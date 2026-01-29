@@ -1,0 +1,44 @@
+@layer components {
+    /* Background */
+    .poikai-page {
+      @apply min-h-screen bg-[#FFF7EA];
+    }
+  
+    /* Soft card */
+    .poikai-card {
+      @apply rounded-3xl bg-white ring-1 ring-gray-100 shadow-sm overflow-hidden;
+    }
+    .poikai-card-header {
+      @apply px-4 py-3 bg-gradient-to-r from-[#E8F7F6] via-white to-[#E8F7F6] border-b border-gray-100;
+    }
+    .poikai-card-iconWrap {
+      @apply grid h-9 w-9 place-items-center rounded-2xl bg-white ring-1 ring-[#BFE7E9];
+    }
+  
+    /* Buttons */
+    .poikai-btn-primary {
+      @apply w-full rounded-2xl bg-[#F0A23A] py-3 font-semibold text-white
+             hover:opacity-95 active:scale-[0.99] transition;
+    }
+  
+    .poikai-btn-outline {
+      @apply w-full rounded-2xl border-2 border-[#F0A23A] bg-transparent py-3
+             font-semibold text-[#F0A23A] hover:bg-[#FFF3E3]
+             active:scale-[0.99] transition;
+    }
+  
+    .poikai-btn-ghost {
+      @apply rounded-full px-3 py-1 text-sm text-gray-600 hover:bg-black/5 transition;
+    }
+  
+    /* Bottom sheet */
+    .poikai-sheet {
+      @apply w-full max-w-md rounded-t-3xl bg-[#FFF7EA] p-4 shadow-xl;
+    }
+  
+    /* Soft panel inside */
+    .poikai-panel {
+      @apply mt-3 rounded-2xl border bg-white p-4;
+    }
+  }
+  
