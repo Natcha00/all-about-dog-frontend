@@ -75,7 +75,7 @@ export default function SwimmingSuccessPage() {
     <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-32">
       <SuccessHeader
         serviceLabel="บริการสระว่ายน้ำ"
-        title="จองสำเร็จ ✅"
+        title="จองสำเร็จ"
         subtitle="ระบบได้รับรายการของคุณแล้ว"
       />
 

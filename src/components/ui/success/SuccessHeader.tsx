@@ -4,7 +4,7 @@ import React from "react";
 
 export default function SuccessHeader({
   serviceLabel,
-  title = "จองสำเร็จ ✅",
+  title = "จองสำเร็จ",
   subtitle = "ระบบได้รับรายการของคุณแล้ว",
 }: {
   serviceLabel: string;

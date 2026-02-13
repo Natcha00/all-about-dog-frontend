@@ -46,12 +46,12 @@ export default function BookingCard({
   const tone = statusTone(b.status);
 
   // CTA ตามสถานะ (ฝั่งผู้ใช้)
-  const primaryCta =
-    b.status === "WaitingSlip"
-      ? { label: "แนบสลิป", onClick: () => onUploadSlip?.(b.id) }
-      : b.status === "finished"
-      ? { label: "ดูประวัติบริการ", onClick: () => onViewHistory?.(b.id) }
-      : undefined;
+  // const primaryCta =
+  //   b.status === "WaitingSlip"
+  //     ? { label: "แนบสลิป", onClick: () => onUploadSlip?.(b.id) }
+  //     : b.status === "finished"
+  //     ? { label: "ดูประวัติบริการ", onClick: () => onViewHistory?.(b.id) }
+  //     : undefined;
 
   const secondaryCta = { label: "ดูรายละเอียด", onClick: () => onViewDetail?.(b.id) };
 
@@ -68,7 +68,10 @@ export default function BookingCard({
             <div className="min-w-0">
               <p className="text-[15px] font-semibold text-black/90 truncate">{b.petName}</p>
               <p className="text-[12px] text-black/55 mt-0.5">
-                {serviceLabel(b.serviceType)} • {formatDateRange(b)}
+                {serviceLabel(b.serviceType)}
+              </p>
+              <p className="text-[12px] text-black/55 mt-0.5">
+                {formatDateRange(b)}
               </p>
             </div>
             <Chip text={statusText} tone={tone} />
@@ -93,7 +96,7 @@ export default function BookingCard({
       </div>
 
       {/* CTA */}
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="mt-4 flex justify-end">
         <button
           type="button"
           onClick={secondaryCta.onClick}
@@ -102,7 +105,7 @@ export default function BookingCard({
           {secondaryCta.label}
         </button>
 
-        {primaryCta ? (
+        {/* {primaryCta ? (
           <button
             type="button"
             onClick={primaryCta.onClick}
@@ -118,7 +121,7 @@ export default function BookingCard({
           >
             ไม่มีการดำเนินการ
           </button>
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -79,18 +79,12 @@ export const CircleProfiles = ({ items }: CircleProfilesProps) => {
 /* =======================
    Single Profile
 ======================= */
-const CircleProfile = ({
-  id,
-  image,
-  name,
-  openNameId,
-  setOpenNameId,
-}: CircleProfileProps) => {
+const CircleProfile = ({ id, image, name, openNameId, setOpenNameId }: CircleProfileProps) => {
   const router = useRouter();
+  const open = openNameId === id;
 
   return (
-    <article className="w-28 text-center relative">
-      {/* Avatar (กดแล้วไปหน้า profile) */}
+    <article className="w-28 text-center relative group">
       <button
         type="button"
         onClick={() => router.push(`/my-dogs/${id}`)}
@@ -109,14 +103,9 @@ const CircleProfile = ({
         "
         aria-label={`ไปหน้าโปรไฟล์ ${name}`}
       >
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-full object-cover"
-        />
+        <img src={image} alt={name} className="w-full h-full object-cover" />
       </button>
 
-      {/* Name (tap to toggle on mobile, hover on desktop) */}
       <button
         type="button"
         className="
@@ -132,34 +121,27 @@ const CircleProfile = ({
         "
         onClick={(e) => {
           e.stopPropagation();
-          setOpenNameId(openNameId === id ? null : id);
+          setOpenNameId(open ? null : id); // ✅ mobile tap toggle
         }}
-        onMouseEnter={() => setOpenNameId(id)}
-        onMouseLeave={() => setOpenNameId(null)}
       >
         {name}
       </button>
 
-      {/* Tooltip (ชื่อเต็ม) */}
-      {openNameId === id && (
-        <div
-          className="
-            absolute left-1/2 -translate-x-1/2
-            -top-2 -translate-y-full
-            z-20
-            px-3 py-2
-            rounded-xl
-            bg-black/80
-            text-white text-sm
-            shadow-lg
-            max-w-[220px]
-            text-center break-words
-          "
-        >
-          {name}
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-black/80 rotate-45" />
-        </div>
-      )}
+      {/* ✅ Tooltip: show on hover (desktop) OR open state (mobile tap) */}
+      <div
+        className={[
+          "absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full z-20",
+          "px-3 py-2 rounded-xl bg-black/80 text-white text-sm shadow-lg",
+          "max-w-[220px] text-center break-words",
+          "opacity-0 pointer-events-none transition",
+          "group-hover:opacity-100 group-hover:pointer-events-auto",
+          open ? "opacity-100 pointer-events-auto" : "",
+        ].join(" ")}
+      >
+        {name}
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-black/80 rotate-45" />
+      </div>
     </article>
   );
 };
+
