@@ -1,0 +1,9 @@
+services:
+  app:
+    image: ghcr.io/Natcha00/all-about-dog-frontend/:latest
+    container_name: all-about-dog-frontend
+    restart: always
+    ports:
+      - "8080:3000"
+    environment:
+      NODE_ENV: production
