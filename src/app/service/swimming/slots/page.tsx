@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SlotCard, { type Slot } from "@/components/ui/swimming/SlotCard";
 
@@ -10,7 +10,7 @@ function isSlotSelectable(slot: Slot, isVip: boolean) {
   return true;
 }
 
-export default function SwimSlotsPage() {
+function SwimSlotsPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -156,4 +156,11 @@ export default function SwimSlotsPage() {
       </div>
     </main>
   );
+}
+
+
+export default function Page(){
+  return <Suspense>
+    <SwimSlotsPage/>
+  </Suspense>
 }

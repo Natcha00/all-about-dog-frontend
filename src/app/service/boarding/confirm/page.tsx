@@ -2,12 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Pet, allocateAssignments, calcPricing, countRooms } from "@/lib/boarding/boarding.logic";
+import {
+  Pet,
+  allocateAssignments,
+  calcPricing,
+  countRooms,
+} from "@/lib/boarding/boarding.logic";
 import BookingConfirmSummary from "@/components/ui/boarding/confirm/BookingConfirmSummary";
 import CostBreakdownSheet from "@/components/ui/boarding/confirm/CostBreakdownSheet";
-import { filterSelectedPetsByIds, readSelectedPetsFromSession } from "@/lib/boarding/selectedPetsSession";
+import {
+  filterSelectedPetsByIds,
+  readSelectedPetsFromSession,
+} from "@/lib/boarding/selectedPetsSession";
+import { Suspense } from "react";
 
-export default function BoardingConfirmPage() {
+function BoardingConfirmPage() {
   const router = useRouter();
   const sp = useSearchParams();
   const [openCost, setOpenCost] = useState(false);
@@ -52,7 +61,10 @@ export default function BoardingConfirmPage() {
     setPets(mapped.length > 0 ? mapped : fallback);
   }, [petIdsKey]);
 
-  const assignments = useMemo(() => allocateAssignments(pets, plan), [pets, plan]);
+  const assignments = useMemo(
+    () => allocateAssignments(pets, plan),
+    [pets, plan],
+  );
   const roomsCount = useMemo(() => countRooms(assignments), [assignments]);
 
   const petLines = useMemo(() => {
@@ -82,50 +94,57 @@ export default function BoardingConfirmPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-44">
-      <div className="mb-6 flex flex-col items-center">
-        <p className="text-sm text-gray-500">บริการฝากเลี้ยง</p>
-        <h1 className="text-3xl font-extrabold text-gray-900">จองห้องพัก</h1>
-      </div>
-
-      <div className="mx-auto w-full max-w-md">
-        <BookingConfirmSummary
-          serviceLabel="รับฝากเลี้ยง"
-          startDate={startDate}
-          endDate={endDate}
-          startTime={startTime}
-          endTime={endTime}
-          nights={nights}
-          plan={plan}
-          petLines={petLines}
-          roomsCount={roomsCount}
-        />
-
-        <div className="mt-6 space-y-3">
-          <button
-            type="button"
-            onClick={() => setOpenCost(true)}
-            className="w-full rounded-2xl border-2 border-[#F0A23A] bg-transparent py-3 font-semibold text-[#F0A23A]"
-          >
-            คำนวณค่าใช้จ่ายเบื้องต้น
-          </button>
-
-          <button
-            type="button"
-            className="w-full rounded-xl bg-[#F0A23A] py-3 font-semibold text-white"
-            onClick={onConfirm}
-          >
-            ยืนยัน
-          </button>
+      <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-44">
+        <div className="mb-6 flex flex-col items-center">
+          <p className="text-sm text-gray-500">บริการฝากเลี้ยง</p>
+          <h1 className="text-3xl font-extrabold text-gray-900">จองห้องพัก</h1>
         </div>
-      </div>
 
-      <CostBreakdownSheet
-        open={openCost}
-        onClose={() => setOpenCost(false)}
-        pricing={pricing}
-        nights={nights}
-      />
-    </main>
+        <div className="mx-auto w-full max-w-md">
+          <BookingConfirmSummary
+            serviceLabel="รับฝากเลี้ยง"
+            startDate={startDate}
+            endDate={endDate}
+            startTime={startTime}
+            endTime={endTime}
+            nights={nights}
+            plan={plan}
+            petLines={petLines}
+            roomsCount={roomsCount}
+          />
+
+          <div className="mt-6 space-y-3">
+            <button
+              type="button"
+              onClick={() => setOpenCost(true)}
+              className="w-full rounded-2xl border-2 border-[#F0A23A] bg-transparent py-3 font-semibold text-[#F0A23A]"
+            >
+              คำนวณค่าใช้จ่ายเบื้องต้น
+            </button>
+
+            <button
+              type="button"
+              className="w-full rounded-xl bg-[#F0A23A] py-3 font-semibold text-white"
+              onClick={onConfirm}
+            >
+              ยืนยัน
+            </button>
+          </div>
+        </div>
+
+        <CostBreakdownSheet
+          open={openCost}
+          onClose={() => setOpenCost(false)}
+          pricing={pricing}
+          nights={nights}
+        />
+      </main>
   );
+}
+
+
+export default function Page(){
+  return <Suspense>
+    <BoardingConfirmPage/>
+  </Suspense>
 }

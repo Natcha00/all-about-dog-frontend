@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 
 import PoikaiCard from "@/components/ui/PoikaiCard";
-import SelectedPetsChips, { SelectedPet } from "@/components/ui/boarding/calendar/SelectedPetsChips";
+import SelectedPetsChips, {
+  SelectedPet,
+} from "@/components/ui/boarding/calendar/SelectedPetsChips";
 import RangeCalendar from "@/components/ui/boarding/calendar/RangeCalendar";
 
 type StoredPet = {
@@ -15,7 +17,7 @@ type StoredPet = {
   size: "small" | "large";
 };
 
-export default function SwimmingCalendarPage() {
+function SwimmingCalendarPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -80,73 +82,83 @@ export default function SwimmingCalendarPage() {
     // ✅ ไปหน้าถัดไปเลือก "รอบว่าง"
     router.push(
       `/service/swimming/slots?pets=${encodeURIComponent(petIds.join(","))}` +
-        `&date=${encodeURIComponent(date)}`
+        `&date=${encodeURIComponent(date)}`,
     );
   };
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] pb-28">
-      <div className="mx-auto w-full max-w-md px-4 pt-8 space-y-4">
-        <div className="flex flex-col items-center">
-          <h1 className="text-2xl font-semibold text-gray-900">เลือกวันว่ายน้ำ</h1>
-          <p className="text-sm text-gray-500">บริการสระว่ายน้ำ</p>
+      <main className="min-h-screen bg-[#FFF7EA] pb-28">
+        <div className="mx-auto w-full max-w-md px-4 pt-8 space-y-4">
+          <div className="flex flex-col items-center">
+            <h1 className="text-2xl font-semibold text-gray-900">
+              เลือกวันว่ายน้ำ
+            </h1>
+            <p className="text-sm text-gray-500">บริการสระว่ายน้ำ</p>
+          </div>
+
+          {/* ✅ โชว์สัตว์ที่เลือก */}
+          <SelectedPetsChips pets={selectedPets} />
+
+          {/* ✅ เลือกวันเดียว */}
+          <PoikaiCard
+            title="เลือกวัน"
+            subtitle="เลือกได้ 1 วันเท่านั้น (ห้ามย้อนหลัง)"
+            icon={<CalendarDays className="w-5 h-5 text-[#399199]" />}
+          >
+            <RangeCalendar
+              monthsToShow={1}
+              value={{ start: date || undefined, end: date || undefined }}
+              onChange={(r) => {
+                // เราจะถือว่าเลือกวันเดียว = ใช้ r.start (หรือ r.end ก็ได้)
+                const picked = (r.end || r.start || "").trim();
+                if (!picked) return;
+
+                // กันย้อนหลัง
+                if (picked < todayYMD) return;
+
+                setDate(picked);
+              }}
+            />
+          </PoikaiCard>
+
+          {/* ✅ สรุปวัน */}
+          {date ? (
+            <div className="rounded-2xl bg-white p-4 shadow-sm text-sm text-gray-700">
+              วันที่เลือก:{" "}
+              <span className="font-semibold text-gray-900">{date}</span>
+            </div>
+          ) : null}
         </div>
 
-        {/* ✅ โชว์สัตว์ที่เลือก */}
-        <SelectedPetsChips pets={selectedPets} />
-
-        {/* ✅ เลือกวันเดียว */}
-        <PoikaiCard
-          title="เลือกวัน"
-          subtitle="เลือกได้ 1 วันเท่านั้น (ห้ามย้อนหลัง)"
-          icon={<CalendarDays className="w-5 h-5 text-[#399199]" />}
-        >
-          <RangeCalendar
-            monthsToShow={1}
-            value={{ start: date || undefined, end: date || undefined }}
-            onChange={(r) => {
-              // เราจะถือว่าเลือกวันเดียว = ใช้ r.start (หรือ r.end ก็ได้)
-              const picked = (r.end || r.start || "").trim();
-              if (!picked) return;
-
-              // กันย้อนหลัง
-              if (picked < todayYMD) return;
-
-              setDate(picked);
-            }}
-          />
-        </PoikaiCard>
-
-        {/* ✅ สรุปวัน */}
-        {date ? (
-          <div className="rounded-2xl bg-white p-4 shadow-sm text-sm text-gray-700">
-            วันที่เลือก: <span className="font-semibold text-gray-900">{date}</span>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Bottom CTA */}
-      <div className="fixed inset-x-0 bottom-16 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
-        <div className="mx-auto max-w-md px-6 py-4">
-          <button
-            type="button"
-            disabled={!canNext}
-            onClick={goNext}
-            className={`
+        {/* Bottom CTA */}
+        <div className="fixed inset-x-0 bottom-16 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
+          <div className="mx-auto max-w-md px-6 py-4">
+            <button
+              type="button"
+              disabled={!canNext}
+              onClick={goNext}
+              className={`
               w-full py-4 rounded-2xl text-xl font-bold text-white transition
               ${canNext ? "bg-[#F0A23A] hover:bg-[#e99625]" : "bg-gray-300 cursor-not-allowed"}
             `}
-          >
-            เลือกรอบที่ว่าง
-          </button>
+            >
+              เลือกรอบที่ว่าง
+            </button>
 
-          {!canNext ? (
-            <p className="mt-2 text-center text-xs text-gray-600">
-              กรุณาเลือกวัน (และต้องมีสัตว์ที่เลือกไว้)
-            </p>
-          ) : null}
+            {!canNext ? (
+              <p className="mt-2 text-center text-xs text-gray-600">
+                กรุณาเลือกวัน (และต้องมีสัตว์ที่เลือกไว้)
+              </p>
+            ) : null}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
   );
+}
+
+
+export default function Page(){
+  return <Suspense>
+    <SwimmingCalendarPage/>
+  </Suspense>
 }

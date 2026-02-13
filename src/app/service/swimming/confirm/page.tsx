@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import {
@@ -8,7 +8,10 @@ import {
   filterSelectedPetsByIds,
 } from "@/lib/boarding/selectedPetsSession";
 import type { SwimPet } from "@/lib/swimming/types";
-import { calcSwimPricing, DEFAULT_SWIM_PRICE } from "@/lib/swimming/swimming.logic";
+import {
+  calcSwimPricing,
+  DEFAULT_SWIM_PRICE,
+} from "@/lib/swimming/swimming.logic";
 
 import SwimConfirmSummary from "@/components/ui/swimming/SwimConfirmSummary";
 import SwimCostBreakdownSheet from "@/components/ui/swimming/SwimCostBreakdownSheet";
@@ -26,7 +29,7 @@ function makeSwimRef(dateISO?: string) {
   return `SW${yyyy}${mm}${dd}-${rand4}`; // ex: SW20260121-0427
 }
 
-export default function SwimConfirmPage() {
+function SwimConfirmPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -103,82 +106,95 @@ export default function SwimConfirmPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-44">
-      <div className="mb-6 flex flex-col items-center">
-        <p className="text-sm text-gray-500">บริการสระว่ายน้ำ</p>
-        <h1 className="text-3xl font-extrabold text-gray-900">ยืนยันการจอง</h1>
-      </div>
+      <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-44">
+        <div className="mb-6 flex flex-col items-center">
+          <p className="text-sm text-gray-500">บริการสระว่ายน้ำ</p>
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            ยืนยันการจอง
+          </h1>
+        </div>
 
-      <div className="mx-auto w-full max-w-md space-y-4">
-        <div className="rounded-3xl bg-white ring-1 ring-gray-100 shadow-sm p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">
-                เจ้าของลงเล่นกับสุนัข <span className="text-emerald-600">(ฟรี)</span>
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                เลือกได้หากต้องการลงสระพร้อมน้องในรอบนี้
-              </p>
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="rounded-3xl bg-white ring-1 ring-gray-100 shadow-sm p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  เจ้าของลงเล่นกับสุนัข{" "}
+                  <span className="text-emerald-600">(ฟรี)</span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  เลือกได้หากต้องการลงสระพร้อมน้องในรอบนี้
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setOwnerPlay((v) => !v)}
+                className={[
+                  "relative inline-flex h-9 w-16 items-center rounded-full transition",
+                  ownerPlay ? "bg-emerald-500" : "bg-gray-200",
+                ].join(" ")}
+                aria-pressed={ownerPlay}
+              >
+                <span
+                  className={[
+                    "inline-block h-7 w-7 transform rounded-full bg-white shadow-sm transition",
+                    ownerPlay ? "translate-x-8" : "translate-x-1",
+                  ].join(" ")}
+                />
+              </button>
             </div>
+          </div>
+
+          <SwimConfirmSummary
+            serviceLabel="จองสระว่ายน้ำ"
+            date={date}
+            time={time}
+            isVip={isVip}
+            petLines={petLines}
+            total={pricing.total}
+            ownerPlay={ownerPlay}
+          />
+
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setOpenCost(true)}
+              className="w-full rounded-2xl border-2 border-[#F0A23A] bg-transparent py-3 font-semibold text-[#F0A23A]"
+            >
+              คำนวณค่าใช้จ่ายเบื้องต้น
+            </button>
 
             <button
               type="button"
-              onClick={() => setOwnerPlay((v) => !v)}
+              disabled={!canConfirm}
+              onClick={onConfirm}
               className={[
-                "relative inline-flex h-9 w-16 items-center rounded-full transition",
-                ownerPlay ? "bg-emerald-500" : "bg-gray-200",
+                "w-full rounded-2xl py-3 font-semibold text-white transition",
+                canConfirm
+                  ? "bg-[#F0A23A] hover:bg-[#e99625]"
+                  : "bg-gray-300 cursor-not-allowed",
               ].join(" ")}
-              aria-pressed={ownerPlay}
             >
-              <span
-                className={[
-                  "inline-block h-7 w-7 transform rounded-full bg-white shadow-sm transition",
-                  ownerPlay ? "translate-x-8" : "translate-x-1",
-                ].join(" ")}
-              />
+              ยืนยัน
             </button>
           </div>
         </div>
 
-        <SwimConfirmSummary
-          serviceLabel="จองสระว่ายน้ำ"
-          date={date}
-          time={time}
+        <SwimCostBreakdownSheet
+          open={openCost}
+          onClose={() => setOpenCost(false)}
+          pricing={pricing}
           isVip={isVip}
-          petLines={petLines}
-          total={pricing.total}
-          ownerPlay={ownerPlay}
         />
-
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => setOpenCost(true)}
-            className="w-full rounded-2xl border-2 border-[#F0A23A] bg-transparent py-3 font-semibold text-[#F0A23A]"
-          >
-            คำนวณค่าใช้จ่ายเบื้องต้น
-          </button>
-
-          <button
-            type="button"
-            disabled={!canConfirm}
-            onClick={onConfirm}
-            className={[
-              "w-full rounded-2xl py-3 font-semibold text-white transition",
-              canConfirm ? "bg-[#F0A23A] hover:bg-[#e99625]" : "bg-gray-300 cursor-not-allowed",
-            ].join(" ")}
-          >
-            ยืนยัน
-          </button>
-        </div>
-      </div>
-
-      <SwimCostBreakdownSheet
-        open={openCost}
-        onClose={() => setOpenCost(false)}
-        pricing={pricing}
-        isVip={isVip}
-      />
-    </main>
+      </main>
+ 
   );
+}
+
+
+export default function Page(){
+  return <Suspense>
+    <SwimConfirmPage/>
+  </Suspense>
 }

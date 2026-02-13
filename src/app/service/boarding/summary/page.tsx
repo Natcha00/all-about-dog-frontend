@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import BoardingSummary from "@/components/ui/boarding/summary/BoardingSummary";
 import type { Pet, PriceConfig } from "@/lib/boarding/boarding.logic";
 import { DEFAULT_PRICE } from "@/lib/boarding/boarding.logic";
-import { filterSelectedPetsByIds, readSelectedPetsFromSession } from "@/lib/boarding/selectedPetsSession";
+import {
+  filterSelectedPetsByIds,
+  readSelectedPetsFromSession,
+} from "@/lib/boarding/selectedPetsSession";
 
 // type StoredPet = {
 //   id: number;
@@ -26,7 +29,7 @@ import { filterSelectedPetsByIds, readSelectedPetsFromSession } from "@/lib/boar
 //   }
 // }
 
-export default function BoardingSummaryPage() {
+function BoardingSummaryPage() {
   const sp = useSearchParams();
 
   const petsParam = sp.get("pets") || "";
@@ -75,7 +78,6 @@ export default function BoardingSummaryPage() {
       size: p.size, // "small" | "large" ตรง type อยู่แล้ว
     }));
 
-
     // fallback: ถ้า session ไม่มีข้อมูล (เช่น refresh หน้าตรง ๆ)
     const fallback: Pet[] = petIds.map((id) => ({
       id,
@@ -90,15 +92,22 @@ export default function BoardingSummaryPage() {
   const priceConfig: PriceConfig = DEFAULT_PRICE;
 
   return (
-    <BoardingSummary
-      pets={pets}
-      startDate={startDate}
-      endDate={endDate}
-      startTime={startTime}
-      endTime={endTime}
-      nights={nights}
-      initialPlan={initialPlan}
-      priceConfig={priceConfig}
-    />
+      <BoardingSummary
+        pets={pets}
+        startDate={startDate}
+        endDate={endDate}
+        startTime={startTime}
+        endTime={endTime}
+        nights={nights}
+        initialPlan={initialPlan}
+        priceConfig={priceConfig}
+      />
   );
+}
+
+
+export default function Page(){
+  return <Suspense>
+    <BoardingSummaryPage/>
+  </Suspense>
 }

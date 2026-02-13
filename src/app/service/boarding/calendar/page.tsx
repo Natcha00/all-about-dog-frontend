@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 
 import PoikaiCard from "@/components/ui/PoikaiCard";
 import PoikaiChip from "@/components/ui/PoikaiChip";
-import SelectedPetsChips, { SelectedPet } from "@/components/ui/boarding/calendar/SelectedPetsChips";
+import SelectedPetsChips, {
+  SelectedPet,
+} from "@/components/ui/boarding/calendar/SelectedPetsChips";
 import AvailabilityBox from "@/components/ui/boarding/calendar/AvailabilityBox";
 import BoardingDateTimeForm from "@/components/ui/boarding/calendar/BoardingDateTimeForm";
 import RangeCalendar from "@/components/ui/boarding/calendar/RangeCalendar";
@@ -30,7 +32,7 @@ function timeToMinutes(t: string) {
   return hh * 60 + mm;
 }
 
-export default function BoardingCalendarPage() {
+function BoardingCalendarPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -69,12 +71,16 @@ export default function BoardingCalendarPage() {
     }
 
     // fallback: ถ้า refresh แล้ว session หาย
-    return petIds.map((id) => ({ id, name: `ID: ${id}`, image: "/images/dogSwimmingLanding.jpg" }));
+    return petIds.map((id) => ({
+      id,
+      name: `ID: ${id}`,
+      image: "/images/dogSwimmingLanding.jpg",
+    }));
   }, [petIds, storedPets]);
 
   // ✅ state วัน/เวลา
   const [startDate, setStartDate] = useState(""); // YYYY-MM-DD
-  const [endDate, setEndDate] = useState("");     // YYYY-MM-DD
+  const [endDate, setEndDate] = useState(""); // YYYY-MM-DD
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("18:59");
 
@@ -83,8 +89,12 @@ export default function BoardingCalendarPage() {
     return calcNights(startDate, endDate);
   }, [startDate, endDate]);
 
-  const startTimeOk = startTime ? timeToMinutes(startTime) >= timeToMinutes("09:00") : false;
-  const endTimeOk = endTime ? timeToMinutes(endTime) < timeToMinutes("19:00") : false;
+  const startTimeOk = startTime
+    ? timeToMinutes(startTime) >= timeToMinutes("09:00")
+    : false;
+  const endTimeOk = endTime
+    ? timeToMinutes(endTime) < timeToMinutes("19:00")
+    : false;
 
   const sameDayTimeOk = useMemo(() => {
     if (!startDate || !endDate || !startTime || !endTime) return false;
@@ -109,7 +119,7 @@ export default function BoardingCalendarPage() {
         `&end=${encodeURIComponent(endDate)}` +
         `&startTime=${encodeURIComponent(startTime)}` +
         `&endTime=${encodeURIComponent(endTime)}` +
-        `&nights=${encodeURIComponent(String(nights))}`
+        `&nights=${encodeURIComponent(String(nights))}`,
     );
   };
 
@@ -143,14 +153,17 @@ export default function BoardingCalendarPage() {
     }
   };
 
-  const startTimeError = startTime && !startTimeOk ? "เวลาเข้าต้องตั้งแต่ 09:00 เป็นต้นไป" : undefined;
+  const startTimeError =
+    startTime && !startTimeOk
+      ? "เวลาเข้าต้องตั้งแต่ 09:00 เป็นต้นไป"
+      : undefined;
 
   const endTimeError =
     (endTime && !endTimeOk
       ? "เวลารับกลับต้องก่อน 19:00"
       : startDate && endDate && startTime && endTime && !sameDayTimeOk
-      ? "ถ้าวันเข้าและวันออกเป็นวันเดียวกัน เวลารับกลับต้องมากกว่าเวลาเข้า"
-      : undefined) || undefined;
+        ? "ถ้าวันเข้าและวันออกเป็นวันเดียวกัน เวลารับกลับต้องมากกว่าเวลาเข้า"
+        : undefined) || undefined;
 
   const inputCls = `
     w-full rounded-2xl
@@ -164,7 +177,9 @@ export default function BoardingCalendarPage() {
     <main className="min-h-screen bg-[#FFF7EA] pb-28">
       <div className="mx-auto w-full max-w-md px-4 pt-8 space-y-4">
         <div className="flex flex-col items-center">
-          <h1 className="text-2xl font-semibold text-gray-900">เลือกวันเข้าพัก</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            เลือกวันเข้าพัก
+          </h1>
           <p className="text-sm text-gray-500">บริการฝากเลี้ยง</p>
         </div>
 
@@ -180,7 +195,10 @@ export default function BoardingCalendarPage() {
           icon={<CalendarDays className="w-5 h-5 text-[#399199]" />}
         >
           <RangeCalendar
-            value={{ start: startDate || undefined, end: endDate || undefined }}
+            value={{
+              start: startDate || undefined,
+              end: endDate || undefined,
+            }}
             onChange={(r) => {
               if (r.start) onStartDateChange(r.start);
               if (r.end) onEndDateChange(r.end);
@@ -242,5 +260,13 @@ export default function BoardingCalendarPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <BoardingCalendarPage />
+    </Suspense>
   );
 }
