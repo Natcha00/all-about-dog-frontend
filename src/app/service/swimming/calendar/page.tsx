@@ -155,14 +155,6 @@ function SwimmingCalendarPage() {
           />
         </PoikaiCard>
 
-        {/* ✅ สรุปวัน */}
-        {/* {date ? (
-          <div className="rounded-2xl bg-white p-4 shadow-sm text-sm text-gray-700">
-            วันที่เลือก: <span className="font-semibold text-gray-900">{date}</span>
-          </div>
-        ) : null} */}
-      </div>
-
       {/* Bottom CTA */}
       <div className="fixed inset-x-0 bottom-0 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
         <div className="mx-auto max-w-md px-6 py-4">
