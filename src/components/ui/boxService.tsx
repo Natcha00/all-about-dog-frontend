@@ -111,7 +111,7 @@ function ServiceModal({
 }) {
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm p-4 top-[-5rem]"
             onClick={onClose}
         >
             <div
@@ -125,11 +125,11 @@ function ServiceModal({
                     aria-label="ปิด"
                     className="absolute top-3 right-3 z-10 w-9 h-9 rounded-lg border border-black/30 bg-white grid place-items-center hover:bg-gray-50 active:scale-[0.98]"
                 >
-                    <span className="text-xl leading-none">×</span>
+                    <span className="text-xl leading-none">x</span>
                 </button>
 
                 {/* Header image */}
-                {headerImageSrc ? (
+                {/* {headerImageSrc ? (
                     <div className="h-32 w-full bg-gray-100 overflow-hidden">
                         <img
                             src={headerImageSrc}
@@ -140,7 +140,7 @@ function ServiceModal({
                             }}
                         />
                     </div>
-                ) : null}
+                ) : null} */}
 
                 {/* Scroll content */}
                 <div className="max-h-[72vh] overflow-y-auto px-6 pt-4 pb-28">
