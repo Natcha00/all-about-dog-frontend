@@ -20,18 +20,28 @@ export default function MyPets() {
   const [dogs] = useState<CircleItemProps[]>(listDog);
 
   return (
-    <div className="min-h-screen overflow-y-auto">
-      <div className="text-center text-2xl font-semibold m-4 text-gray-700">
+    <div className="min-h-screen bg-[#FFF7EA] px-6 py-6">
+      
+      <h1 className="text-center text-2xl font-extrabold text-gray-900 mb-6">
         สัตว์เลี้ยงของฉัน
-      </div>
+      </h1>
 
-      <div className="grid grid-cols-2 gap-8 place-items-center">
-        <article className="w-28 text-center">
+      <div className="grid grid-cols-2 gap-6 place-items-center">
+        
+        {/* Add Button */}
+        <div className="w-28 text-center">
           <CircleAdd />
-        </article>
+        </div>
 
-        <CircleProfiles items={dogs} />
+        {/* Dogs */}
+        {dogs.map((dog) => (
+          <div key={dog.id} className="w-28 text-center">
+            <CircleProfiles items={[dog]} />
+          </div>
+        ))}
+
       </div>
     </div>
   );
 }
+

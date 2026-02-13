@@ -99,7 +99,7 @@ export default function SwimmingServicePage() {
             </div>
 
             {/* Bottom CTA */}
-            <div className="fixed inset-x-0 bottom-16 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
+            <div className="fixed inset-x-0 bottom-0 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
                 <div className="mx-auto max-w-md px-6 py-4">
                     <button
                         type="button"

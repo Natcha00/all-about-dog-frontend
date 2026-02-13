@@ -128,22 +128,9 @@ function ServiceModal({
                     <span className="text-xl leading-none">x</span>
                 </button>
 
-                {/* Header image */}
-                {/* {headerImageSrc ? (
-                    <div className="h-32 w-full bg-gray-100 overflow-hidden">
-                        <img
-                            src={headerImageSrc}
-                            alt={title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                            }}
-                        />
-                    </div>
-                ) : null} */}
 
                 {/* Scroll content */}
-                <div className="max-h-[72vh] overflow-y-auto px-6 pt-4 pb-28">
+                <div className="max-h-[60vh] overflow-y-auto px-6 pt-4 pb-28">
                     <h2 className="text-2xl font-extrabold text-center mb-4">{title}</h2>
                     {children}
                 </div>

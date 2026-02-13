@@ -5,8 +5,7 @@ export function statusToTab(status: BookingStatus): TabKey {
   if (status === "WaitingSlip" || status === "slip_uploaded") return "payment";
   if (status === "slip_verified" || status === "check-in") return "active";
   if (status === "finished") return "finished";
-  if (status === "cancelled") return "cancelled";
-  return "other";
+  return "cancelled";
 }
 
 export function tabMeta(tab: TabKey) {
@@ -19,10 +18,8 @@ export function tabMeta(tab: TabKey) {
       return { label: "กำลังให้บริการ", hint: "ชำระแล้ว/เช็คอิน", tone: "info" as const };
     case "finished":
       return { label: "เสร็จสิ้น", hint: "จบงานแล้ว", tone: "success" as const };
-    case "cancelled":
-      return { label: "ยกเลิก", hint: "ถูกยกเลิก", tone: "danger" as const };
     default:
-      return { label: "อื่น ๆ", hint: "สถานะอื่น", tone: "neutral" as const };
+      return { label: "ยกเลิก", hint: "ถูกยกเลิก", tone: "danger" as const };
   }
 }
 

@@ -141,7 +141,7 @@ export default function StepBasic(props: {
             />
           </div>
           <div>
-            <Label>ส่วนสูง (ซม.)*</Label>
+            <Label>ส่วนสูง (ซม.)</Label>
             <Input
               placeholder="เช่น 30"
               inputMode="numeric"
@@ -165,6 +165,7 @@ export default function StepBasic(props: {
               value={form.birthDate}
               onChange={(e) => setForm((p) => ({ ...p, birthDate: e.target.value }))}
               error={errors.birthDate}
+              className="appearance-none text-[14px]"
             />
           </div>
           <div>

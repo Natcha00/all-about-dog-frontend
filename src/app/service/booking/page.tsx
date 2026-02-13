@@ -21,7 +21,6 @@ export default function BookingsPage() {
       active: 0,
       finished: 0,
       cancelled: 0,
-      other: 0,
     };
     for (const b of bookings) base[statusToTab(b.status)] += 1;
     return base;

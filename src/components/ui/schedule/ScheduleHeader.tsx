@@ -18,12 +18,12 @@ export default function ScheduleHeader({
   onChangePet: (pet: string) => void;
 }) {
   return (
-    <header className="mb-4">
-      <h1 className="text-center text-[34px] font-extrabold text-black">
+    <header>
+      <h1 className="text-center text-[34px] font-extrabold text-black pb-3">
         ตารางนัด
       </h1>
 
-      <div className="mt-3 flex flex-col items-center justify-between gap-3">
+      <div className="flex flex-col items-center justify-between">
         {/* เดือน */}
         <div className="flex items-center gap-2">
           <button
@@ -46,7 +46,7 @@ export default function ScheduleHeader({
         </div>
 
         {/* filter สัตว์เลี้ยง */}
-        <div className="flex items-center gap-2">
+        <div className=" flex items-center justify-center gap-3">
           <div className="text-base font-semibold">สัตว์เลี้ยง</div>
           <select
             value={selectedPet}
@@ -59,12 +59,10 @@ export default function ScheduleHeader({
               </option>
             ))}
           </select>
-        </div>
-        <Link
+          <Link
           href="/service/booking"
-          className="absolute right-0 top-1/2 -translate-y-1/2
-                     rounded-xl border border-black/40 bg-[#FFF7EA]
-                     p-2 shadow-sm hover:bg-black/5 active:scale-[0.98]"
+          className="rounded-xl border border-black/40 bg-[#FFF7EA]
+          p-2 shadow-sm hover:bg-black/5 active:scale-[0.98]"
           aria-label="ไปหน้ารายการจองทั้งหมด"
         >
           {/* แบบง่ายสุด */}
@@ -73,6 +71,9 @@ export default function ScheduleHeader({
           {/* ถ้าจะใช้ lucide-react */}
           {/* <CalendarDays className="h-6 w-6" /> */}
         </Link>
+        </div>
+        
+     
       </div>
     </header>
   );

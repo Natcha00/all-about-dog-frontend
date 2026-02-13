@@ -418,11 +418,61 @@ export default function BookingDetailPage() {
     return items;
   }, [b.status, b.verifiedBy, b.verifiedAt, b.cancelledReason]);
 
-  return (
-    <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-32">
-      <SuccessHeader serviceLabel="รายละเอียดการจอง" />
+  const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
 
+
+  return (
+    <main className="min-h-screen bg-[#FFF7EA] px-6 py-8 pb-32">
+      <SuccessHeader serviceLabel="รายละเอียดการจอง" />
+  
       <div className="mx-auto w-full max-w-md space-y-4">
+        {/* 0) Status strip (เห็นสถานะทันที) */}
+        <div className="rounded-2xl bg-white/80 ring-1 ring-black/5 shadow-sm px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-black/45">Booking ID</p>
+              <p className="text-sm font-extrabold text-black/90 truncate">{b.id}</p>
+            </div>
+  
+            <span className="shrink-0 rounded-full bg-black/[0.06] px-3 py-1 text-xs font-bold text-black/70">
+              {STATUS_LABEL[b.status]}
+            </span>
+          </div>
+  
+          {/* quick note */}
+          <p className="mt-2 text-xs text-black/45">
+            {canUploadSlip
+              ? "แนบสลิปเพื่อให้พนักงานตรวจสอบ"
+              : "การแนบสลิปจะเปิดได้เฉพาะสถานะที่กำหนด"}
+          </p>
+        </div>
+  
+        {/* 1) Primary actions (ทำก่อน) */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setOpenHistory(true)}
+            className="rounded-2xl bg-white ring-1 ring-black/10 py-4 font-extrabold text-black/90 active:scale-[0.99] transition flex items-center justify-center gap-2"
+          >
+            <History className="h-5 w-5 text-black/60" />
+            ประวัติสถานะ
+          </button>
+  
+          <button
+            type="button"
+            disabled={!canUploadSlip}
+            onClick={() => setOpenSlip(true)}
+            className={[
+              "rounded-2xl py-4 font-extrabold active:scale-[0.99] transition flex items-center justify-center gap-2",
+              canUploadSlip ? "bg-[#111] text-white" : "bg-gray-200 text-gray-500",
+            ].join(" ")}
+          >
+            <ImagePlus className="h-5 w-5" />
+            แนบสลิป
+          </button>
+        </div>
+  
+        {/* 2) Details card (อ่านทีหลัง) */}
         <SuccessSummaryCard
           title="รายละเอียดการจอง"
           subtitle="สรุปรายการ"
@@ -432,59 +482,44 @@ export default function BookingDetailPage() {
           totalLabel="หมายเหตุ"
           totalValue={<span className="text-black/60">{b.cancelledReason ?? "-"}</span>}
         />
-
-        {/* ✅ ปุ่มหลัก 2 ปุ่ม ตามที่ขอ */}
-        <div className="grid grid-cols-2 gap-3">
+  
+        {/* 3) Danger zone (แยกโซนให้ชัด) */}
+        <div className="rounded-2xl bg-white/70 ring-1 ring-black/5 p-4">
+          <p className="text-sm font-extrabold text-black/80">การจัดการ</p>
+          <p className="text-xs text-black/45 mt-1">
+            การยกเลิกทำได้เฉพาะสถานะ “รออนุมัติ”
+          </p>
+  
           <button
             type="button"
-            onClick={() => setOpenHistory(true)}
-            className="rounded-2xl bg-white ring-1 ring-black/10 py-4 font-extrabold text-black/90 active:scale-[0.99] transition flex items-center justify-center gap-2"
-          >
-            <History className="h-5 w-5 text-black/60 bottom-16" />
-            ประวัติสถานะ
-          </button>
-
-          <button
-            type="button"
-            disabled={!canUploadSlip}
-            onClick={() => setOpenSlip(true)}
+            disabled={!canCancel}
+            onClick={() => setOpenCancelConfirm(true)}
             className={[
-              "rounded-2xl py-4 font-extrabold active:scale-[0.99] transition flex items-center justify-center gap-2 z-50",
-              canUploadSlip ? "bg-[#111] text-white" : "bg-gray-200 text-gray-500",
+              "mt-3 w-full rounded-2xl py-4 text-base font-extrabold transition",
+              canCancel
+                ? "bg-white text-red-600 ring-1 ring-red-200 active:scale-[0.99]"
+                : "bg-gray-200 text-gray-500",
             ].join(" ")}
           >
-            <ImagePlus className="h-5 w-5" />
-            แนบสลิป
+            {b.status === "cancelled" ? "ยกเลิกแล้ว" : "ยกเลิกการจอง"}
           </button>
         </div>
-
-        {/* ยกเลิก */}
+  
+        {/* 4) Back (รอง) */}
         <button
           type="button"
-          disabled={!canCancel}
-          onClick={() => setLocalStatus("cancelled")}
-          className={[
-            "w-full rounded-2xl py-4 text-xl font-bold transition",
-            canCancel ? "bg-white text-red-600 border border-red-200" : "bg-gray-200 text-gray-500",
-          ].join(" ")}
-        >
-          {b.status === "cancelled" ? "ยกเลิกแล้ว" : "ยกเลิกการจอง"}
-        </button>
-
-        <button
-          type="button"
-          className="w-full rounded-2xl bg-[#F0A23A] py-4 text-xl font-bold text-white"
+          className="w-full rounded-2xl bg-white ring-1 ring-black/10 py-4 text-base font-extrabold text-black/80 active:scale-[0.99] transition"
           onClick={() => router.push("/service/schedule")}
         >
           กลับไปหน้าปฏิทิน
         </button>
-
+  
         {/* debug */}
         {slipFile ? (
           <div className="text-center text-xs text-black/40">debug slip: {slipFile.name}</div>
         ) : null}
       </div>
-
+  
       {/* ✅ Modal: ประวัติสถานะ */}
       <BottomSheet
         open={openHistory}
@@ -498,26 +533,78 @@ export default function BookingDetailPage() {
       >
         <TimelineList items={historyItems} />
       </BottomSheet>
-
+  
       {/* ✅ Modal: แนบสลิป */}
-      <BottomSheet open={openSlip} title="แนบหลักฐานการชำระเงิน" onClose={() => setOpenSlip(false)}>
+      <BottomSheet
+        open={openSlip}
+        title="แนบหลักฐานการชำระเงิน"
+        onClose={() => setOpenSlip(false)}
+      >
         <SlipUploadPanel
           disabled={!canUploadSlip}
           defaultPreview={slipPreview ?? b.slipUrl ?? null}
           onPick={(file, previewUrl) => {
             setSlipFile(file);
             setSlipPreview(previewUrl);
-
-            // mock: เลือกไฟล์แล้วให้สถานะเป็น slip_uploaded เพื่อให้ timeline เปลี่ยน
             setLocalStatus("slip_uploaded");
           }}
           onSubmit={() => {
-            // mock: submit แล้วคงสถานะไว้ slip_uploaded
-            // (อนาคต: ยิง API แล้ว refetch)
             setOpenSlip(false);
           }}
         />
       </BottomSheet>
+
+      {openCancelConfirm && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+    onClick={() => setOpenCancelConfirm(false)}
+  >
+    <div
+      className="w-full max-w-sm rounded-3xl bg-white shadow-2xl ring-1 ring-black/10"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="px-5 py-4 border-b border-black/5">
+        <p className="text-base font-extrabold text-gray-900">
+          ยืนยันการยกเลิกการจอง
+        </p>
+        <p className="mt-1 text-sm text-black/55">
+          การยกเลิกไม่สามารถย้อนกลับได้
+        </p>
+      </div>
+
+      <div className="px-5 py-4">
+        <div className="rounded-2xl bg-red-50 ring-1 ring-red-100 p-4">
+          <p className="text-sm text-red-700">
+            คุณต้องการยกเลิกรายการจองนี้ใช่หรือไม่?
+          </p>
+        </div>
+
+        <div className="mt-4 flex gap-3">
+          <button
+            type="button"
+            className="flex-1 rounded-2xl bg-black/[0.06] py-3 font-extrabold text-black/70 active:scale-[0.99] transition"
+            onClick={() => setOpenCancelConfirm(false)}
+          >
+            ยกเลิก
+          </button>
+
+          <button
+            type="button"
+            className="flex-1 rounded-2xl bg-red-600 py-3 font-extrabold text-white active:scale-[0.99] transition"
+            onClick={() => {
+              setOpenCancelConfirm(false);
+              setLocalStatus("cancelled");
+            }}
+          >
+            ยืนยันการยกเลิก
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </main>
   );
+  
 }

@@ -69,7 +69,6 @@ export default function CreatePetPageView() {
     if (!form.gender) e.gender = "กรุณาเลือกเพศ";
     if (!form.breed.trim()) e.breed = "กรุณาเลือก/ระบุพันธุ์";
     if (!form.weightKg.trim()) e.weightKg = "กรุณากรอกน้ำหนัก";
-    if (!form.heightCm.trim()) e.heightCm = "กรุณากรอกส่วนสูง";
     if (!form.birthDate) e.birthDate = "กรุณาเลือกวันเกิด";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -95,6 +94,8 @@ export default function CreatePetPageView() {
     console.log("CREATE PET PAYLOAD", payload);
     router.push("/my-dogs");
   };
+
+  const [showConfirm, setShowConfirm] = useState(false);
 
   return (
     <main className="min-h-screen bg-[#FFF7EA] px-5 pb-28">
@@ -124,7 +125,7 @@ export default function CreatePetPageView() {
       </div>
 
       {/* Bottom CTA */}
-      <div className="fixed inset-x-0 bottom-16 z-100 bg-[#FFF7EA]/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-100 bg-[#FFF7EA]/95 backdrop-blur">
         <div className="mx-auto w-full max-w-md px-5 py-5">
           {step === 1 ? (
             <button
@@ -145,10 +146,11 @@ export default function CreatePetPageView() {
               >
                 กลับ
               </button>
+
               <button
                 type="button"
                 disabled={!canSave}
-                onClick={onSave}
+                onClick={() => setShowConfirm(true)}
                 className={[
                   "w-full rounded-2xl py-3.5 text-base font-extrabold text-white shadow-sm active:scale-[0.99] transition",
                   canSave ? "" : "opacity-50 cursor-not-allowed",
@@ -157,10 +159,69 @@ export default function CreatePetPageView() {
               >
                 บันทึก
               </button>
+
             </div>
           )}
         </div>
       </div>
+      {showConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm p-4"
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white ring-1 ring-black/10 shadow-[0_20px_60px_rgba(0,0,0,0.25)] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-black/5 bg-white/70">
+              <p className="text-base font-extrabold text-gray-900">
+                ยืนยันการบันทึกข้อมูล
+              </p>
+              <p className="mt-1 text-sm text-black/55">
+                ตรวจสอบข้อมูลให้ครบก่อนกดยืนยัน
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="px-5 py-4">
+              <div className="rounded-2xl bg-[#FFF7EA]/60 ring-1 ring-black/5 p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-black/60">ชื่อสัตว์เลี้ยง</p>
+                  <p className="text-sm font-extrabold text-black/90">
+                    {form.name || "-"}
+                  </p>
+                </div>
+                <div className="mt-2 text-xs text-black/45">
+                  เพศ: {form.gender || "-"} • พันธุ์: {form.breed || "-"}
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  type="button"
+                  className="flex-1 rounded-2xl bg-black/[0.06] py-3 font-extrabold text-black/70 active:scale-[0.99] transition"
+                  onClick={() => setShowConfirm(false)}
+                >
+                  ยกเลิก
+                </button>
+
+                <button
+                  type="button"
+                  className="flex-1 rounded-2xl bg-[#F2A245] py-3 font-extrabold text-white active:scale-[0.99] transition"
+                  onClick={() => {
+                    setShowConfirm(false);
+                    onSave();
+                  }}
+                >
+                  ยืนยัน
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }

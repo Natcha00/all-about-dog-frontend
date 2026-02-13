@@ -10,7 +10,7 @@ export type BookingStatus =
 
 export type ServiceType = "boarding" | "swim";
 
-export type TabKey = "pending" | "payment" | "active" | "finished" | "cancelled" | "other";
+export type TabKey = "pending" | "payment" | "active" | "finished" | "cancelled";
 
 export type Booking = {
   id: string;                 // Reservation ID

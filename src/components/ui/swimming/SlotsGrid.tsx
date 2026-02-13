@@ -21,8 +21,9 @@ export default function SlotsGrid({ slots, selectedTime, isVip, onSelectTime }: 
           <SlotCard
             key={slot.time}
             slot={slot}
-            selected={selectedTime === slot.time}
+            active={selectedTime === slot.time}
             disabled={vipDisabled}
+            isVip={isVip}
             onSelect={onSelectTime}
           />
         );

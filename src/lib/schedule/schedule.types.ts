@@ -1,5 +1,5 @@
 export type ServiceKind = "swimming" | "boarding"
-export type BookingStatus = "pending" | "WaitingSlip" | "slipUploaded" | "slipVerified"| "finished" | "cancelled" 
+export type BookingStatus = "pending" | "WaitingSlip" | "slipUploaded" | "slipVerified"| "finished" | "cancelled"  | "approved"
 
 export type Booking = {
   id: string;

@@ -21,19 +21,18 @@ export default function MonthCalendar({
   const days = monthGridDays(anchorMonth);
 
   return (
-    <section className="rounded-2xl border border-black/50 bg-[#FFF7EA] p-2">
-      <div className="grid grid-cols-7">
+    <section className="rounded-3xl bg-white/70 ring-1 ring-black/5 shadow-sm overflow-hidden">
+      {/* DOW header */}
+      <div className="grid grid-cols-7 bg-white/70 px-2 pt-3 pb-2">
         {DOW.map((d) => (
-          <div
-            key={d}
-            className="px-1 pb-2 text-center text-sm font-semibold text-black/70"
-          >
+          <div key={d} className="text-center text-[11px] font-bold text-black/50">
             {d}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 border-t border-black/40">
+      {/* days grid */}
+      <div className="grid grid-cols-7 divide-x divide-y divide-black/5">
         {days.map((d) => {
           const k = dayKey(d);
           const bookings = markersByDay.get(k) ?? [];

@@ -14,7 +14,7 @@ export default function SwimCostBreakdownSheet(props: {
   const { open, onClose, pricing, isVip } = props;
 
   return (
-    <BottomSheetModal open={open} onClose={onClose} title="คำนวณค่าใช้จ่าย">
+    <BottomSheetModal open={open} onClose={onClose}>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-600">ประเภท</p>
