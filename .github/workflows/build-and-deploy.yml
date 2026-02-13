@@ -10,8 +10,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }} # OWNER/REPO
-  APP_DIR: /var/www/about-dog             # ✅ แก้ path ตาม server ของเธอ
+  APP_DIR: /var/www/about-dog
 
 jobs:
   build_and_push:
@@ -19,6 +18,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # ✅ ทำ IMAGE_NAME ให้ lowercase (GHCR บังคับ)
+      - name: Set IMAGE_NAME (lowercase)
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -45,22 +48,25 @@ jobs:
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:
+      # ✅ ทำ IMAGE_NAME ให้ lowercase เหมือนกัน (เผื่ออยากใช้ต่อในสคริปต์)
+      - name: Set IMAGE_NAME (lowercase)
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Deploy via SSH (pull & up)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
+          # ✅ อย่าใช้  ${{ secrets.SSH_PORT || 22 }}  (พังได้)
+          port: ${{ secrets.SSH_PORT }}
           script: |
             set -e
-            cd ${{ env.APP_DIR }}
+            cd "${{ env.APP_DIR }}"
 
-            # update compose file / configs (ถ้า server clone repo ไว้)
             git fetch --all
             git reset --hard origin/main
 
-            # login ghcr เพื่อ pull (ต้องมี token ที่ read:packages)
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             docker compose pull
