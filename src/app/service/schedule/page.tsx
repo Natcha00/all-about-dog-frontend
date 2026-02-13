@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 
 import type { Booking } from "@/lib/booking/booking.types";
@@ -47,9 +47,13 @@ export default function SchedulePage() {
     return bookingsByDay.get(dayKey(selectedDate)) ?? [];
   }, [bookingsByDay, selectedDate]);
 
+  const bookingSectionRef = useRef<HTMLDivElement | null>(null);
+
   return (
     <main className="min-h-screen bg-[#FFF7EA]">
-      <div className="mx-auto w-full max-w-md px-4 pt-6 pb-8">
+      <div className="mx-auto w-full max-w-md px-4 pt-6 pb-10 space-y-5">
+
+        {/* 1️⃣ Header */}
         <ScheduleHeader
           monthLabel={format(anchorMonth, "MMMM yyyy")}
           pets={allPets}
@@ -59,20 +63,43 @@ export default function SchedulePage() {
           onChangePet={setPetFilter}
         />
 
-        <MonthCalendar
-          anchorMonth={anchorMonth}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-          markersByDay={bookingsByDay}
-        />
+        {/* 2️⃣ Calendar Section */}
+        <section className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm p-4">
+          <MonthCalendar
+            anchorMonth={anchorMonth}
+            selectedDate={selectedDate}
+            onSelectDate={(d) => {
+              setSelectedDate(d);
 
-        <div className="mt-5">
-          <h2 className="text-[28px] font-extrabold tracking-tight text-black">
-            {format(selectedDate, "d MMMM yyyy")}
-          </h2>
+              // รอ render เสร็จนิดนึงแล้วค่อย scroll
+              setTimeout(() => {
+                bookingSectionRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }, 50);
+            }}
+            markersByDay={bookingsByDay}
+          />
+        </section>
+
+        {/* 3️⃣ Selected Day */}
+        <section ref={bookingSectionRef}>
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs text-black/50">รายการในวันที่</p>
+              <h2 className="text-2xl font-extrabold tracking-tight text-black">
+                {format(selectedDate, "d MMMM yyyy")}
+              </h2>
+            </div>
+
+            <span className="shrink-0 rounded-full bg-black/[0.06] px-3 py-1 text-xs font-bold text-black/70">
+              {selectedDayBookings.length} รายการ
+            </span>
+          </div>
 
           <BookingList bookings={selectedDayBookings} />
-        </div>
+        </section>
       </div>
     </main>
   );

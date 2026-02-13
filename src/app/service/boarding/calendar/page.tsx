@@ -165,102 +165,107 @@ function BoardingCalendarPage() {
         ? "ถ้าวันเข้าและวันออกเป็นวันเดียวกัน เวลารับกลับต้องมากกว่าเวลาเข้า"
         : undefined) || undefined;
 
-  const inputCls = `
-    w-full rounded-2xl
-    border border-gray-200
-    bg-white px-4 py-3
-    text-sm outline-none
-    focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]
-  `;
-
+      const inputCls = `
+      rounded-2xl
+      border border-gray-200
+      bg-white px-4 py-3
+      text-sm outline-none
+      focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]
+    `;
+    
   return (
     <main className="min-h-screen bg-[#FFF7EA] pb-28">
       <div className="mx-auto w-full max-w-md px-4 pt-8 space-y-4">
+        {/* Header */}
         <div className="flex flex-col items-center">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            เลือกวันเข้าพัก
-          </h1>
+          <h1 className="text-2xl font-extrabold text-gray-900">เลือกวันเข้าพัก</h1>
           <p className="text-sm text-gray-500">บริการฝากเลี้ยง</p>
         </div>
-
-        {/* ✅ โชว์สัตว์ที่เลือก */}
-        <SelectedPetsChips pets={selectedPets} />
-
-        <AvailabilityBox startDate={startDate} endDate={endDate} />
-
-        {/* ✅ ปฏิทิน “ลากเลือกช่วงวัน” */}
+  
+        {/* Selected pets */}
+        <section className="space-y-2">
+          <p className="text-xs font-semibold text-black/50 px-1">สัตว์ที่เลือก</p>
+          <SelectedPetsChips pets={selectedPets} />
+        </section>
+  
+        {/* วัน + เวลา รวมไว้ในการ์ดเดียว */}
         <PoikaiCard
-          title="เลือกช่วงวันเข้าพัก"
-          subtitle="ลากเพื่อเลือกวันเข้า–วันออก"
-          icon={<CalendarDays className="w-5 h-5 text-[#399199]" />}
+          title="เลือกวันและเวลาเข้าพัก"
+          subtitle="เวลาเข้า ≥ 09:00 และรับกลับก่อน 19:00"
         >
-          <RangeCalendar
-            value={{
-              start: startDate || undefined,
-              end: endDate || undefined,
-            }}
-            onChange={(r) => {
-              if (r.start) onStartDateChange(r.start);
-              if (r.end) onEndDateChange(r.end);
-            }}
-          />
+          <div className="space-y-4">
+            <BoardingDateTimeForm
+              startDate={startDate}
+              endDate={endDate}
+              startTime={startTime}
+              endTime={endTime}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
+              setStartTime={setStartTime}
+              setEndTime={setEndTime}
+              inputCls={inputCls}
+              startTimeError={startTimeError}
+              endTimeError={endTimeError}
+              onStartDateChange={onStartDateChange}
+              onEndDateChange={onEndDateChange}
+              onStartTimeChange={onStartTimeChange}
+            />
+  
+            <AvailabilityBox startDate={startDate} endDate={endDate} />
+          </div>
         </PoikaiCard>
-
-        {/* เวลาเข้า-ออก (ใช้ของเดิมได้) */}
-        <BoardingDateTimeForm
-          startDate={startDate}
-          endDate={endDate}
-          startTime={startTime}
-          endTime={endTime}
-          setStartDate={setStartDate} // ยังส่งไปได้ แต่ตอนนี้เราให้ RangeCalendar เป็นตัวคุมวันหลัก
-          setEndDate={setEndDate}
-          setStartTime={setStartTime}
-          setEndTime={setEndTime}
-          inputCls={inputCls}
-          startTimeError={startTimeError}
-          endTimeError={endTimeError}
-          onStartDateChange={onStartDateChange}
-          onEndDateChange={onEndDateChange}
-          onStartTimeChange={onStartTimeChange}
-        />
-
+  
+        {/* Summary */}
         {startDate && endDate ? (
-          <PoikaiCard
-            title="สรุปจำนวนคืน"
-            subtitle="ระบบคำนวณให้อัตโนมัติ"
-            icon={<CalendarDays className="w-5 h-5 text-[#399199]" />}
-          >
+          <div className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm p-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">จำนวนคืนทั้งหมด</p>
+              <div>
+                <p className="text-xs text-black/50">สรุปจำนวนคืน</p>
+                <p className="text-sm font-extrabold text-black/80">
+                  {startDate} → {endDate}
+                </p>
+              </div>
+  
               <PoikaiChip tone="success">{nights} คืน</PoikaiChip>
             </div>
-          </PoikaiCard>
-        ) : null}
+  
+            <div className="mt-2 text-xs text-black/45">
+              เวลาเข้า {startTime || "-"} • รับกลับ {endTime || "-"}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-3xl bg-white/60 ring-1 ring-black/5 p-4 text-sm text-black/55">
+            เลือกวันเข้าและวันออกเพื่อให้ระบบคำนวณจำนวนคืน
+          </div>
+        )}
       </div>
-
-      <div className="fixed inset-x-0 bottom-16 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
+  
+      {/* Bottom CTA */}
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
         <div className="mx-auto max-w-md px-6 py-4">
           <button
             type="button"
             disabled={!canNext}
             onClick={goNext}
-            className={`
-              w-full py-4 rounded-2xl text-xl font-bold text-white transition
-              ${canNext ? "bg-[#F0A23A] hover:bg-[#e99625]" : "bg-gray-300 cursor-not-allowed"}
-            `}
+            className={[
+              "w-full py-4 rounded-2xl text-xl font-extrabold text-white transition active:scale-[0.99]",
+              canNext ? "bg-[#F0A23A] hover:bg-[#e99625]" : "bg-gray-300 cursor-not-allowed",
+            ].join(" ")}
           >
             ต่อไป
           </button>
-
+  
           {!canNext ? (
             <p className="mt-2 text-center text-xs text-gray-600">
-              กรุณาเลือกวันให้ครบ (เข้า ≥ 09:00, รับกลับก่อน 19:00)
+              กรุณาเลือกวัน/เวลาให้ครบ (เข้า ≥ 09:00, รับกลับก่อน 19:00)
             </p>
           ) : null}
         </div>
       </div>
     </main>
   );
+  
+  
 }
 
 export default function Page() {

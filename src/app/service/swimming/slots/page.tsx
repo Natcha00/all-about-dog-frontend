@@ -70,61 +70,87 @@ function SwimSlotsPage() {
   }, [petIds.length, date, selectedTime, isVip, slots]);
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-44">
-      <h1 className="text-3xl font-extrabold text-center text-gray-900">จองสระว่ายน้ำ</h1>
-
-      {/* (optional) โชว์วันที่ที่เลือกมา */}
-      <p className="mt-2 text-center text-sm text-gray-600">
-        วันที่เลือก: <span className="font-semibold">{date || "-"}</span>
-      </p>
-
-      <div className="mt-6">
-        <p className="text-l font-bold text-gray-900">เลือกรอบ</p>
-        <p className="text-xs text-gray-600">
-          (เลือกรอบที่เพื่อนขนาดใกล้เคียงกันน้องๆเพื่อลดอุบัติเหตุ)
-        </p>
-      </div>
-
-      {/* slots grid */}
-      <div className="mt-4 grid grid-cols-3 gap-x-6 gap-y-8">
-        {slots.map((slot) => {
-          const disabled = !isSlotSelectable(slot, isVip);
-          const active = selectedTime === slot.time;
-
-          return (
-            <SlotCard
-              key={slot.time}
-              slot={slot}
-              active={active}
-              disabled={disabled}
-              isVip={isVip}
-              onSelect={(time) => setSelectedTime(time)} // ✅ time เป็น string
-            />
-          );
-        })}
-      </div>
-
-      {/* vip checkbox */}
-      <div className="mt-10 flex items-start gap-4">
-        <input
-          type="checkbox"
-          checked={isVip}
-          onChange={(e) => setIsVip(e.target.checked)}
-          className="mt-1 h-6 w-6"
-        />
-        <div>
-          <p className="text-lg font-bold text-gray-900">จองเป็นรอบ VIP มีเฉพาะบ้านเรา</p>
-          <p className="text-sm text-gray-600">(เฉพาะวันธรรมดา ไม่รวมวันหยุดและนักขัตฤกษ์)</p>
-          {isVip ? (
-            <p className="mt-1 text-xs text-gray-700">
-              * VIP เลือกได้เฉพาะรอบที่ “ว่างสนิท” (ยังไม่มีใครจอง)
-            </p>
-          ) : null}
+    <main className="min-h-screen bg-[#FFF7EA] px-6 py-8 pb-44">
+      <div className="mx-auto w-full max-w-md space-y-4">
+        
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-2xl font-extrabold text-gray-900">
+            เลือกรอบว่ายน้ำ
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            วันที่ {date || "-"} • {petIds.length} ตัว
+          </p>
         </div>
+  
+        {/* เลือกรอบ */}
+        <section className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm p-5">
+          <div className="mb-3">
+            <p className="text-sm font-extrabold text-gray-900">ขั้นตอนที่ 1: เลือกรอบ</p>
+            <p className="text-xs text-gray-500">
+              เลือกรอบที่เพื่อนขนาดใกล้เคียงกันเพื่อลดอุบัติเหตุ
+            </p>
+          </div>
+  
+          <div className="grid grid-cols-3 gap-x-4 gap-y-6">
+            {slots.map((slot) => {
+              const disabled = !isSlotSelectable(slot, isVip);
+              const active = selectedTime === slot.time;
+  
+              return (
+                <SlotCard
+                  key={slot.time}
+                  slot={slot}
+                  active={active}
+                  disabled={disabled}
+                  isVip={isVip}
+                  onSelect={(time) => setSelectedTime(time)}
+                />
+              );
+            })}
+          </div>
+        </section>
+  
+        {/* VIP Section */}
+        <section className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm p-5">
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={isVip}
+              onChange={(e) => setIsVip(e.target.checked)}
+              className="mt-1 h-5 w-5"
+            />
+            <div>
+              <p className="text-sm font-extrabold text-gray-900">
+                จองเป็นรอบ VIP
+              </p>
+              <p className="text-xs text-gray-500">
+                เฉพาะวันธรรมดา ไม่รวมวันหยุดและนักขัตฤกษ์
+              </p>
+              {isVip && (
+                <p className="mt-1 text-xs font-semibold text-black/60">
+                  * VIP เลือกได้เฉพาะรอบที่ว่างสนิท
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+  
+        {/* Summary (ถ้าเลือกแล้ว) */}
+        {selectedTime && (
+          <div className="rounded-2xl bg-[#FFF7EA] ring-1 ring-black/5 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-black/60">รอบที่เลือก</p>
+              <p className="text-base font-extrabold text-black/90">
+                {selectedTime} {isVip ? "(VIP)" : ""}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* bottom button */}
-      <div className="fixed inset-x-0 bottom-16 z-20 bg-[#FFF7EA]/95 backdrop-blur">
+  
+      {/* Bottom CTA */}
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
         <div className="mx-auto max-w-md px-6 py-4">
           <button
             type="button"
@@ -136,22 +162,22 @@ function SwimSlotsPage() {
                 time: selectedTime,
                 vip: isVip ? "1" : "0",
               });
-
+  
               router.push(`/service/swimming/confirm?${qs.toString()}`);
             }}
             className={[
-              "w-full py-4 rounded-2xl text-xl font-bold text-white transition",
+              "w-full py-4 rounded-2xl text-xl font-extrabold text-white transition active:scale-[0.99]",
               canNext ? "bg-[#F0A23A] hover:bg-[#e99625]" : "bg-gray-300 cursor-not-allowed",
             ].join(" ")}
           >
             ต่อไป
           </button>
-
-          {!canNext ? (
+  
+          {!canNext && (
             <p className="mt-2 text-center text-xs text-gray-600">
-              กรุณาเลือกสัตว์ + วันที่ + รอบ ให้ครบ (VIP เลือกได้เฉพาะรอบที่ว่างสนิท)
+              กรุณาเลือกสัตว์ + วันที่ + รอบ ให้ครบ
             </p>
-          ) : null}
+          )}
         </div>
       </div>
     </main>

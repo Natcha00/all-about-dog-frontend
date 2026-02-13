@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
 export default function Navbar({
-  title = "Your title",
-  subtitle = "Optional subtitle",
+  title = "All About Dog",
+  subtitle = "บริการดูแลสัตว์เลี้ยง",
 }: {
   title?: string;
   subtitle?: string;
@@ -39,11 +39,15 @@ export default function Navbar({
             </button>
 
             {/* Title block */}
-            <div className="min-w-0">
-              <p className="truncate text-[16px] font-semibold text-black">
+            <div className="min-w-0 flex-1">
+              <button 
+               type="button"
+               onClick={() => router.push("/")}
+               className="truncate text-[16px] font-semibold text-black">
                 {title}
-              </p>
-              <p className="truncate text-[12px] text-black/60">
+              </button>
+              <p
+                className="truncate text-[12px] text-black/60">
                 {subtitle}
               </p>
             </div>

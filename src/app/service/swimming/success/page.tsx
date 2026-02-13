@@ -81,12 +81,36 @@ function SwimmingSuccessPage() {
   }, [pets]);
 
   return (
-    <Suspense>
-      <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-32">
-        <SuccessHeader
-          serviceLabel="บริการสระว่ายน้ำ"
-          title="จองสำเร็จ ✅"
-          subtitle="ระบบได้รับรายการของคุณแล้ว"
+    <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-32">
+      <SuccessHeader
+        serviceLabel="บริการสระว่ายน้ำ"
+        title="จองสำเร็จ"
+        subtitle="ระบบได้รับรายการของคุณแล้ว"
+      />
+
+      <div className="mx-auto w-full max-w-md space-y-4">
+        <SuccessSummaryCard
+          title="รายละเอียดการจอง"
+          subtitle="ตรวจสอบข้อมูลก่อนกลับหน้า service"
+          rows={[
+            // ✅ ให้แสดงเสมอ (ถ้าไม่มีให้ขึ้น "-")
+            { label: "รายการจอง", value: ref || "-" },
+
+            { label: "วันที่ใช้บริการ", value: formatThaiDate(date) },
+            { label: "รอบเวลา", value: formatTime(roundTime) },
+            { label: "ประเภท", value: <PoikaiChip tone="neutral">{typeLabel}</PoikaiChip> },
+            {
+              label: "เจ้าของลงเล่น",
+              value: (
+                <PoikaiChip tone={ownerRaw === "1" ? "success" : "neutral"}>
+                  {ownerLabel}
+                </PoikaiChip>
+              ),
+            },
+          ]}
+          selectedTitle="สัตว์ที่เลือก"
+          selectedContent={petText}
+          totalValue={`${total.toLocaleString("th-TH")} บาท`}
         />
 
         <div className="mx-auto w-full max-w-md space-y-4">
@@ -125,8 +149,8 @@ function SwimmingSuccessPage() {
             กลับไปหน้าบริการ
           </button>
         </div>
+        </div>
       </main>
-    </Suspense>
   );
 }
 

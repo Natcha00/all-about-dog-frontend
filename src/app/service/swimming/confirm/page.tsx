@@ -47,9 +47,9 @@ function SwimConfirmPage() {
   const petIds = useMemo(() => {
     return petsParam
       ? petsParam
-          .split(",")
-          .map((x) => Number(x))
-          .filter((n) => Number.isFinite(n) && n > 0)
+        .split(",")
+        .map((x) => Number(x))
+        .filter((n) => Number.isFinite(n) && n > 0)
       : [];
   }, [petsParam]);
 
@@ -105,6 +105,9 @@ function SwimConfirmPage() {
     router.push(`/service/swimming/success?${qs.toString()}`);
   };
 
+  const [showConfirm, setShowConfirm] = useState(false);
+
+
   return (
       <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-44">
         <div className="mb-6 flex flex-col items-center">
@@ -156,39 +159,86 @@ function SwimConfirmPage() {
             ownerPlay={ownerPlay}
           />
 
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => setOpenCost(true)}
-              className="w-full rounded-2xl border-2 border-[#F0A23A] bg-transparent py-3 font-semibold text-[#F0A23A]"
-            >
-              คำนวณค่าใช้จ่ายเบื้องต้น
-            </button>
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setOpenCost(true)}
+            className="w-full rounded-2xl border-2 border-[#F0A23A] bg-transparent py-3 font-semibold text-[#F0A23A]"
+          >
+            คำนวณค่าใช้จ่ายเบื้องต้น
+          </button>
 
-            <button
-              type="button"
-              disabled={!canConfirm}
-              onClick={onConfirm}
-              className={[
-                "w-full rounded-2xl py-3 font-semibold text-white transition",
-                canConfirm
-                  ? "bg-[#F0A23A] hover:bg-[#e99625]"
-                  : "bg-gray-300 cursor-not-allowed",
-              ].join(" ")}
-            >
-              ยืนยัน
-            </button>
+          <button
+            type="button"
+            disabled={!canConfirm}
+            onClick={() => setShowConfirm(true)}
+            className={[
+              "w-full rounded-2xl py-3 font-semibold text-white transition",
+              canConfirm ? "bg-[#F0A23A] hover:bg-[#e99625]" : "bg-gray-300 cursor-not-allowed",
+            ].join(" ")}
+          >
+            ยืนยัน
+          </button>
+        </div>
+      </div>
+
+      <SwimCostBreakdownSheet
+        open={openCost}
+        onClose={() => setOpenCost(false)}
+        pricing={pricing}
+        isVip={isVip}
+      />
+
+      {/* Confirm Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-extrabold text-gray-900">
+              ยืนยันการจองใช่ไหม?
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-600">
+              ระบบจะบันทึกรายการและไปยังหน้าสำเร็จทันที
+            </p>
+
+            <div className="mt-4 rounded-2xl bg-[#FFF7EA]/60 ring-1 ring-black/5 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-black/60">ราคารวม</p>
+                <p className="text-sm font-extrabold text-black/90">
+                  {pricing.total.toLocaleString()} บาท
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 rounded-2xl bg-gray-200 py-3 font-semibold text-gray-700 active:scale-[0.99] transition"
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirm(false);
+                  onConfirm();
+                }}
+                className="flex-1 rounded-2xl bg-[#F0A23A] py-3 font-semibold text-white active:scale-[0.99] transition"
+              >
+                ยืนยัน
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        <SwimCostBreakdownSheet
-          open={openCost}
-          onClose={() => setOpenCost(false)}
-          pricing={pricing}
-          isVip={isVip}
-        />
-      </main>
- 
+
+    </main>
   );
 }
 
