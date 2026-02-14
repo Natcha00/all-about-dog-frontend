@@ -45,38 +45,38 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: build_and_push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Add SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: SSH debug
-        run: |
-          ssh -vvv -o StrictHostKeyChecking=no -p 22 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "whoami && pwd"
-      # ✅ ทำ IMAGE_NAME ให้ lowercase เหมือนกัน (เผื่ออยากใช้ต่อในสคริปต์)
-      - name: Set IMAGE_NAME (lowercase)
-        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+  needs: build_and_push
+  runs-on: ubuntu-latest
+  steps:
+    - name: Set IMAGE_NAME (lowercase)
+      run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      - name: Deploy via SSH (pull & up)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # ✅ อย่าใช้  ${{ secrets.SSH_PORT || 22 }}  (พังได้)
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            set -e
+    - name: Add SSH key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-            cd "${{ env.APP_DIR }}"
+    - name: SSH debug
+      run: |
+        ssh -vvv -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 22 \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "whoami && pwd"
 
-            git fetch --all
-            git reset --hard origin/main
+    - name: Deploy (pull & up)
+      env:
+        GHCR_PAT: ${{ secrets.GHCR_PAT }}
+        ACTOR: ${{ github.actor }}
+      run: |
+        ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 22 \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          set -e
+          cd /var/www/about-dog
 
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          git fetch --all
+          git reset --hard origin/main
 
-            docker compose pull
-            docker compose up -d
-            docker image prune -f
+          echo "$GHCR_PAT" | docker login ghcr.io -u "$ACTOR" --password-stdin
+
+          docker compose pull
+          docker compose up -d
+          docker image prune -f
+        EOF
