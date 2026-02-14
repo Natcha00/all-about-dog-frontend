@@ -5,7 +5,7 @@ import { ChevronLeft } from "lucide-react";
 
 export default function Navbar({
   title = "All About Dog",
-  subtitle = "บริการดูแลสัตว์เลี้ยง",
+  subtitle = "บริการดูแลสุนัขครบวงจร",
 }: {
   title?: string;
   subtitle?: string;
