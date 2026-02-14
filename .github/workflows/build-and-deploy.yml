@@ -45,38 +45,38 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-  needs: build_and_push
-  runs-on: ubuntu-latest
-  steps:
-    - name: Set IMAGE_NAME (lowercase)
-      run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set IMAGE_NAME (lowercase)
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-    - name: Add SSH key
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: SSH debug
-      run: |
-        ssh -vvv -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 22 \
-          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "whoami && pwd"
+      - name: SSH debug
+        run: |
+          ssh -vvv -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 22 \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "whoami && pwd"
 
-    - name: Deploy (pull & up)
-      env:
-        GHCR_PAT: ${{ secrets.GHCR_PAT }}
-        ACTOR: ${{ github.actor }}
-      run: |
-        ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 22 \
-          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          set -e
-          cd /var/www/about-dog
+      - name: Deploy (pull & up)
+        env:
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 22 \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
+            cd /var/www/about-dog
 
-          git fetch --all
-          git reset --hard origin/main
+            git fetch --all
+            git reset --hard origin/main
 
-          echo "$GHCR_PAT" | docker login ghcr.io -u "$ACTOR" --password-stdin
+            echo "$GHCR_PAT" | docker login ghcr.io -u "$ACTOR" --password-stdin
 
-          docker compose pull
-          docker compose up -d
-          docker image prune -f
-        EOF
+            docker compose pull
+            docker compose up -d
+            docker image prune -f
+          EOF
