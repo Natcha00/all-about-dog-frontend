@@ -65,6 +65,14 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
+            if [ ! -f "/root/about-dog/docker-compose.yml" ]; then
+              echo "docker-compose.yml not found in /root/about-dog"
+              exit 1
+            fi
+
+            cd /root/about-dog
+
             docker compose pull
             docker compose up -d
             docker image prune -f
