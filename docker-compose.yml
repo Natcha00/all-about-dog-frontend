@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/Natcha00/all-about-dog-frontend/:latest
+    image: ghcr.io/natcha00/all-about-dog-frontend:latest
     container_name: all-about-dog-frontend
     restart: always
     ports:
