@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @layer components {
-  .poikai-page { @apply min-h-screen bg-[#FFF7EA]; }
+  .poikai-page { @apply min-h-screen bg-[#F7F4E8]; }
 
   .poikai-btn-primary {
     @apply w-full rounded-2xl bg-[#F0A23A] py-3 font-semibold text-white

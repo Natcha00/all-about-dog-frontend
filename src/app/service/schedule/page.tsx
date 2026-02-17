@@ -50,7 +50,7 @@ export default function SchedulePage() {
   const bookingSectionRef = useRef<HTMLDivElement | null>(null);
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA]">
+    <main className="min-h-screen bg-[#F7F4E8]">
       <div className="mx-auto w-full max-w-md px-4 pt-6 pb-10 space-y-5">
 
         {/* 1️⃣ Header */}

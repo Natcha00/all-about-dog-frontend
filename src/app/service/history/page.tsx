@@ -25,7 +25,7 @@ const mock: ServiceHistoryItem[] = [
 
 export default function ServiceHistoryPage() {
   return (
-    <main className="min-h-screen bg-[#FFF7EA]">
+    <main className="min-h-screen bg-[#F7F4E8]">
       <div className="mx-auto w-full max-w-md px-4 pt-8 pb-10">
         <h1 className="text-4xl font-extrabold text-center text-gray-900">
           ประวัติการใช้บริการ

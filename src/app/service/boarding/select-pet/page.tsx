@@ -72,7 +72,7 @@ export default function SwimmingServicePage() {
     };
 
     return (
-        <main className="min-h-screen bg-[#FFF7EA] px-6 py-10 pb-44">
+        <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
             {/* Title */}
             <h1 className="text-3xl font-extrabold text-center text-gray-900">
                 จองห้องพัก
@@ -99,7 +99,7 @@ export default function SwimmingServicePage() {
             </div>
 
             {/* Bottom CTA */}
-            <div className="fixed inset-x-0 bottom-0 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
+            <div className="fixed inset-x-0 bottom-0 z-20 bg-[#F7F4E8]/95 backdrop-blur border-t border-black/5">
                 <div className="mx-auto max-w-md px-6 py-4">
                     <button
                         type="button"

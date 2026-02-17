@@ -98,7 +98,7 @@ export default function CreatePetPageView() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-5 pb-28">
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       <div className="mx-auto w-full max-w-md pt-8">
 
         {/* Title */}
@@ -125,7 +125,7 @@ export default function CreatePetPageView() {
       </div>
 
       {/* Bottom CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-100 bg-[#FFF7EA]/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-100 bg-[#F7F4E8]/95 backdrop-blur">
         <div className="mx-auto w-full max-w-md px-5 py-5">
           {step === 1 ? (
             <button
@@ -185,7 +185,7 @@ export default function CreatePetPageView() {
 
             {/* Content */}
             <div className="px-5 py-4">
-              <div className="rounded-2xl bg-[#FFF7EA]/60 ring-1 ring-black/5 p-4">
+              <div className="rounded-2xl bg-[#F7F4E8]/60 ring-1 ring-black/5 p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-black/60">ชื่อสัตว์เลี้ยง</p>
                   <p className="text-sm font-extrabold text-black/90">

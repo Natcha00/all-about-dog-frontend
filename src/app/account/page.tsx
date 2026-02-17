@@ -95,7 +95,7 @@ export default function AccountPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-5 pb-28">
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       <div className="mx-auto w-full max-w-md pt-8 space-y-5">
         <h1 className="text-center text-2xl font-extrabold text-black">บัญชีผู้ใช้</h1>
 

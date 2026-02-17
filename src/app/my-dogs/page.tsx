@@ -20,7 +20,7 @@ export default function MyPets() {
   const [dogs] = useState<CircleItemProps[]>(listDog);
 
   return (
-    <div className="min-h-screen bg-[#FFF7EA] px-6 py-6">
+    <div className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       
       <h1 className="text-center text-2xl font-extrabold text-gray-900 mb-6">
         สัตว์เลี้ยงของฉัน

@@ -27,9 +27,9 @@ export default function BookingsPage() {
   }, [bookings]);
 
   return (
-    <main className="min-h-screen bg-[#F7F4E8] pb-24">
-      <header className="px-4 pt-5">
-        <h1 className="text-[22px] font-semibold text-black/90">รายการจอง</h1>
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
+      <header className="px-4 pt-5 text-center">
+        <h1 className="text-[22px] font-semibold text-black/90 ">รายการจอง</h1>
         <p className="text-[13px] text-black/45 mt-1">
           ดูสถานะการจองและดำเนินการต่อได้จากแท็บด้านล่าง
         </p>

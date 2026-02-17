@@ -97,7 +97,7 @@ function BoardingConfirmPage() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-6 py-8 pb-44">
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       {/* Header */}
       <div className="mx-auto max-w-md">
         <div className="mb-4 text-center">
@@ -181,7 +181,7 @@ function BoardingConfirmPage() {
             </div>
   
             <div className="px-5 py-4">
-              <div className="rounded-2xl bg-[#FFF7EA]/60 ring-1 ring-black/5 p-4">
+              <div className="rounded-2xl bg-[#F7F4E8]/60 ring-1 ring-black/5 p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-black/60">ราคารวม</p>
                   <p className="text-sm font-extrabold text-black/90">

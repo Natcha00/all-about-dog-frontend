@@ -61,7 +61,7 @@ function Row({
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-[#FFF7EA] pb-10">
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       <div className="mx-auto w-full max-w-md px-4 pt-6">
         {/* Top bar */}
         <div className="flex items-center gap-2">

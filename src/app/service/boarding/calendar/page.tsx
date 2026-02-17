@@ -174,7 +174,7 @@ function BoardingCalendarPage() {
     `;
     
   return (
-    <main className="min-h-screen bg-[#FFF7EA] pb-28">
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       <div className="mx-auto w-full max-w-md px-4 pt-8 space-y-4">
         {/* Header */}
         <div className="flex flex-col items-center">
@@ -241,7 +241,7 @@ function BoardingCalendarPage() {
       </div>
   
       {/* Bottom CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#F7F4E8]/95 backdrop-blur border-t border-black/5">
         <div className="mx-auto max-w-md px-6 py-4">
           <button
             type="button"

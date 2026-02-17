@@ -22,7 +22,7 @@ export default function SwimSuccessView(props: {
   } = props;
 
   return (
-    <main className="bg-[#FFF7EA] px-6 py-2">
+    <main className="bg-[#F7F4E8] px-6 py-2">
       <div className="mx-auto w-full max-w-md">
         <div className="mt-6">
           <SwimSuccessCard

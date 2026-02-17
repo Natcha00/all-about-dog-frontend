@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
+import Image from "next/image";
 
 export default function Navbar({
   title = "All About Dog",
@@ -52,7 +53,25 @@ export default function Navbar({
               </p>
             </div>
 
-            <div className="ml-auto w-10" />
+            <button
+              type="button"
+              onClick={() => router.push("/account")}
+              className="
+                relative h-10 w-10 overflow-hidden rounded-full
+                ring-1 ring-black/10
+                hover:scale-[1.03]
+                active:scale-[0.97]
+                transition
+              "
+              aria-label="โปรไฟล์"
+            >
+              <Image
+                src="/avatar.png"   // เปลี่ยนเป็น path รูปของคุณ
+                alt="Profile"
+                fill
+                className="object-cover"
+              />
+            </button>
           </div>
         </div>
       </div>

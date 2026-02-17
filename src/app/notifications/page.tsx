@@ -34,7 +34,7 @@ export default function NotificationsPage() {
   }, [tab, notifications]);
 
   return (
-    <div className="min-h-screen px-4 pb-28 space-y-6">
+    <div className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
         <NotificationTabs value={tab} onChange={setTab} />
 
         <div className="space-y-3">

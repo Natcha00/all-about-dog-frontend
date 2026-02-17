@@ -36,7 +36,7 @@ export default function BtnContainerHeath({
                   text-sm font-semibold
                   transition
                   ${active
-                    ? "bg-[#399199] text-white shadow-sm"
+                    ? "bg-[#f0a23a] text-white shadow-sm"
                     : "bg-transparent text-gray-600 hover:bg-white hover:text-gray-900"}
                 `}
               >

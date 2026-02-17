@@ -1,7 +1,7 @@
 @layer components {
     /* Background */
     .poikai-page {
-      @apply min-h-screen bg-[#FFF7EA];
+      @apply min-h-screen bg-[#F7F4E8];
     }
   
     /* Soft card */
@@ -33,7 +33,7 @@
   
     /* Bottom sheet */
     .poikai-sheet {
-      @apply w-full max-w-md rounded-t-3xl bg-[#FFF7EA] p-4 shadow-xl;
+      @apply w-full max-w-md rounded-t-3xl bg-[#F7F4E8] p-4 shadow-xl;
     }
   
     /* Soft panel inside */

@@ -185,7 +185,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
           type="button"
           onClick={openAdd}
           className="
-            rounded-2xl bg-[#399199] text-white
+            rounded-2xl bg-[#f0a23a] text-white
             px-4 py-2 text-sm font-semibold
             shadow-sm hover:opacity-95 active:scale-[0.99] transition
           "
@@ -208,7 +208,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="grid h-9 w-9 place-items-center rounded-2xl bg-white ring-1 ring-[#BFE7E9]">
-                      <Syringe className="w-5 h-5 text-[#399199]" />
+                      <Syringe className="w-5 h-5 text-[#f0a23a]" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{r.type}</p>
@@ -318,7 +318,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
                       border border-gray-200
                       bg-white px-4 py-3 pr-12
                       text-sm outline-none
-                      focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]
+                      focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#f0a23a]
                     "
                   />
                   <CalendarDays className="w-5 h-5 text-gray-500 absolute right-4 top-1/2 -translate-y-1/2" />
@@ -340,7 +340,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
                       border border-gray-200
                       bg-white px-4 py-3 pr-12
                       text-sm outline-none
-                      focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]
+                      focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#f0a23a]
                     "
                   >
                     <option value="พิษสุนัขบ้า">พิษสุนัขบ้า</option>
@@ -373,7 +373,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
                     border border-gray-200
                     bg-white px-4 py-3
                     text-sm outline-none
-                    focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]
+                    focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#f0a23a]
                   "
                 />
                 {errors.dose ? <p className="mt-1 text-xs text-red-600">{errors.dose}</p> : null}
@@ -394,7 +394,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
                     border border-gray-200
                     bg-white px-4 py-3
                     text-sm outline-none
-                    focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]
+                    focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#f0a23a]
                   "
                 />
               </div>

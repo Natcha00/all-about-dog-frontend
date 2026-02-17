@@ -65,7 +65,7 @@ function ServiceIcon({ type }: { type: ServiceType }) {
   const Icon = type === "ว่ายน้ำ" ? Waves : Home;
   return (
     <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white ring-1 ring-[#BFE7E9]">
-      <Icon className="w-5 h-5 text-[#399199]" />
+      <Icon className="w-5 h-5 text-[#f0a23a]" />
     </div>
   );
 }

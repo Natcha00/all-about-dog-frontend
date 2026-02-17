@@ -75,8 +75,21 @@ function buildMockHistory(status: BookingStatus): HistoryItem[] {
     WaitingSlip: ["created", "waiting_slip"],
     slip_uploaded: ["created", "waiting_slip", "slip_uploaded"],
     slip_verified: ["created", "waiting_slip", "slip_uploaded", "slip_verified"],
-    "check-in": ["created", "waiting_slip", "slip_uploaded", "slip_verified", "check_in"],
-    finished: ["created", "waiting_slip", "slip_uploaded", "slip_verified", "check_in", "finished"],
+    "check-in": [
+      "created",
+      "waiting_slip",
+      "slip_uploaded",
+      "slip_verified",
+      "check_in",
+    ],
+    finished: [
+      "created",
+      "waiting_slip",
+      "slip_uploaded",
+      "slip_verified",
+      "check_in",
+      "finished",
+    ],
     cancelled: ["created", "cancelled"],
     rejected: ["created", "rejected"],
   };
@@ -107,7 +120,6 @@ function buildMockHistory(status: BookingStatus): HistoryItem[] {
 
   const allow = new Set(statusToKeys[status]);
 
-  // “ตัวอย่าง” ให้มี text เหมือนภาพที่คุณแนบ (โชว์ว่าใครตรวจได้)
   const baseSteps: HistoryItem[] = [
     { key: "created", label: "สร้างรายการจอง", at: formatThaiDateTime(base), tone: "info" },
     { key: "waiting_slip", label: "รอชำระเงิน", at: formatThaiDateTime(t1), tone: "info" },
@@ -153,7 +165,6 @@ function BottomSheet({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  // lock scroll
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -175,17 +186,20 @@ function BottomSheet({
         onClick={onClose}
       />
 
-      {/* sheet */}
-      <div className="absolute inset-x-0 bottom-16 mx-auto w-full max-w-md">
-        <div className="rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/10">
+      {/* sheet wrapper */}
+      <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-md px-4 pb-4">
+        {/* ✅ ต้องมี max-h + flex-col + overflow-hidden */}
+        <div className="rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/10 max-h-[85vh] flex flex-col overflow-hidden">
           {/* handle */}
           <div className="flex justify-center pt-3">
             <div className="h-1.5 w-12 rounded-full bg-black/10" />
           </div>
 
-          {/* header */}
-          <div className="flex items-center justify-between px-4 pt-3 pb-2">
-            <div className="text-[16px] font-extrabold text-black/90">{title}</div>
+          {/* header (ไม่เลื่อน) */}
+          <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
+            <div className="text-[16px] font-extrabold text-black/90">
+              {title}
+            </div>
             <div className="flex items-center gap-2">
               {rightAction}
               <button
@@ -199,12 +213,16 @@ function BottomSheet({
             </div>
           </div>
 
-          <div className="px-4 pb-5">{children}</div>
+          {/* ✅ content (เลื่อนตรงนี้) */}
+          <div className="px-4 pb-5 overflow-y-auto">
+            {children}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
 
 function TimelineList({ items }: { items: HistoryItem[] }) {
   return (
@@ -223,9 +241,15 @@ function TimelineList({ items }: { items: HistoryItem[] }) {
               <div className="flex items-start gap-3">
                 <span className={`mt-1 h-2.5 w-2.5 rounded-full ${dot}`} />
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-black">{it.label}</div>
-                  {it.at ? <div className="mt-1 text-xs text-black/50">{it.at}</div> : null}
-                  {it.note ? <div className="mt-1 text-xs text-black/60">{it.note}</div> : null}
+                  <div className="text-sm font-semibold text-black">
+                    {it.label}
+                  </div>
+                  {it.at ? (
+                    <div className="mt-1 text-xs text-black/50">{it.at}</div>
+                  ) : null}
+                  {it.note ? (
+                    <div className="mt-1 text-xs text-black/60">{it.note}</div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -237,8 +261,85 @@ function TimelineList({ items }: { items: HistoryItem[] }) {
 }
 
 /* =========================
+   Image Preview Modal (FULLSCREEN)
+========================= */
+
+function ImagePreviewModal({
+  open,
+  src,
+  title = "ดูรูปเต็ม",
+  onClose,
+}: {
+  open: boolean;
+  src: string | null;
+  title?: string;
+  onClose: () => void;
+}) {
+  if (!open || !src) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60]">
+      {/* overlay */}
+      <button
+        type="button"
+        aria-label="close preview overlay"
+        className="absolute inset-0 bg-black/70"
+        onClick={onClose}
+      />
+
+      {/* content */}
+      <div className="absolute inset-0 flex items-center justify-center p-3">
+        <div
+          className="relative w-full max-w-3xl rounded-2xl bg-black/30 ring-1 ring-white/10 shadow-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* header */}
+          <div className="flex items-center justify-between px-3 py-2 bg-black/40">
+            <div className="text-xs font-extrabold text-white/90">{title}</div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="grid h-9 w-9 place-items-center rounded-full bg-white/10 hover:bg-white/15 active:scale-95 transition"
+              aria-label="ปิด"
+            >
+              <X className="h-5 w-5 text-white" />
+            </button>
+          </div>
+
+          {/* image area */}
+          <div className="w-full h-[78vh] bg-black">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt="preview"
+              className="w-full h-full object-contain"
+            />
+          </div>
+
+          {/* hint */}
+          <div className="px-3 py-2 bg-black/40 text-[11px] text-white/70">
+            แตะ/คลิกพื้นหลังเพื่อปิด
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================
    Slip Upload content (inside modal)
 ========================= */
+
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <p className="text-gray-600 text-sm">{label}</p>
+      <div className="font-semibold text-gray-900 text-sm text-right">
+        {value}
+      </div>
+    </div>
+  );
+}
 
 function SlipUploadPanel({
   disabled,
@@ -251,8 +352,12 @@ function SlipUploadPanel({
   onPick: (file: File, previewUrl: string) => void;
   onSubmit: () => void;
 }) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(defaultPreview ?? null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    defaultPreview ?? null
+  );
   const [fileName, setFileName] = useState<string>("");
+
+  const [openPreview, setOpenPreview] = useState(false);
 
   // cleanup object url
   useEffect(() => {
@@ -261,63 +366,128 @@ function SlipUploadPanel({
     };
   }, [previewUrl]);
 
+  // ✅ ถ้ารูปหายไป ให้ปิด modal (กันค้าง)
+  useEffect(() => {
+    if (!previewUrl) setOpenPreview(false);
+  }, [previewUrl]);
+
   return (
     <div className="space-y-3">
+      {/* Hint */}
       <div className="text-[13px] text-black/55">
-        รองรับไฟล์รูปภาพ (mock ตอนนี้ยังไม่อัปโหลดจริง) • แนะนำให้เป็นรูปชัดเจน
+        รองรับไฟล์รูปภาพ • แนะนำให้เป็นรูปชัดเจน (mock ตอนนี้ยังไม่อัปโหลดจริง)
       </div>
 
-      {previewUrl ? (
-        <div className="rounded-2xl overflow-hidden ring-1 ring-black/10 bg-white">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={previewUrl} alt="slip preview" className="w-full h-64 object-cover" />
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-black/15 bg-black/[0.02] p-8 text-center text-sm text-black/50">
-          ยังไม่ได้เลือกไฟล์
-        </div>
-      )}
+      {/* Card เหมือนบน */}
+      <div className="rounded-2xl border border-black/10 bg-white p-4 space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-extrabold text-gray-900">แนบสลิปใหม่</p>
+            <p className="text-xs text-black/45 mt-0.5">
+              กรุณาตรวจสอบรูปและข้อมูลก่อนกดส่ง
+            </p>
+          </div>
 
-      <div className="flex items-center gap-2">
-        <label
-          className={[
-            "flex-1 cursor-pointer rounded-2xl py-3 text-center font-extrabold transition",
-            disabled ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-white ring-1 ring-black/10 text-black",
-          ].join(" ")}
-        >
-          เลือกรูปสลิป
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            disabled={disabled}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              setFileName(f.name);
-              const url = URL.createObjectURL(f);
-              setPreviewUrl(url);
-              onPick(f, url);
-            }}
+          {previewUrl ? (
+            <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-extrabold text-emerald-700 ring-1 ring-emerald-100">
+              พร้อมส่ง
+            </span>
+          ) : (
+            <span className="shrink-0 rounded-full bg-black/[0.04] px-2 py-1 text-[11px] font-extrabold text-black/50 ring-1 ring-black/10">
+              ยังไม่เลือกไฟล์
+            </span>
+          )}
+        </div>
+
+        {/* Fields แบบเดียวกับด้านบน */}
+        <div className="text-sm text-gray-700 space-y-1">
+          {/* <Row label="ไฟล์" value={fileName || "-"} /> */}
+          <Row label="แนบโดย" value="ลูกค้า: (mock)" />
+          <Row
+            label="เวลาแนบ"
+            value={previewUrl ? new Date().toLocaleString("th-TH") : "-"}
           />
-        </label>
+          {/* <Row label="สถานะ" value={previewUrl ? "รอส่ง" : "-"} /> */}
+        </div>
 
-        <button
-          type="button"
-          disabled={!previewUrl || disabled}
-          className={[
-            "rounded-2xl px-4 py-3 font-extrabold transition",
-            !previewUrl || disabled ? "bg-gray-200 text-gray-500" : "bg-[#F0A23A] text-white",
-          ].join(" ")}
-          onClick={() => {
-            // mock “ส่ง”
-            onSubmit();
-            alert(fileName ? `ส่งสลิปแล้ว: ${fileName}` : "ส่งสลิปแล้ว");
-          }}
-        >
-          ส่ง
-        </button>
+        {/* Preview */}
+        {previewUrl ? (
+          <div className="rounded-2xl overflow-hidden ring-1 ring-black/10 bg-white">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewUrl}
+              alt="slip preview"
+              className="w-full h-64 object-cover cursor-zoom-in"
+              onClick={() => setOpenPreview(true)}
+            />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-black/15 bg-black/[0.02] p-8 text-center text-sm text-black/50">
+            ยังไม่ได้เลือกไฟล์
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <label
+            className={[
+              "flex-1 cursor-pointer rounded-2xl py-3 text-center font-extrabold transition",
+              disabled
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-white ring-1 ring-black/10 text-black hover:bg-black/[0.02]",
+            ].join(" ")}
+          >
+            เลือกรูปสลิป
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={disabled}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+
+                setFileName(f.name);
+
+                const url = URL.createObjectURL(f);
+                setPreviewUrl(url);
+
+                onPick(f, url);
+              }}
+            />
+          </label>
+
+          <button
+            type="button"
+            disabled={!previewUrl || disabled}
+            className={[
+              "rounded-2xl px-4 py-3 font-extrabold transition active:scale-[0.99]",
+              !previewUrl || disabled
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-[#F0A23A] text-white hover:bg-[#e99625]",
+            ].join(" ")}
+            onClick={() => {
+              onSubmit();
+              alert(fileName ? `ส่งสลิปแล้ว: ${fileName}` : "ส่งสลิปแล้ว");
+            }}
+          >
+            ส่ง
+          </button>
+        </div>
+
+        {/* Small footnote */}
+        <p className="text-xs text-black/45">
+          * หลังส่งแล้ว staff จะตรวจสอบและอัปเดตสถานะการชำระเงิน
+        </p>
       </div>
+
+      {/* ✅ ใส่ modal เปิดรูปเต็ม ตามที่คุณต้องการ */}
+      <ImagePreviewModal
+        open={openPreview}
+        src={previewUrl}
+        title={fileName ? `ดูรูปเต็ม • ${fileName}` : "ดูรูปเต็ม"}
+        onClose={() => setOpenPreview(false)}
+      />
     </div>
   );
 }
@@ -347,7 +517,7 @@ export default function BookingDetailPage() {
 
   if (!booking) {
     return (
-      <main className="min-h-screen bg-[#FFF7EA] px-6 py-10">
+      <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
         <div className="mx-auto w-full max-w-md space-y-4">
           <div className="text-black/70 text-center">ไม่พบรายการจอง</div>
           <button
@@ -393,7 +563,6 @@ export default function BookingDetailPage() {
   }, [b]);
 
   const historyItems = useMemo(() => {
-    // ถ้า booking มี verifiedBy/verifiedAt ให้ใส่เข้า note ด้วย
     const items = buildMockHistory(b.status);
 
     if (b.verifiedBy || b.verifiedAt) {
@@ -412,7 +581,9 @@ export default function BookingDetailPage() {
     }
 
     if (b.cancelledReason) {
-      return items.map((it) => (it.key === "cancelled" ? { ...it, note: b.cancelledReason } : it));
+      return items.map((it) =>
+        it.key === "cancelled" ? { ...it, note: b.cancelledReason } : it
+      );
     }
 
     return items;
@@ -420,34 +591,34 @@ export default function BookingDetailPage() {
 
   const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
 
-
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-6 py-8 pb-32">
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       <SuccessHeader serviceLabel="รายละเอียดการจอง" />
-  
+
       <div className="mx-auto w-full max-w-md space-y-4">
-        {/* 0) Status strip (เห็นสถานะทันที) */}
+        {/* 0) Status strip */}
         <div className="rounded-2xl bg-white/80 ring-1 ring-black/5 shadow-sm px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs text-black/45">Booking ID</p>
-              <p className="text-sm font-extrabold text-black/90 truncate">{b.id}</p>
+              <p className="text-sm font-extrabold text-black/90 truncate">
+                {b.id}
+              </p>
             </div>
-  
+
             <span className="shrink-0 rounded-full bg-black/[0.06] px-3 py-1 text-xs font-bold text-black/70">
               {STATUS_LABEL[b.status]}
             </span>
           </div>
-  
-          {/* quick note */}
+
           <p className="mt-2 text-xs text-black/45">
             {canUploadSlip
               ? "แนบสลิปเพื่อให้พนักงานตรวจสอบ"
               : "การแนบสลิปจะเปิดได้เฉพาะสถานะที่กำหนด"}
           </p>
         </div>
-  
-        {/* 1) Primary actions (ทำก่อน) */}
+
+        {/* 1) Primary actions */}
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
@@ -457,7 +628,7 @@ export default function BookingDetailPage() {
             <History className="h-5 w-5 text-black/60" />
             ประวัติสถานะ
           </button>
-  
+
           <button
             type="button"
             disabled={!canUploadSlip}
@@ -471,25 +642,25 @@ export default function BookingDetailPage() {
             แนบสลิป
           </button>
         </div>
-  
-        {/* 2) Details card (อ่านทีหลัง) */}
+
+        {/* 2) Details card */}
         <SuccessSummaryCard
           title="รายละเอียดการจอง"
           subtitle="สรุปรายการ"
           rows={rows}
           selectedTitle="สัตว์เลี้ยงที่ใช้บริการ"
           selectedContent={b.petName}
-          totalLabel="หมายเหตุ"
           totalValue={<span className="text-black/60">{b.cancelledReason ?? "-"}</span>}
+          refCode="RSV-20260004"
         />
-  
-        {/* 3) Danger zone (แยกโซนให้ชัด) */}
+
+        {/* 3) Danger zone */}
         <div className="rounded-2xl bg-white/70 ring-1 ring-black/5 p-4">
           <p className="text-sm font-extrabold text-black/80">การจัดการ</p>
           <p className="text-xs text-black/45 mt-1">
             การยกเลิกทำได้เฉพาะสถานะ “รออนุมัติ”
           </p>
-  
+
           <button
             type="button"
             disabled={!canCancel}
@@ -504,22 +675,24 @@ export default function BookingDetailPage() {
             {b.status === "cancelled" ? "ยกเลิกแล้ว" : "ยกเลิกการจอง"}
           </button>
         </div>
-  
-        {/* 4) Back (รอง) */}
+
+        {/* 4) Back */}
         <button
           type="button"
           className="w-full rounded-2xl bg-white ring-1 ring-black/10 py-4 text-base font-extrabold text-black/80 active:scale-[0.99] transition"
-          onClick={() => router.push("/service/schedule")}
+          onClick={() => router.push("/service/booking")}
         >
-          กลับไปหน้าปฏิทิน
+          กลับไปหน้ารายการจอง
         </button>
-  
+
         {/* debug */}
         {slipFile ? (
-          <div className="text-center text-xs text-black/40">debug slip: {slipFile.name}</div>
+          <div className="text-center text-xs text-black/40">
+            debug slip: {slipFile.name}
+          </div>
         ) : null}
       </div>
-  
+
       {/* ✅ Modal: ประวัติสถานะ */}
       <BottomSheet
         open={openHistory}
@@ -533,7 +706,7 @@ export default function BookingDetailPage() {
       >
         <TimelineList items={historyItems} />
       </BottomSheet>
-  
+
       {/* ✅ Modal: แนบสลิป */}
       <BottomSheet
         open={openSlip}
@@ -555,56 +728,54 @@ export default function BookingDetailPage() {
       </BottomSheet>
 
       {openCancelConfirm && (
-  <div
-    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-    onClick={() => setOpenCancelConfirm(false)}
-  >
-    <div
-      className="w-full max-w-sm rounded-3xl bg-white shadow-2xl ring-1 ring-black/10"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="px-5 py-4 border-b border-black/5">
-        <p className="text-base font-extrabold text-gray-900">
-          ยืนยันการยกเลิกการจอง
-        </p>
-        <p className="mt-1 text-sm text-black/55">
-          การยกเลิกไม่สามารถย้อนกลับได้
-        </p>
-      </div>
-
-      <div className="px-5 py-4">
-        <div className="rounded-2xl bg-red-50 ring-1 ring-red-100 p-4">
-          <p className="text-sm text-red-700">
-            คุณต้องการยกเลิกรายการจองนี้ใช่หรือไม่?
-          </p>
-        </div>
-
-        <div className="mt-4 flex gap-3">
-          <button
-            type="button"
-            className="flex-1 rounded-2xl bg-black/[0.06] py-3 font-extrabold text-black/70 active:scale-[0.99] transition"
-            onClick={() => setOpenCancelConfirm(false)}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => setOpenCancelConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white shadow-2xl ring-1 ring-black/10"
+            onClick={(e) => e.stopPropagation()}
           >
-            ยกเลิก
-          </button>
+            <div className="px-5 py-4 border-b border-black/5">
+              <p className="text-base font-extrabold text-gray-900">
+                ยืนยันการยกเลิกการจอง
+              </p>
+              <p className="mt-1 text-sm text-black/55">
+                การยกเลิกไม่สามารถย้อนกลับได้
+              </p>
+            </div>
 
-          <button
-            type="button"
-            className="flex-1 rounded-2xl bg-red-600 py-3 font-extrabold text-white active:scale-[0.99] transition"
-            onClick={() => {
-              setOpenCancelConfirm(false);
-              setLocalStatus("cancelled");
-            }}
-          >
-            ยืนยันการยกเลิก
-          </button>
+            <div className="px-5 py-4">
+              <div className="rounded-2xl bg-red-50 ring-1 ring-red-100 p-4">
+                <p className="text-sm text-red-700">
+                  คุณต้องการยกเลิกรายการจองนี้ใช่หรือไม่?
+                </p>
+              </div>
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  type="button"
+                  className="flex-1 rounded-2xl bg-black/[0.06] py-3 font-extrabold text-black/70 active:scale-[0.99] transition"
+                  onClick={() => setOpenCancelConfirm(false)}
+                >
+                  ยกเลิก
+                </button>
+
+                <button
+                  type="button"
+                  className="flex-1 rounded-2xl bg-red-600 py-3 font-extrabold text-white active:scale-[0.99] transition"
+                  onClick={() => {
+                    setOpenCancelConfirm(false);
+                    setLocalStatus("cancelled");
+                  }}
+                >
+                  ยืนยันการยกเลิก
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </main>
   );
-  
 }

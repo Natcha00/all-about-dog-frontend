@@ -70,7 +70,7 @@ function SwimSlotsPage() {
   }, [petIds.length, date, selectedTime, isVip, slots]);
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-6 py-8 pb-44">
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       <div className="mx-auto w-full max-w-md space-y-4">
         
         {/* Header */}
@@ -138,7 +138,7 @@ function SwimSlotsPage() {
   
         {/* Summary (ถ้าเลือกแล้ว) */}
         {selectedTime && (
-          <div className="rounded-2xl bg-[#FFF7EA] ring-1 ring-black/5 p-4">
+          <div className="rounded-2xl bg-[#F7F4E8] ring-1 ring-black/5 p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-black/60">รอบที่เลือก</p>
               <p className="text-base font-extrabold text-black/90">
@@ -150,7 +150,7 @@ function SwimSlotsPage() {
       </div>
   
       {/* Bottom CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#F7F4E8]/95 backdrop-blur border-t border-black/5">
         <div className="mx-auto max-w-md px-6 py-4">
           <button
             type="button"

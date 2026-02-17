@@ -6,8 +6,7 @@ import {
   LayoutGrid,
   Bell,
   PawPrint,
-  Users,
-  UserCircle2,
+  ClipboardList,
 } from "lucide-react";
 
 type NavItem = {
@@ -18,9 +17,11 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "บริการ", href: "/service", Icon: LayoutGrid },
-  { label: "สัตว์เลี้ยง", href: "/my-dogs", Icon: PawPrint },
+  { label: "จองบริการ", href: "/walkin", Icon: ClipboardList },
+  // { label: "รายการจอง", href: "/service/booking", Icon: ClipboardList },
   { label: "แจ้งเตือน", href: "/notifications", Icon: Bell },
-  { label: "บัญชีผู้ใช้", href: "/account", Icon: UserCircle2 },
+  { label: "สัตว์เลี้ยง", href: "/my-dogs", Icon: PawPrint },
+  // { label: "บัญชีผู้ใช้", href: "/account", Icon: UserCircle2 },
 ];
 
 function isActivePath(pathname: string, href: string) {

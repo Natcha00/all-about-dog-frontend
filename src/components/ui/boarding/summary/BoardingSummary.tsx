@@ -121,7 +121,7 @@ export default function BoardingSummary(props: Props) {
   }, [pets]);
 
   return (
-    <main className="min-h-screen bg-[#FFF7EA] px-6 py-8 pb-44">
+    <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       {/* Header */}
       <div className="mx-auto w-full max-w-md">
         <div className="mb-4 text-center">
@@ -140,7 +140,7 @@ export default function BoardingSummary(props: Props) {
             </div>
   
             {/* Price pill */}
-            <div className="shrink-0 rounded-2xl bg-[#FFF7EA] ring-1 ring-black/5 px-3 py-2 text-right">
+            <div className="shrink-0 rounded-2xl bg-[#F7F4E8] ring-1 ring-black/5 px-3 py-2 text-right">
               <p className="text-[11px] text-black/50">ราคารวม</p>
               <p className="text-base font-extrabold text-black/90">{pricing.total.toLocaleString()} บาท</p>
             </div>
@@ -274,7 +274,7 @@ export default function BoardingSummary(props: Props) {
       </div>
   
       {/* Bottom CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#FFF7EA]/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#F7F4E8]/95 backdrop-blur">
         <div className="mx-auto max-w-md px-6 py-4">
           <button
             type="button"

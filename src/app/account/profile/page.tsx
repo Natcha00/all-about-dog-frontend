@@ -48,7 +48,7 @@ export default function ProfilePage() {
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
     return (
-        <main className="min-h-screen bg-[#FFF7EA] px-5 pb-28">
+        <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
             <div className="mx-auto w-full max-w-md pt-8 space-y-4">
                 <h1 className="text-center text-2xl font-extrabold text-black">แก้ไขข้อมูลส่วนตัว</h1>
 
@@ -156,7 +156,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Sticky CTA */}
-            <div className="fixed inset-x-0 bottom-0 z-50 bg-[#FFF7EA]/95 backdrop-blur border-t border-black/5">
+            <div className="fixed inset-x-0 bottom-0 z-50 bg-[#F7F4E8]/95 backdrop-blur border-t border-black/5">
                 <div className="mx-auto max-w-md px-5 py-4">
                     <button
                         type="button"

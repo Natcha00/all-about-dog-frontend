@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export default function ScheduleHeader({
@@ -51,7 +52,7 @@ export default function ScheduleHeader({
           <select
             value={selectedPet}
             onChange={(e) => onChangePet(e.target.value)}
-            className="h-10 rounded-xl border border-black/40 bg-[#FFF7EA] px-3 text-base font-semibold outline-none"
+            className="h-10 rounded-xl border border-black/40 bg-[#F7F4E8] px-3 text-base font-semibold outline-none"
           >
             {pets.map((p) => (
               <option key={p} value={p}>
@@ -60,20 +61,26 @@ export default function ScheduleHeader({
             ))}
           </select>
           <Link
-          href="/service/booking"
-          className="rounded-xl border border-black/40 bg-[#FFF7EA]
+            href="/service/booking"
+            className="rounded-xl border border-black/40 bg-[#F7F4E8]
           p-2 shadow-sm hover:bg-black/5 active:scale-[0.98]"
-          aria-label="ไปหน้ารายการจองทั้งหมด"
-        >
-          {/* แบบง่ายสุด */}
-          <span className="text-xl leading-none">🗓️</span>
+            aria-label="ไปหน้ารายการจองทั้งหมด"
+          >
+            {/* แบบง่ายสุด */}
+            <Image
+              src="/images/tickets.png"
+              alt="tickets"
+              width={24}
+              height={24}
+              className="object-contain"
+            />
 
-          {/* ถ้าจะใช้ lucide-react */}
-          {/* <CalendarDays className="h-6 w-6" /> */}
-        </Link>
+            {/* ถ้าจะใช้ lucide-react */}
+            {/* <CalendarDays className="h-6 w-6" /> */}
+          </Link>
         </div>
-        
-     
+
+
       </div>
     </header>
   );
