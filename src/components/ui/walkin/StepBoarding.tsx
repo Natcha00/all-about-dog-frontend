@@ -1,9 +1,64 @@
 "use client";
 
+
+
 import { calcBoardingTotal } from "@/lib/walkin/boarding/boarding.price.logic";
 import { BoardingDraft, PetPicked } from "@/lib/walkin/walkin/types.mock";
 import { useMemo, useState } from "react";
 type Plan = 1 | 2 | 3;
+type RoomType = "SMALL" | "LARGE" | "VIP";
+
+type RoomAssign = {
+  type: RoomType;
+  roomNo: number;
+  pets: PetPicked[];
+};
+
+function chunkPets<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+function buildRoomAssignments(pets: PetPicked[], plan: Plan): RoomAssign[] {
+  if (!pets.length) return [];
+
+  // plan 3: VIP บ้านเดียว
+  if (plan === 3) {
+    return [{ type: "VIP", roomNo: 1, pets }];
+  }
+
+  const small = pets.filter((p) => p.size === "small");
+  const large = pets.filter((p) => p.size === "large");
+
+  // plan 1: 1 ตัว/ห้อง
+  if (plan === 1) {
+    const smallRooms = small.map((p, idx) => ({ type: "SMALL" as const, roomNo: idx + 1, pets: [p] }));
+    const largeRooms = large.map((p, idx) => ({ type: "LARGE" as const, roomNo: idx + 1, pets: [p] }));
+    return [...smallRooms, ...largeRooms];
+  }
+
+  // plan 2: เล็ก 3/ห้อง, ใหญ่ 2/ห้อง
+  const smallRooms = chunkPets(small, 3).map((group, idx) => ({
+    type: "SMALL" as const,
+    roomNo: idx + 1,
+    pets: group,
+  }));
+
+  const largeRooms = chunkPets(large, 2).map((group, idx) => ({
+    type: "LARGE" as const,
+    roomNo: idx + 1,
+    pets: group,
+  }));
+
+  return [...smallRooms, ...largeRooms];
+}
+
+function roomTypeLabel(t: RoomType) {
+  if (t === "VIP") return "ห้อง VIP";
+  if (t === "SMALL") return "ตึกหมาเล็ก";
+  return "ตึกหมาใหญ่";
+}
 
 function chunkCount(count: number, size: number) {
   return Math.ceil(Math.max(0, count) / size);
@@ -47,12 +102,15 @@ type DailyCapacity = {
 
 // ✅ mock: ความจุห้องว่างในแต่ละคืน (คุณแทนด้วย backend ได้ทีหลัง)
 const CAPACITY_BY_DATE: Record<string, DailyCapacity> = {
-  "2026-02-16": { SMALL: 5, LARGE: 2, VIP: 1 },
-  "2026-02-17": { SMALL: 0, LARGE: 2, VIP: 1 }, // ตัวอย่าง: หมดห้องเล็ก
-  "2026-02-18": { SMALL: 7, LARGE: 0, VIP: 1 }, // ตัวอย่าง: หมดห้องใหญ่
-  "2026-02-19": { SMALL: 7, LARGE: 0, VIP: 1 }, // ตัวอย่าง: หมดห้องใหญ่
-  "2026-02-20": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
-  "2026-02-21": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
+  "2026-03-16": { SMALL: 5, LARGE: 2, VIP: 1 },
+  "2026-03-17": { SMALL: 1, LARGE: 2, VIP: 1 }, // ตัวอย่าง: หมดห้องเล็ก
+  "2026-03-18": { SMALL: 7, LARGE: 0, VIP: 1 }, // ตัวอย่าง: หมดห้องใหญ่
+  "2026-03-19": { SMALL: 7, LARGE: 0, VIP: 1 }, // ตัวอย่าง: หมดห้องใหญ่
+  "2026-03-20": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
+  "2026-03-21": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
+  "2026-03-22": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
+  "2026-03-23": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
+  "2026-03-24": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
 };
 
 // คืนลิสต์คืน (คืนที่ 1..คืนสุดท้าย) เช่น start=1 end=10 => ได้คืน 1..9
@@ -84,7 +142,7 @@ function checkAvailabilityRange(params: {
 
   const fails = nights
     .map((date) => {
-      const cap = CAPACITY_BY_DATE[date] ?? { SMALL: 999, LARGE: 999, VIP: 999 }; // ถ้าไม่มีข้อมูล mock ให้ถือว่าว่าง (กัน dev ง่าย)
+      const cap = CAPACITY_BY_DATE[date] ?? { SMALL: 0, LARGE: 0, VIP: 0 }; // ถ้าไม่มีข้อมูล mock ให้ถือว่าว่าง (กัน dev ง่าย)
       const ok =
         need.SMALL <= cap.SMALL &&
         need.LARGE <= cap.LARGE &&
@@ -148,12 +206,29 @@ export default function StepBoarding(props: {
     return calcBoardingTotal({ pets, plan, nights }).total;
   }, [nights, pets, plan]);
 
+  const canCheckAvailability =
+    pets.length > 0 &&
+    !!start &&
+    !!end &&
+    new Date(end) > new Date(start);
+
+
+  const availability = useMemo(() => {
+    if (!canCheckAvailability) return null;
+    return checkAvailabilityRange({ pets, plan, start, end });
+  }, [canCheckAvailability, pets, plan, start, end]);
+
+
+  const isAvailableAllNights = availability?.ok ?? false;
+
   const canShowSummary =
     pets.length > 0 &&
     !!start &&
     !!end &&
     new Date(end) > new Date(start) &&
-    !!plan;
+    !!plan &&
+    isAvailableAllNights; // ✅ ต้องว่างครบทุกคืนเท่านั้น
+
   const priceBreakdown = useMemo(() => {
     if (!canShowSummary || !nights) return [];
 
@@ -210,21 +285,16 @@ export default function StepBoarding(props: {
     return result;
   }, [pets, plan, nights, canShowSummary]);
 
+  const roomAssignments = useMemo(() => {
+    if (!canShowSummary) return [];
+    return buildRoomAssignments(pets, plan);
+  }, [pets, plan, canShowSummary]);
+
+
   const [note, setNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
 
-  const canCheckAvailability =
-    pets.length > 0 &&
-    !!start &&
-    !!end &&
-    new Date(end) > new Date(start);
 
-  const availability = useMemo(() => {
-    if (!canCheckAvailability) return null;
-    return checkAvailabilityRange({ pets, plan, start, end });
-  }, [canCheckAvailability, pets, plan, start, end]);
-
-  const isAvailableAllNights = availability?.ok ?? false;
 
   const canNext =
     pets.length > 0 &&
@@ -267,45 +337,69 @@ export default function StepBoarding(props: {
 
       {/* แพ็กเกจ */}
       <div className="space-y-2">
-        <p className="text-sm font-extrabold text-gray-900">แพ็กเกจ</p>
-        <div className="grid grid-cols-3 gap-2">
-          <PlanButton active={plan === 1} onClick={() => setPlan(1)}>
-            แบบ 1 : มาตรฐาน
-          </PlanButton>
-          <PlanButton active={plan === 2} onClick={() => setPlan(2)}>
-            แบบ 2 : นอนด้วยกัน
-          </PlanButton>
-          <PlanButton active={plan === 3} onClick={() => setPlan(3)}>
-            แบบ 3 : VIP บ้านเดี่ยว
-          </PlanButton>
+        <div className="flex items-end justify-between gap-3">
+          <p className="text-sm font-extrabold text-gray-900">แพ็กเกจ</p>
+          <p className="text-xs text-black/45">แตะเพื่อเลือก</p>
+        </div>
+
+        <PlanSlider value={plan} onChange={setPlan} />
+
+        {/* คำอธิบายใต้สไลด์ (สวย+อ่านง่าย) */}
+        <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-4">
+          {plan === 1 ? (
+            <div className="space-y-1">
+              <p className="text-sm font-extrabold text-gray-900">แบบ 1 : มาตรฐาน</p>
+              <p className="text-xs text-black/55 leading-relaxed">
+                รูปแบบ: แยกกันอยู่ 1 ตัว/ห้องพัก แบ่งห้องพักตามขนาดตัว
+              </p>
+            </div>
+          ) : plan === 2 ? (
+            <div className="space-y-1">
+              <p className="text-sm font-extrabold text-gray-900">แบบ 2 : นอนด้วยกัน</p>
+              <p className="text-xs text-black/55 leading-relaxed">
+                รูปแบบ: รวมกันอยู่ 2–3 ตัว/ห้องพัก (ตามเงื่อนไขขนาด)
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <p className="text-sm font-extrabold text-gray-900">แบบ 3 : VIP บ้านเดี่ยว</p>
+              <p className="text-xs text-black/55 leading-relaxed">
+                ลูกค้ามาจากบ้านเดียวกัน พักด้วยกันในห้องส่วนตัว
+              </p>
+            </div>
+          )}
         </div>
       </div>
+
       {/* ✅ Availability card */}
       {canCheckAvailability ? (
         availability ? (
           availability.ok ? (
             <div className="rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 p-4">
               <p className="text-sm font-extrabold text-emerald-900">ห้องว่างตลอดช่วงที่เลือก ✅</p>
+              <p className="text-xs font-semibold  text-emerald-800/80 mt-1 ">
+                {start} ถึง {end} = {availability.nightsCount} คืน
+              </p>
               <p className="text-xs text-emerald-800/80 mt-1">
-                {start} → {end} • {availability.nightsCount} คืน • ต้องใช้ต่อคืน:
+                ชนิดห้องต่อคืน:
                 {" "}
                 {plan === 3
                   ? `VIP ${availability.need.VIP} ห้อง`
-                  : `เล็ก ${availability.need.SMALL} ห้อง, ใหญ่ ${availability.need.LARGE} ห้อง`}
+                  : `ตึกหมาเล็ก ${availability.need.SMALL} ห้อง, ตึกหมาใหญ่ ${availability.need.LARGE} ห้อง`}
               </p>
             </div>
           ) : (
             <div className="rounded-2xl bg-rose-50 ring-1 ring-rose-200 p-4">
-              <p className="text-sm font-extrabold text-rose-900">ห้องไม่ว่างครบทุกคืน ❌</p>
+              <p className="text-sm font-extrabold text-rose-900">รอบการจองไม่พร้อมให้บริการ</p>
               <p className="text-xs text-rose-800/80 mt-1">
-                กรุณาเลือกวันใหม่ (มีอย่างน้อย 1 คืนที่ห้องไม่พอ)
+                กรุณาเลือกวันใหม่
               </p>
 
-              <div className="mt-3 rounded-2xl bg-white/70 ring-1 ring-black/5 p-3 space-y-2">
+              <div className="mt-2 rounded-2xl bg-white/70 ring-1 ring-black/5 p-3 space-y-2">
                 <p className="text-xs font-extrabold text-black/70">คืนที่มีปัญหา</p>
 
-                <div className="space-y-2">
-                  {availability.fails.slice(0, 3).map((f) => {
+                <div className="space-y-2 overflow-y-auto max-h-56 m-1 p-1">
+                  {availability.fails.map((f) => {
                     const smallNotEnough = f.need.SMALL > f.cap.SMALL;
                     const largeNotEnough = f.need.LARGE > f.cap.LARGE;
                     const vipNotEnough = f.need.VIP > f.cap.VIP;
@@ -335,11 +429,11 @@ export default function StepBoarding(props: {
                           ) : (
                             <>
                               <span className={smallNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ห้องเล็ก {f.need.SMALL}
+                                ตึกหมาเล็ก {f.need.SMALL}
                               </span>
                               {" • "}
                               <span className={largeNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ห้องใหญ่ {f.need.LARGE}
+                                ตึกหมาใหญ่ {f.need.LARGE}
                               </span>
                             </>
                           )}
@@ -355,11 +449,11 @@ export default function StepBoarding(props: {
                           ) : (
                             <>
                               <span className={smallNotEnough ? "text-rose-600 font-bold" : ""}>
-                                เล็ก {f.cap.SMALL}
+                                ตึกหมาเล็ก {f.cap.SMALL}
                               </span>
                               {" • "}
                               <span className={largeNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ใหญ่ {f.cap.LARGE}
+                                ตึกหมาใหญ่ {f.cap.LARGE}
                               </span>
                             </>
                           )}
@@ -370,11 +464,11 @@ export default function StepBoarding(props: {
 
                 </div>
 
-                {availability.fails.length > 3 ? (
+                {/* {availability.fails.length > 3 ? (
                   <p className="text-[11px] text-black/45">
                     และอีก {availability.fails.length - 3} คืน…
                   </p>
-                ) : null}
+                ) : null} */}
               </div>
             </div>
           )
@@ -390,14 +484,56 @@ export default function StepBoarding(props: {
       {canShowSummary && (
         <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-4">
           <p className="text-sm font-extrabold text-gray-900">สรุป</p>
-
+          <p className="text-sm font-extrabold text-gray-900">
+            รายละเอียดราคา ({nights} คืน)
+          </p>
           <div className="rounded-2xl bg-white ring-1 ring-black/10 p-4 space-y-3 shadow-sm mt-2">
-            <p className="text-sm font-extrabold text-gray-900">
-              รายละเอียดราคา ({nights} คืน)
-            </p>
+
 
             <div className="space-y-2">
-              {priceBreakdown.map((item) => (
+              {/* ✅ แผนผังห้อง: หมาตัวไหนนอนห้องไหน */}
+              {roomAssignments.length > 0 ? (
+                <div className="mt-3 rounded-2xl bg-white ring-1 ring-black/10 p-4 overflow-y-auto max-h-56">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-extrabold text-gray-900">รูปแบบเข้าพัก</p>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {roomAssignments.map((r) => (
+                      <div key={`${r.type}-${r.roomNo}`} className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-3">
+                        <div className="flex justify-between">
+                        <p className="text-xs font-extrabold text-black/70">
+                          {roomTypeLabel(r.type)} • ห้อง {r.roomNo} 
+                        </p>
+                        <p className="text-xs font-extrabold text-black/70">
+                          {r.pets.length} ตัว
+                        </p>
+                        </div>
+
+                        <div className="mt-1 text-sm text-black/70">
+                          {r.pets.map((p) => (
+                            <div key={p.id} className="flex items-center justify-between text-black/45">
+                              <span className="font-semibold">{p.name}</span>
+                              <span className="text-xs">{p.size}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ช่วยบอกว่าเป็น “แนะนำ” */}
+                  <p className="mt-2 text-[11px] text-black/45">
+                    * เป็นการจัดห้องแบบแนะนำอัตโนมัติ
+                  </p>
+                </div>
+              ) : null}
+
+
+            </div>
+
+            <div className="h-px bg-black/10" />
+            {priceBreakdown.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between text-sm"
@@ -416,10 +552,6 @@ export default function StepBoarding(props: {
                   </span>
                 </div>
               ))}
-            </div>
-
-            <div className="h-px bg-black/10" />
-
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-gray-900">รวมทั้งหมด</span>
               <span className="text-lg font-extrabold text-[#F0A23A]">
@@ -449,7 +581,7 @@ export default function StepBoarding(props: {
             className={[
               "shrink-0 rounded-full px-3 py-1 text-xs font-extrabold ring-1",
               noteOpen
-                ? "bg-[#F7F4E8] text-[#B25A00] ring-[#F0A23A]/40"
+                ? "bg-[#fff7ea] text-[#B25A00] ring-[#F0A23A]/40"
                 : "bg-black/[0.04] text-black/60 ring-black/10",
             ].join(" ")}
           >
@@ -508,7 +640,7 @@ export default function StepBoarding(props: {
               endTime,
               plan,
               total,
-              note,
+              customerNote: note,
             })
           }
           className={[
@@ -553,21 +685,52 @@ function Field(props: {
   );
 }
 
-function PlanButton(props: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+
+function PlanSlider(props: { value: 1 | 2 | 3; onChange: (v: 1 | 2 | 3) => void }) {
+  const { value, onChange } = props;
+
+  // ตำแหน่งของ pill (0%, 100%, 200%)
+  const translate =
+    value === 1 ? "translate-x-0" : value === 2 ? "translate-x-full" : "translate-x-[200%]";
+
+  return (
+    <div className="rounded-2xl bg-white ring-1 ring-black/10 p-1">
+      <div className="relative grid grid-cols-3">
+        {/* pill ที่เลื่อน */}
+        <div
+          className={[
+            "absolute inset-y-0 left-0 w-1/3 rounded-2xl bg-[#fff7ea] ring-1 ring-[#F0A23A]/40",
+            "transition-transform duration-300 ease-out",
+            translate,
+          ].join(" ")}
+        />
+
+        {/* buttons */}
+        <PlanSlideBtn active={value === 1} onClick={() => onChange(1)}>
+          แบบ 1
+        </PlanSlideBtn>
+        <PlanSlideBtn active={value === 2} onClick={() => onChange(2)}>
+          แบบ 2
+        </PlanSlideBtn>
+        <PlanSlideBtn active={value === 3} onClick={() => onChange(3)}>
+          VIP
+        </PlanSlideBtn>
+      </div>
+    </div>
+  );
+}
+
+function PlanSlideBtn(props: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   const { active, onClick, children } = props;
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
-        "rounded-2xl py-3 text-sm font-extrabold ring-2 transition",
-        active
-          ? "bg-[#F7F4E8] ring-[#F0A23A] text-gray-900"
-          : "bg-white ring-black/10 text-black/60",
+        "relative z-10 h-11 rounded-2xl",
+        "text-sm font-extrabold transition",
+        active ? "text-gray-900" : "text-black/55 hover:text-gray-900",
       ].join(" ")}
     >
       {children}

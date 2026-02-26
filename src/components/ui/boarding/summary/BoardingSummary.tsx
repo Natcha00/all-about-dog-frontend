@@ -140,7 +140,7 @@ export default function BoardingSummary(props: Props) {
             </div>
   
             {/* Price pill */}
-            <div className="shrink-0 rounded-2xl bg-[#F7F4E8] ring-1 ring-black/5 px-3 py-2 text-right">
+            <div className="shrink-0 rounded-2xl bg-[#fff7ea] ring-1 ring-black/5 px-3 py-2 text-right">
               <p className="text-[11px] text-black/50">ราคารวม</p>
               <p className="text-base font-extrabold text-black/90">{pricing.total.toLocaleString()} บาท</p>
             </div>
@@ -255,9 +255,9 @@ export default function BoardingSummary(props: Props) {
                     <div className="flex items-center justify-between">
                       <p className="font-extrabold text-gray-900">
                         {r.roomType === "SMALL"
-                          ? `ห้องเล็ก ${r.roomNo}`
+                          ? `ตึกหมาเล็ก ${r.roomNo}`
                           : r.roomType === "LARGE"
-                          ? `ห้องใหญ่ ${r.roomNo}`
+                          ? `ตึกหมาใหญ่ ${r.roomNo}`
                           : `VIP ${r.roomNo}`}
                       </p>
                       <p className="text-xs text-black/50">{r.petIds.length} ตัว</p>
@@ -274,7 +274,7 @@ export default function BoardingSummary(props: Props) {
       </div>
   
       {/* Bottom CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#F7F4E8]/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#fff7ea]/95 backdrop-blur">
         <div className="mx-auto max-w-md px-6 py-4">
           <button
             type="button"

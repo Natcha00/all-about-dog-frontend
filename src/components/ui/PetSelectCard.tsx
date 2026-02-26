@@ -40,7 +40,7 @@ export default function PetSelectCard({
                 <div
                     className={`
             w-24 h-24 rounded-full
-            bg-[#F7F4E8]
+            bg-[#fff7ea]
             ring-4
             shadow-[0_10px_25px_rgba(0,0,0,0.08)]
             transition-all
@@ -64,7 +64,7 @@ export default function PetSelectCard({
             absolute -bottom-1 -right-1
             grid place-items-center
             w-8 h-8 rounded-full
-            ring-4 ring-[#F7F4E8]
+            ring-4 ring-[#fff7ea]
             shadow-md
             transition-all
             ${selected

@@ -14,7 +14,7 @@ export default function BillHeader({
 
   return (
     <header className="sticky top-0 z-20">
-      <div className="bg-[#F7F4E8]/90 backdrop-blur supports-[backdrop-filter]:bg-[#F7F4E8]/75">
+      <div className="bg-[#fff7ea]/90 backdrop-blur supports-[backdrop-filter]:bg-[#fff7ea]/75">
         <div className="mx-auto w-full max-w-md px-4 py-3">
           <div className="flex items-center gap-3">
             <button

@@ -1,11 +1,19 @@
 "use client";
 
-
 import { swimPricePerDog, swimTotalPrice } from "@/lib/walkin/swimming/swimming.price.logic";
 import { PetPicked, SwimmingDraft } from "@/lib/walkin/walkin/types.mock";
 import React, { useEffect, useMemo, useState } from "react";
 
-type Slot = { time: string; capacity: number; booked: number };
+/**
+ * ✅ Slot แบบแยกขนาดเพื่อกัน "กัดกัน"
+ * capacity: โควต้าต่อรอบแยก small/large
+ * booked: จำนวนที่ถูกจองแล้วแยก small/large
+ */
+type Slot = {
+  time: string;
+  capacity: { small: number; large: number };
+  booked: { small: number; large: number };
+};
 
 function todayISO() {
   const d = new Date();
@@ -15,44 +23,75 @@ function todayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function isSelectable(slot: Slot, isVip: boolean, petsCount: number) {
-  const count = Math.max(0, petsCount);
-
-  // ถ้าเลือกมาเกิน capacity ต่อรอบ เลือกไม่ได้ทุกกรณี
-  if (count > slot.capacity) return false;
-
-  // VIP ต้องว่างสนิท และต้องพอจุจำนวนหมาที่เลือก
-  if (isVip) return slot.booked === 0 && count <= slot.capacity;
-
-  // ปกติ ต้องมีที่ว่างพอ
-  return slot.booked + count <= slot.capacity;
+function countPicked(pets: PetPicked[]) {
+  return pets.reduce(
+    (acc, p) => {
+      if (p.size === "large") acc.large += 1;
+      else acc.small += 1;
+      return acc;
+    },
+    { small: 0, large: 0 },
+  );
 }
 
-// ✅ ย้ายออกนอก component ให้ไม่สร้างใหม่ทุก render (ไม่กระทบ UI)
+/**
+ * ✅ เลือกได้ไหม
+ * - VIP: ต้องว่างสนิททั้ง small/large และต้องพอจุตามขนาด
+ * - ปกติ: ต้องมีที่ว่างพอตามขนาด
+ */
+function isSelectable(slot: Slot, isVip: boolean, pets: PetPicked[]) {
+  const need = countPicked(pets);
+
+  const totalCap = slot.capacity.small + slot.capacity.large;
+  const totalBooked = slot.booked.small + slot.booked.large;
+
+  // ถ้าเลือกมาเกินความจุรวม (กันเคสแปลก ๆ)
+  if (need.small + need.large > totalCap) return false;
+
+  if (isVip) {
+    const empty = totalBooked === 0;
+    const enough =
+      need.small <= slot.capacity.small &&
+      need.large <= slot.capacity.large;
+    return empty && enough;
+  }
+
+  const availSmall = slot.capacity.small - slot.booked.small;
+  const availLarge = slot.capacity.large - slot.booked.large;
+
+  return need.small <= availSmall && need.large <= availLarge;
+}
+
+/**
+ * ✅ mock slots by date
+ * (ทำให้เลขใน UI สื่อว่า: จองแล้ว x/y + แยก small/large)
+ */
 const SLOTS_BY_DATE: Record<string, Slot[]> = {
-  "2026-02-16": [
-    { time: "10:00", capacity: 5, booked: 2 },
-    { time: "11:00", capacity: 5, booked: 3 },
-    { time: "12:00", capacity: 5, booked: 0 },
-    { time: "13:00", capacity: 5, booked: 2 },
-    { time: "14:00", capacity: 5, booked: 5 },
-    { time: "15:00", capacity: 5, booked: 1 },
+  "2026-03-20": [
+    { time: "10:00", capacity: { small: 3, large: 2 }, booked: { small: 2, large: 0 } }, // จองแล้ว 2/5 (เล็ก2 ใหญ่0)
+    { time: "11:00", capacity: { small: 2, large: 3 }, booked: { small: 0, large: 3 } }, // จองแล้ว 3/5 (เล็ก0 ใหญ่3)
+    { time: "12:00", capacity: { small: 3, large: 2 }, booked: { small: 0, large: 0 } }, // ว่าง
+    { time: "13:00", capacity: { small: 3, large: 2 }, booked: { small: 0, large: 2 } }, // จองแล้ว 2/5 (เล็ก0 ใหญ่2)
+    { time: "14:00", capacity: { small: 2, large: 3 }, booked: { small: 2, large: 3 } }, // เต็ม 5/5
+    { time: "15:00", capacity: { small: 3, large: 2 }, booked: { small: 0, large: 3 } }, // (ถ้าเกิน capacity.large ให้ปรับ)
+    { time: "16:00", capacity: { small: 2, large: 3 }, booked: { small: 0, large: 4 } }, // (ตัวอย่างเลข—ควรไม่เกิน capacity.large)
+    { time: "17:00", capacity: { small: 4, large: 1 }, booked: { small: 1, large: 0 } },
   ],
-  "2026-02-18": [
-    { time: "10:00", capacity: 6, booked: 1 },
-    { time: "11:00", capacity: 6, booked: 6 },
-    { time: "12:00", capacity: 6, booked: 2 },
-    { time: "13:00", capacity: 6, booked: 4 },
-    { time: "14:00", capacity: 6, booked: 0 },
-    { time: "15:00", capacity: 6, booked: 3 },
+  "2026-03-21": [
+    { time: "10:00", capacity: { small: 4, large: 2 }, booked: { small: 1, large: 0 } },
+    { time: "11:00", capacity: { small: 4, large: 2 }, booked: { small: 4, large: 2 } }, // เต็ม
+    { time: "12:00", capacity: { small: 4, large: 2 }, booked: { small: 1, large: 1 } },
+    { time: "13:00", capacity: { small: 4, large: 2 }, booked: { small: 2, large: 2 } },
+    { time: "14:00", capacity: { small: 4, large: 2 }, booked: { small: 0, large: 0 } }, // ว่าง
+    { time: "15:00", capacity: { small: 4, large: 2 }, booked: { small: 3, large: 0 } },
   ],
-  "2026-02-19": [
-    { time: "10:00", capacity: 4, booked: 4 },
-    { time: "11:00", capacity: 4, booked: 2 },
-    { time: "12:00", capacity: 4, booked: 1 },
-    { time: "13:00", capacity: 4, booked: 0 },
-    { time: "14:00", capacity: 4, booked: 3 },
-    { time: "15:00", capacity: 4, booked: 1 },
+  "2026-03-22": [
+    { time: "10:00", capacity: { small: 2, large: 2 }, booked: { small: 2, large: 2 } }, // เต็ม
+    { time: "11:00", capacity: { small: 2, large: 2 }, booked: { small: 1, large: 1 } },
+    { time: "12:00", capacity: { small: 2, large: 2 }, booked: { small: 1, large: 0 } },
+    { time: "13:00", capacity: { small: 2, large: 2 }, booked: { small: 0, large: 0 } },
+    { time: "14:00", capacity: { small: 2, large: 2 }, booked: { small: 1, large: 2 } },
+    { time: "15:00", capacity: { small: 2, large: 2 }, booked: { small: 1, large: 0 } },
   ],
 };
 
@@ -86,8 +125,8 @@ export default function StepSwimming(props: {
     const slot = slots.find((s) => s.time === selectedTime);
     if (!slot) return;
 
-    if (!isSelectable(slot, true, pets.length)) setSelectedTime("");
-  }, [isVip, selectedTime, slots, pets.length]);
+    if (!isSelectable(slot, true, pets)) setSelectedTime("");
+  }, [isVip, selectedTime, slots, pets]);
 
   // ✅ ทำข้อมูลให้ตรง SwimPetInfo (breed/weight เป็น optional ได้)
   const petsForPricing = useMemo(
@@ -99,7 +138,7 @@ export default function StepSwimming(props: {
     [pets],
   );
 
-  // ✅ คิดเงินตาม breed/weight (VIP ไม่บวกเพิ่มตาม logic คุณ)
+  // ✅ คิดเงินตาม breed/weight
   const total: number = useMemo(() => {
     return swimTotalPrice(petsForPricing);
   }, [petsForPricing]);
@@ -108,22 +147,24 @@ export default function StepSwimming(props: {
     if (!dateISO || !selectedTime) return false;
     const slot = slots.find((s) => s.time === selectedTime);
     if (!slot) return false;
-    return isSelectable(slot, isVip, pets.length);
-  }, [dateISO, selectedTime, isVip, slots, pets.length]);
+    return isSelectable(slot, isVip, pets);
+  }, [dateISO, selectedTime, isVip, slots, pets]);
 
-  const priceBreakdown = pets.map((p) => ({
-    id: p.id,
-    name: p.name,
-    breed: p.breed,
-    price: swimPricePerDog({
+  const priceBreakdown = useMemo(() => {
+    return pets.map((p) => ({
+      id: p.id,
+      name: p.name,
       breed: p.breed,
-      weightKg: p.weightKg,
-    }),
-  }));
+      price: swimPricePerDog({breed: p.breed ?? undefined, weightKg: p.weightKg ?? undefined, }),
+    }));
+  }, [
+    pets.map(p => `${p.id}|${p.breed ?? ""}|${p.weightKg ?? ""}`).join("::")
+  ]);
 
   const [note, setNote] = useState<string>("");
   const [noteOpen, setNoteOpen] = useState<boolean>(false);
 
+  const need = useMemo(() => countPicked(pets), [pets]);
 
   return (
     <section className="rounded-3xl bg-white/70 ring-1 ring-black/5 shadow-sm p-5 space-y-4">
@@ -137,39 +178,63 @@ export default function StepSwimming(props: {
         <input
           type="date"
           value={dateISO}
-           min={todayISO()} 
+          min={todayISO()}
           onChange={(e) => setDateISO(e.target.value)}
           className="appearance-none h-11 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]"
         />
       </div>
 
       <div className="rounded-2xl ring-1 ring-black/10 bg-white p-4 space-y-3">
-        <p className="text-sm font-extrabold text-gray-900">เลือกรอบ</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-extrabold text-gray-900">เลือกรอบ</p>
+            <p className="text-xs text-black/45 mt-0.5">
+              เลือกรอบที่รองรับขนาดใกล้เคียงกับน้อง ๆ เพื่อป้องกันอุบัติเหตุ
+            </p>
+          </div>
+
+          <div className="shrink-0 rounded-2xl bg-black/[0.03] ring-1 ring-black/5 px-3 py-2 text-xs font-extrabold text-black/60">
+            สุนัขของฉัน เล็ก {need.small} • ใหญ่ {need.large}
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
           {slots.map((s) => {
-            const disabled = !isSelectable(s, isVip, pets.length);
+            const disabled = !isSelectable(s, isVip, pets);
             const active = selectedTime === s.time;
 
+            const totalCap = s.capacity.small + s.capacity.large;
+            const totalBooked = s.booked.small + s.booked.large;
+            const remaining = Math.max(0, totalCap - totalBooked);
+
+            const statusText =
+              totalBooked >= totalCap ? "เต็ม" : totalBooked === 0 ? "ว่าง" : `เหลืออีก ${remaining} ที่`;
+
             return (
-              <button
-                key={s.time}
-                type="button"
-                disabled={disabled}
-                onClick={() => setSelectedTime(s.time)}
-                className={[
-                  "rounded-2xl py-3 text-sm font-extrabold ring-2 transition active:scale-[0.99]",
-                  disabled
-                    ? "bg-gray-200 ring-gray-200 text-black/30 cursor-not-allowed"
-                    : active
-                      ? "bg-[#F7F4E8] ring-[#F0A23A] text-black"
-                      : "bg-white ring-black/10 text-black/60",
-                ].join(" ")}
-              >
-                {s.time}
-                <div className="text-[10px] font-semibold text-black/40 mt-1">
-                  {s.booked}/{s.capacity}
+              <div className="flex flex-col items-center justify-center h-full">
+                <button
+                  key={s.time}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setSelectedTime(s.time)}
+                  className={[
+                    "rounded-2xl py-3 text-sm font-extrabold ring-2 transition active:scale-[0.99] text-left px-3",
+                    disabled
+                      ? "bg-gray-200 ring-gray-200 text-black/30 cursor-not-allowed"
+                      : active
+                        ? "bg-[#fff7ea] ring-[#F0A23A] text-black"
+                        : "bg-white ring-black/10 text-black/70 hover:bg-black/[0.02]",
+                  ].join(" ")}
+                >
+                  <div className="text-center">{s.time}</div>
+                </button>
+                <div className="mt-2 w-full text-center text-[11px] font-semibold leading-4">
+                  <div className={totalBooked >= totalCap ? "text-black/45" : "text-black/70"}>{statusText}</div>
+                  <div className="text-black/45">จองแล้ว {totalBooked}/{totalCap}</div>
+                  <div className="text-black/45">พันธุ์ใหญ่: {s.booked.large}</div>
+                  <div className="text-black/45">พันธุ์เล็ก: {s.booked.small}</div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -210,50 +275,35 @@ export default function StepSwimming(props: {
           </button>
         </div>
       </div>
-      {selectedTime && (
+
+      {selectedTime ? (
         <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-4">
           <p className="text-sm font-extrabold text-gray-900">สรุป</p>
-          <div className="rounded-2xl bg-white ring-1 ring-black/10 p-4 space-y-3 shadow-sm mt-2">
-            <p className="text-sm font-extrabold text-gray-900">รายละเอียดราคา</p>
 
-            {/* รายตัว */}
+          <p className="text-sm font-extrabold text-gray-900 mt-2">รายละเอียดราคา</p>
+          <div className="rounded-2xl bg-white ring-1 ring-black/10 p-4 space-y-3 shadow-sm mt-2">
             <div className="space-y-2">
               {priceBreakdown.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between text-sm"
-                >
+                <div key={item.id} className="flex items-center justify-between text-sm">
                   <div className="text-black/70">
-                    <span className="font-semibold text-gray-900">
-                      {item.name}
-                    </span>{" "}
-                    <span className="text-xs text-black/45">
-                      ({item.breed || "-"})
-                    </span>
+                    <span className="font-semibold text-gray-900">{item.name}</span>{" "}
+                    <span className="text-xs text-black/45">({item.breed || "-"})</span>
                   </div>
 
-                  <span className="font-extrabold text-gray-900">
-                    {item.price.toLocaleString()} บาท
-                  </span>
+                  <span className="font-extrabold text-gray-900">{item.price.toLocaleString()} บาท</span>
                 </div>
               ))}
             </div>
 
-            {/* Divider */}
             <div className="h-px bg-black/10" />
 
-            {/* Summary */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-gray-900">รวมทั้งหมด</span>
-              <span className="text-lg font-extrabold text-[#F0A23A]">
-                {total.toLocaleString()} บาท
-              </span>
+              <span className="text-lg font-extrabold text-[#F0A23A]">{total.toLocaleString()} บาท</span>
             </div>
           </div>
-
         </div>
-      )
-      }
+      ) : null}
 
       {/* ✅ Note (toggle box) */}
       <div className="rounded-2xl bg-white ring-1 ring-black/10 overflow-hidden">
@@ -265,16 +315,14 @@ export default function StepSwimming(props: {
           <div className="text-left">
             <p className="text-sm font-extrabold text-gray-900">แนบหมายเหตุ</p>
             <p className="text-xs text-black/45">
-              {note?.trim()
-                ? `มีข้อความแล้ว (${note.trim().length} ตัวอักษร)`
-                : "เพิ่มข้อความประกอบรายการ (ถ้ามี)"}
+              {note?.trim() ? `มีข้อความแล้ว (${note.trim().length} ตัวอักษร)` : "เพิ่มข้อความประกอบรายการ (ถ้ามี)"}
             </p>
           </div>
 
           <span
             className={[
               "shrink-0 rounded-full px-3 py-1 text-xs font-extrabold ring-1",
-              noteOpen ? "bg-[#F7F4E8] text-[#B25A00] ring-[#F0A23A]/40" : "bg-black/[0.04] text-black/60 ring-black/10",
+              noteOpen ? "bg-[#fff7ea] text-[#B25A00] ring-[#F0A23A]/40" : "bg-black/[0.04] text-black/60 ring-black/10",
             ].join(" ")}
           >
             {noteOpen ? "ซ่อน" : "เปิด"}
@@ -295,11 +343,7 @@ export default function StepSwimming(props: {
               <p className="text-xs text-black/45">* หมายเหตุนี้เป็นข้อความภายในรายการจอง</p>
 
               {note.trim() ? (
-                <button
-                  type="button"
-                  onClick={() => setNote("")}
-                  className="text-xs font-extrabold text-rose-600 hover:underline"
-                >
+                <button type="button" onClick={() => setNote("")} className="text-xs font-extrabold text-rose-600 hover:underline">
                   ล้างข้อความ
                 </button>
               ) : null}
@@ -327,8 +371,8 @@ export default function StepSwimming(props: {
               time: selectedTime,
               isVip,
               ownerPlay,
-              total, 
-              note: note.trim() || undefined,
+              total,
+              customerNote: note.trim() || undefined,
             })
           }
           className={[
@@ -341,9 +385,7 @@ export default function StepSwimming(props: {
       </div>
 
       {!canNext ? (
-        <p className="text-xs text-rose-600 text-center">
-          กรุณาเลือกวัน + รอบ ให้ครบ (VIP ต้องว่างสนิท)
-        </p>
+        <p className="text-xs text-rose-600 text-center">กรุณาเลือกวัน + รอบ ให้ครบ (VIP ต้องว่างสนิท และต้องมีโควต้าตามขนาด)</p>
       ) : null}
     </section>
   );

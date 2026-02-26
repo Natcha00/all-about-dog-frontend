@@ -6,8 +6,8 @@ import type { ServiceHistoryItem, ServiceKind } from "./types";
 
 const filters: { key: "all" | ServiceKind; label: string }[] = [
   { key: "all", label: "ทั้งหมด" },
-  { key: "swimming", label: "สระว่ายน้ำ" },
-  { key: "boarding", label: "ฝากเลี้ยง" },
+  { key: "SWIMMING", label: "สระว่ายน้ำ" },
+  { key: "BOARDING", label: "ฝากเลี้ยง" },
 ];
 
 function FilterChip({
@@ -27,8 +27,8 @@ function FilterChip({
         rounded-full px-4 py-2 text-sm font-semibold transition
         ring-1
         ${active
-          ? "bg-[#399199] text-white ring-[#399199]"
-          : "bg-white text-[#399199] ring-[#BFE7E9] hover:bg-[#E8F7F6]"}
+          ? "bg-[#f0a23a] text-white ring-[#f0a23a]"
+          : "bg-white text-[#f0a23a] ring-[#f0a23a] hover:bg-[#f0a23a]"}
       `}
     >
       {children}
@@ -41,7 +41,7 @@ export default function HistoryList({ items }: { items: ServiceHistoryItem[] }) 
 
   const visible = useMemo(() => {
     if (filter === "all") return items;
-    return items.filter((x) => x.kind === filter);
+    return items.filter((x) => x.type === filter);
   }, [items, filter]);
 
   return (

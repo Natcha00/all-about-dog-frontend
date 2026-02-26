@@ -1,0 +1,16 @@
+{
+  "slip": {
+    "status": "uploaded",
+    "imageUrl": "...",
+    "uploadedBy": {
+      "type": "customer",
+      "name": "ลูกค้า"
+    },
+    "uploadedAt": "2026-02-24T20:45:58+07:00",
+      "verifiedBy": {
+        "id": 3,
+        "name": "staff 01"
+      },
+      "verifiedAt": "2026-02-24T21:10:00+07:00"
+    }
+}

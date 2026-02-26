@@ -1,7 +1,7 @@
 "use client";
 
 import { fetchServiceRules, ServiceKey, ServiceRulesDTO } from "@/lib/walkin/walkin/mockServiceRules";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import SwimmingRulesTab from "./SwimmingRulesTab";
 import BoardingRulesTab from "./BoardingRulesTab";
 
@@ -15,10 +15,23 @@ export default function ServiceRulesModal(props: {
   const [tab, setTab] = useState<ServiceKey>(defaultTab);
   const [rules, setRules] = useState<Record<ServiceKey, ServiceRulesDTO> | null>(null);
 
+  // ✅ แยก ref ของ scroll แต่ละ tab
+  const swimRef = useRef<HTMLDivElement | null>(null);
+  const boardRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
     fetchServiceRules().then(setRules);
   }, [open]);
+
+  // ✅ ทุกครั้งที่เปลี่ยน tab ให้ "tab ที่ถูกเปิด" เด้งบนสุด
+  useEffect(() => {
+    if (!open) return;
+    requestAnimationFrame(() => {
+      const el = tab === "swimming" ? swimRef.current : boardRef.current;
+      if (el) el.scrollTop = 0;
+    });
+  }, [tab, open]);
 
   if (!open) return null;
 
@@ -52,7 +65,7 @@ export default function ServiceRulesModal(props: {
               className={[
                 "rounded-2xl py-2 text-sm font-extrabold ring-2 transition",
                 tab === "swimming"
-                  ? "bg-[#F7F4E8] ring-[#F0A23A] text-gray-900"
+                  ? "bg-[#fff7ea] ring-[#F0A23A] text-gray-900"
                   : "bg-white ring-black/10 text-black/60 hover:bg-black/[0.03]",
               ].join(" ")}
             >
@@ -65,7 +78,7 @@ export default function ServiceRulesModal(props: {
               className={[
                 "rounded-2xl py-2 text-sm font-extrabold ring-2 transition",
                 tab === "boarding"
-                  ? "bg-[#F7F4E8] ring-[#F0A23A] text-gray-900"
+                  ? "bg-[#fff7ea] ring-[#F0A23A] text-gray-900"
                   : "bg-white ring-black/10 text-black/60 hover:bg-black/[0.03]",
               ].join(" ")}
             >
@@ -74,14 +87,32 @@ export default function ServiceRulesModal(props: {
           </div>
         </div>
 
-        {/* Body */}
-        <div className="max-h-[65vh] overflow-y-auto px-5 py-4">
+        {/* Body: แยก scroll container ต่อ tab */}
+        <div className="px-5 py-4">
           {!rules ? (
             <div className="text-sm text-black/60">กำลังโหลดข้อมูล...</div>
-          ) : tab === "swimming" ? (
-            <SwimmingRulesTab data={rules.swimming} />
           ) : (
-            <BoardingRulesTab data={rules.boarding} />
+            <>
+              <div
+                ref={swimRef}
+                className={[
+                  "max-h-[65vh] overflow-y-auto",
+                  tab === "swimming" ? "block" : "hidden",
+                ].join(" ")}
+              >
+                <SwimmingRulesTab data={rules.swimming} />
+              </div>
+
+              <div
+                ref={boardRef}
+                className={[
+                  "max-h-[65vh] overflow-y-auto",
+                  tab === "boarding" ? "block" : "hidden",
+                ].join(" ")}
+              >
+                <BoardingRulesTab data={rules.boarding} />
+              </div>
+            </>
           )}
         </div>
 

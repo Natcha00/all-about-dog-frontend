@@ -6,20 +6,18 @@ import type { ServiceHistoryItem } from "@/components/ui/history/types";
 
 const mock: ServiceHistoryItem[] = [
   {
-    id: "202320034",
-    kind: "swimming",
-    kindLabel: "สระว่ายน้ำ",
-    iconSrc: "/icons/swimming.png",
-    startAt: "2023-03-17T14:45:00",
-    endAt: "2023-03-17T16:00:00",
+    type: "SWIMMING",
+    id: "#202320034",
+    kindLabel: "บริการว่ายน้ำ",
+    date: "2023-03-17",
+    slotLabel: "14:00 - 15:00"
   },
   {
-    id: "202330060",
-    kind: "boarding",
-    kindLabel: "รับฝากเลี้ยง",
-    iconSrc: "/icons/boarding.png",
-    startAt: "2023-04-01T10:00:00",
-    endAt: "2023-04-03T12:00:00",
+    type: "BOARDING",
+    id: "#BD20260321-0012",
+    kindLabel: "บริการฝากเลี้ยง",
+    startAt: "2026-03-21T14:00:00",
+    endAt: "2026-03-23T10:00:00"
   },
 ];
 

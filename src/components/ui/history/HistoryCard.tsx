@@ -1,6 +1,16 @@
 import React from "react";
 import type { ServiceHistoryItem } from "./types";
 
+function formatThaiDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("th-TH", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
 function formatThaiDateTime(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
@@ -15,17 +25,10 @@ function formatThaiDateTime(iso: string) {
 
 export default function HistoryCard({ item }: { item: ServiceHistoryItem }) {
   return (
-    <div
-      className="
-        rounded-3xl bg-white
-        ring-1 ring-[#399199]/60
-        shadow-sm
-        px-4 py-4
-      "
-    >
+    <div className="rounded-3xl bg-white ring-1 ring-[#f0a23a]/60 shadow-sm px-4 py-4">
       <div className="flex items-center gap-4">
         {/* Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-[#E8F7F6] ring-1 ring-[#BFE7E9] grid place-items-center overflow-hidden">
+        <div className="w-16 h-16 rounded-2xl bg-[#f7efdb] ring-1 ring-[#f0a23a] grid place-items-center overflow-hidden">
           {item.iconSrc ? (
             <img src={item.iconSrc} alt={item.kindLabel} className="w-10 h-10 object-contain" />
           ) : (
@@ -40,17 +43,37 @@ export default function HistoryCard({ item }: { item: ServiceHistoryItem }) {
           </div>
 
           <div className="mt-2 space-y-1 text-[15px] leading-relaxed">
-            <div className="flex gap-2">
-              <span className="font-extrabold text-gray-900">เข้าใช้บริการ:</span>
-              <span className="text-gray-900">{formatThaiDateTime(item.startAt)} น.</span>
-            </div>
+            {/* 🐶 ฝากเลี้ยง */}
+            {item.type === "BOARDING" && (
+              <>
+                <div className="flex gap-1">
+                  <span className="font-extrabold">ใช้บริการ:</span>
+                  <span>{formatThaiDateTime(item.startAt)} น.</span>
+                </div>
 
-            <div className="flex gap-2">
-              <span className="font-extrabold text-gray-900">ออกจากบริการ:</span>
-              <span className="text-gray-900">{formatThaiDateTime(item.endAt)} น.</span>
-            </div>
+                <div className="flex gap-1">
+                  <span className="font-extrabold">ออกบริการ:</span>
+                  <span>{formatThaiDateTime(item.endAt)} น.</span>
+                </div>
+              </>
+            )}
 
-            <div className="pt-1 text-[15px] text-gray-900">
+            {/* 🏊 ว่ายน้ำ */}
+            {item.type === "SWIMMING" && (
+              <>
+                <div className="flex gap-2">
+                  <span className="font-extrabold">วันที่:</span>
+                  <span>{formatThaiDate(item.date)}</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <span className="font-extrabold">รอบ:</span>
+                  <span>{item.slotLabel}</span>
+                </div>
+              </>
+            )}
+
+            <div className="pt-1 text-[15px]">
               (อ้างอิงรายการจอง : <span className="font-semibold">{item.id}</span>)
             </div>
           </div>

@@ -181,7 +181,7 @@ function BoardingConfirmPage() {
             </div>
   
             <div className="px-5 py-4">
-              <div className="rounded-2xl bg-[#F7F4E8]/60 ring-1 ring-black/5 p-4">
+              <div className="rounded-2xl bg-[#fff7ea]/60 ring-1 ring-black/5 p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-black/60">ราคารวม</p>
                   <p className="text-sm font-extrabold text-black/90">

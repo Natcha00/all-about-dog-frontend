@@ -17,7 +17,8 @@ export default function BookingsPage() {
   const counts = useMemo(() => {
     const base: Record<TabKey, number> = {
       pending: 0,
-      payment: 0,
+      waitingSlip: 0,
+      slipVerified:0,
       active: 0,
       finished: 0,
       cancelled: 0,
@@ -43,10 +44,6 @@ export default function BookingsPage() {
         <BookingList
           bookings={bookings}
           tab={tab}
-          onUploadSlip={(bookingId) => {
-            // ✅ จะทำเป็นหน้าแนบสลิปแยกก็ได้
-            router.push(`/booking/${bookingId}?action=upload-slip`);
-          }}
           onViewDetail={(bookingId) => {
             // ✅ ไปหน้ารายละเอียดจริง
             router.push(`/service/booking/${bookingId}`);

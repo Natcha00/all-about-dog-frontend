@@ -4,7 +4,6 @@ export function calcPetSizeByWeight(weightKg: number): PetSize {
   // ปรับ threshold ได้ตามที่ร้านกำหนด
   if (!Number.isFinite(weightKg) || weightKg <= 0) return "เล็ก";
   if (weightKg < 10) return "เล็ก";
-  if (weightKg < 20) return "กลาง";
   return "ใหญ่";
 }
 

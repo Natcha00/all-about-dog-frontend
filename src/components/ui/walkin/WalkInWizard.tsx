@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import StepPet from "./StepPet";
 import StepService from "./StepService";
 import StepBoarding from "./StepBoarding";
 import StepSwimming from "./StepSwimming";
@@ -26,10 +25,9 @@ import type {
 } from "@/lib/walkin/walkin/types.mock";
 import { EMPTY_CUSTOMER } from "@/lib/walkin/walkin/types.mock";
 import ServiceRulesModal from "./ServiceRulesModal";
+import StepPetCustomer from "./stepsPet/StepPet";
 
 type Step = "pet" | "service" | "boarding" | "swimming" | "confirm" | "success";
-
-const ORANGE = "#F0A23A";
 
 const initialPetForm: PetCreateForm = {
   imageFile: null,
@@ -88,6 +86,10 @@ export default function WalkInWizardCustomer() {
   // success
   const [successRef, setSuccessRef] = useState("");
 
+  const canGoService = selectedPets.length > 0;
+  const canGoConfirm = !!serviceType && !!booking;
+  const [showRules, setShowRules] = useState(true);
+
   // ✅ progress สำหรับ 3 tabs (สุนัข/บริการ/ยืนยัน)
   const progress = useMemo(() => {
     const map: Record<Step, number> = {
@@ -134,9 +136,6 @@ export default function WalkInWizardCustomer() {
     setSuccessRef("");
   };
 
-  const canGoService = selectedPets.length > 0;
-  const canGoConfirm = !!serviceType && !!booking;
-  const [showRules, setShowRules] = useState(true);
 
 
   return (
@@ -162,7 +161,7 @@ export default function WalkInWizardCustomer() {
 
       {/* Step 1: Pet */}
       {step === "pet" && (
-        <StepPet
+        <StepPetCustomer
           tab={petTab}
           onTabChange={setPetTab}
           selectedPets={selectedPets}

@@ -13,7 +13,7 @@ export default function BookingTabs({
   onChange: (t: TabKey) => void;
   counts: Record<TabKey, number>;
 }) {
-  const tabs: TabKey[] = ["pending", "payment", "active", "finished", "cancelled"];
+  const tabs: TabKey[] = ["pending", "waitingSlip","slipVerified", "active", "finished", "cancelled"];
 
   return (
     <div className="px-2">
@@ -32,7 +32,7 @@ export default function BookingTabs({
                 "shrink-0 px-4 py-2 rounded-2xl transition-all duration-200",
                 "text-sm font-semibold whitespace-nowrap",
                 active
-                  ? "bg-[#F7F4E8] text-gray-900 ring-2 ring-[#F0A23A] shadow-sm"
+                  ? "bg-[#fff7ea] text-gray-900 ring-2 ring-[#F0A23A] shadow-sm"
                   : "bg-white/60 text-gray-600 ring-1 ring-black/10 hover:bg-black/[0.03]",
               ].join(" ")}
             >

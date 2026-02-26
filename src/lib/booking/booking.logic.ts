@@ -2,8 +2,9 @@ import type { Booking, BookingStatus, TabKey, BillStatusEvent } from "./booking.
 
 export function statusToTab(status: BookingStatus): TabKey {
   if (status === "pending") return "pending";
-  if (status === "WaitingSlip" || status === "slip_uploaded") return "payment";
-  if (status === "slip_verified" || status === "check-in") return "active";
+  if (status === "WaitingSlip" || status === "slip_uploaded") return "waitingSlip";
+  if (status === "slip_verified") return "slipVerified";
+  if (status === "check-in") return "active";
   if (status === "finished") return "finished";
   return "cancelled";
 }
@@ -12,16 +13,19 @@ export function tabMeta(tab: TabKey) {
   switch (tab) {
     case "pending":
       return { label: "รอดำเนินการ", hint: "รอร้านอนุมัติ", tone: "neutral" as const };
-    case "payment":
+    case "waitingSlip":
       return { label: "รอชำระเงิน", hint: "แนบสลิป/รอตรวจ", tone: "warning" as const };
+    case "slipVerified":
+      return { label: "ชำระเงินแล้ว", hint: "รอเข้าใช้บริการ", tone: "success" as const };
     case "active":
-      return { label: "กำลังให้บริการ", hint: "ชำระแล้ว/เช็คอิน", tone: "info" as const };
+      return { label: "กำลังใช้บริการ", hint: "ชำระแล้ว/เช็คอิน", tone: "info" as const };
     case "finished":
       return { label: "เสร็จสิ้น", hint: "จบงานแล้ว", tone: "success" as const };
     default:
       return { label: "ยกเลิก", hint: "ถูกยกเลิก", tone: "danger" as const };
   }
 }
+
 
 export function statusLabel(status: BookingStatus) {
   switch (status) {
@@ -46,34 +50,34 @@ export function statusLabel(status: BookingStatus) {
   }
 }
 
+
 export function serviceLabel(serviceType: Booking["serviceType"]) {
   return serviceType === "boarding" ? "ฝากเลี้ยง" : "ว่ายน้ำ";
 }
 
 export function formatDateRange(b: Booking) {
-  // คุณจะเปลี่ยนเป็น date-fns ได้ภายหลัง
+  // boarding = ช่วงวันเข้า-ออก
   if (b.serviceType === "boarding") {
     return b.endAt ? `${b.startAt} – ${b.endAt}` : b.startAt;
   }
-  return b.slotLabel ? `${b.startAt} • ${b.slotLabel}` : b.startAt;
-}
 
+  // swimming = วัน + รอบ (slotLabel)
+  return b.slotLabel ? `${b.startAt}\n ${b.slotLabel}` : b.startAt;}
 
-export function statusTone(status: BookingStatus) {
+  export function statusTone(status: BookingStatus) {
     if (status === "cancelled" || status === "rejected") return "danger" as const;
     if (status === "finished") return "success" as const;
     if (status === "WaitingSlip" || status === "slip_uploaded") return "warning" as const;
-    if (status === "slip_verified" || status === "check-in") return "info" as const;
+    if (status === "slip_verified") return "success" as const;
+    if (status === "check-in") return "info" as const;
     return "neutral" as const;
   }
-  
+
   export function buildBillTimeline(b: Booking): BillStatusEvent[] {
     const base: BillStatusEvent[] = [
       { key: "pending", label: "สร้างบิล", tone: "neutral" },
       { key: "waiting_payment", label: "รอชำระเงิน", tone: "warning" },
       { key: "slip_uploaded", label: "อัปโหลดสลิปแล้ว", tone: "info" },
-  
-      // จุดที่คุณต้องการ: ใครเป็นคนตรวจ/เวลา
       {
         key: "slip_verified",
         label: "ยืนยันการชำระเงินโดยพนักงาน",
@@ -81,12 +85,10 @@ export function statusTone(status: BookingStatus) {
         at: b.verifiedAt,
         by: b.verifiedBy,
       },
-  
       { key: "checked_in", label: "Check-in", tone: "info", at: b.checkInAt },
       { key: "finished", label: "จบการใช้บริการ", tone: "success", at: b.checkOutAt },
     ];
   
-    // กรณีถูกยกเลิก/ปฏิเสธ ให้ timeline จบที่เหตุผล
     if (b.status === "cancelled") {
       return [
         ...base.slice(0, 4),
@@ -104,3 +106,28 @@ export function statusTone(status: BookingStatus) {
     return base;
   }
   
+  /** ✅ Helpers สำหรับ booking ที่มีหลายตัว */
+  export function primaryPet(b: Booking) {
+    return b.pets?.[0];
+  }
+  
+  export function petsLabel(b: Booking) {
+    if (b.petsSummary?.label) return b.petsSummary.label;
+  
+    const names = (b.pets ?? []).map((p) => p.petName).filter(Boolean);
+    if (names.length === 0) return "—";
+    if (names.length <= 3) return names.join(", ");
+    return `${names[0]}, ${names[1]} และอีก ${names.length - 2} ตัว`;
+  }
+
+  export function petsList(b: Booking): string[] {
+    const fromArray = (b.pets ?? [])
+      .map((p) => String((p as any).petName ?? "").trim())
+      .filter(Boolean);
+  
+    if (fromArray.length) return fromArray;
+  
+    // ✅ fallback กรณี mock มี petName ตัวเดียว
+    const single = String((b as any).petName ?? "").trim();
+    return single ? [single] : [];
+  }

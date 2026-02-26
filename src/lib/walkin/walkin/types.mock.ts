@@ -13,12 +13,9 @@ export type PetPicked = {
   id: number;
   name: string;
   size: "small" | "large";
-
-  // ✅ เพิ่มเพื่อคิดราคาว่ายน้ำ
-  breed?: string;       // ชื่อสายพันธุ์ (เช่น "ชิวาวา", "สุนัขไทย", "โกลเด้นรีทรีฟเวอร์")
-  weightKg?: number;    // น้ำหนักเป็นตัวเลข (เช่น 6.5)
+  breed?: string | null;   // ✅ เพิ่ม null
+  weightKg?: number | null; // ✅ ถ้า weight ก็อาจเป็น null
 };
-
 
 export type ServiceType = "boarding" | "swimming";
 

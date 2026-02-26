@@ -9,6 +9,8 @@ import SuccessSummaryCard from "@/components/ui/success/SuccessSummaryCard";
 
 import type { Booking } from "@/lib/booking/booking.types";
 import { bookingMock } from "@/lib/booking/booking.mock";
+import { QRCodeSVG } from "qrcode.react";
+import type { PetPicked, ServiceType } from "@/lib/walkin/walkin/types.mock";
 
 /* ===== labels ===== */
 
@@ -27,6 +29,79 @@ const STATUS_LABEL: Record<BookingStatus, string> = {
 
 function serviceLabel(t: Booking["serviceType"]) {
   return t === "boarding" ? "ฝากเลี้ยง" : "ว่ายน้ำ";
+}
+
+/* =========================
+   room assignment helpers
+========================= */
+
+type RoomType = "SMALL" | "LARGE" | "VIP";
+type RoomAssignment = {
+  type: RoomType;
+  roomNo: number;
+  pets: Array<{ id: number; name: string; breed?: string | null; size?: "small" | "large" }>;
+};
+
+function chunk<T>(arr: T[], size: number) {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+function buildRoomAssignments(params: {
+  pets: Array<{ id: number; name: string; size: "small" | "large"; breed?: string | null }>;
+  plan: 1 | 2 | 3;
+}): RoomAssignment[] {
+  const { pets, plan } = params;
+  if (!pets.length) return [];
+
+  if (plan === 3) {
+    return [
+      {
+        type: "VIP",
+        roomNo: 1,
+        pets: pets.map((p) => ({ ...p })),
+      },
+    ];
+  }
+
+  const small = pets.filter((p) => p.size === "small");
+  const large = pets.filter((p) => p.size === "large");
+
+  if (plan === 1) {
+    const smallRooms: RoomAssignment[] = small.map((p, idx) => ({
+      type: "SMALL",
+      roomNo: idx + 1,
+      pets: [{ ...p }],
+    }));
+    const largeRooms: RoomAssignment[] = large.map((p, idx) => ({
+      type: "LARGE",
+      roomNo: idx + 1,
+      pets: [{ ...p }],
+    }));
+    return [...smallRooms, ...largeRooms];
+  }
+
+  // plan 2: small 3/room, large 2/room
+  const smallRooms: RoomAssignment[] = chunk(small, 3).map((grp, idx) => ({
+    type: "SMALL",
+    roomNo: idx + 1,
+    pets: grp.map((p) => ({ ...p })),
+  }));
+
+  const largeRooms: RoomAssignment[] = chunk(large, 2).map((grp, idx) => ({
+    type: "LARGE",
+    roomNo: idx + 1,
+    pets: grp.map((p) => ({ ...p })),
+  }));
+
+  return [...smallRooms, ...largeRooms];
+}
+
+function planLabel(plan: 1 | 2 | 3) {
+  if (plan === 1) return "แบบ 1 : มาตรฐาน";
+  if (plan === 2) return "แบบ 2 : นอนด้วยกัน";
+  return "แบบ 3 : VIP บ้านเดี่ยว";
 }
 
 /* =========================
@@ -75,21 +150,8 @@ function buildMockHistory(status: BookingStatus): HistoryItem[] {
     WaitingSlip: ["created", "waiting_slip"],
     slip_uploaded: ["created", "waiting_slip", "slip_uploaded"],
     slip_verified: ["created", "waiting_slip", "slip_uploaded", "slip_verified"],
-    "check-in": [
-      "created",
-      "waiting_slip",
-      "slip_uploaded",
-      "slip_verified",
-      "check_in",
-    ],
-    finished: [
-      "created",
-      "waiting_slip",
-      "slip_uploaded",
-      "slip_verified",
-      "check_in",
-      "finished",
-    ],
+    "check-in": ["created", "waiting_slip", "slip_uploaded", "slip_verified", "check_in"],
+    finished: ["created", "waiting_slip", "slip_uploaded", "slip_verified", "check_in", "finished"],
     cancelled: ["created", "cancelled"],
     rejected: ["created", "rejected"],
   };
@@ -178,28 +240,16 @@ function BottomSheet({
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* overlay */}
-      <button
-        type="button"
-        aria-label="close overlay"
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-      />
+      <button type="button" aria-label="close overlay" className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      {/* sheet wrapper */}
       <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-md px-4 pb-4">
-        {/* ✅ ต้องมี max-h + flex-col + overflow-hidden */}
         <div className="rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/10 max-h-[85vh] flex flex-col overflow-hidden">
-          {/* handle */}
           <div className="flex justify-center pt-3">
             <div className="h-1.5 w-12 rounded-full bg-black/10" />
           </div>
 
-          {/* header (ไม่เลื่อน) */}
           <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
-            <div className="text-[16px] font-extrabold text-black/90">
-              {title}
-            </div>
+            <div className="text-[16px] font-extrabold text-black/90">{title}</div>
             <div className="flex items-center gap-2">
               {rightAction}
               <button
@@ -213,16 +263,12 @@ function BottomSheet({
             </div>
           </div>
 
-          {/* ✅ content (เลื่อนตรงนี้) */}
-          <div className="px-4 pb-5 overflow-y-auto">
-            {children}
-          </div>
+          <div className="px-4 pb-5 overflow-y-auto">{children}</div>
         </div>
       </div>
     </div>
   );
 }
-
 
 function TimelineList({ items }: { items: HistoryItem[] }) {
   return (
@@ -230,26 +276,16 @@ function TimelineList({ items }: { items: HistoryItem[] }) {
       <div className="divide-y divide-black/5">
         {items.map((it) => {
           const dot =
-            it.tone === "danger"
-              ? "bg-red-500"
-              : it.tone === "success"
-              ? "bg-emerald-500"
-              : "bg-emerald-500";
+            it.tone === "danger" ? "bg-red-500" : it.tone === "success" ? "bg-emerald-500" : "bg-emerald-500";
 
           return (
             <div key={it.key} className="px-4 py-3">
               <div className="flex items-start gap-3">
                 <span className={`mt-1 h-2.5 w-2.5 rounded-full ${dot}`} />
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-black">
-                    {it.label}
-                  </div>
-                  {it.at ? (
-                    <div className="mt-1 text-xs text-black/50">{it.at}</div>
-                  ) : null}
-                  {it.note ? (
-                    <div className="mt-1 text-xs text-black/60">{it.note}</div>
-                  ) : null}
+                  <div className="text-sm font-semibold text-black">{it.label}</div>
+                  {it.at ? <div className="mt-1 text-xs text-black/50">{it.at}</div> : null}
+                  {it.note ? <div className="mt-1 text-xs text-black/60">{it.note}</div> : null}
                 </div>
               </div>
             </div>
@@ -279,7 +315,6 @@ function ImagePreviewModal({
 
   return (
     <div className="fixed inset-0 z-[60]">
-      {/* overlay */}
       <button
         type="button"
         aria-label="close preview overlay"
@@ -287,13 +322,11 @@ function ImagePreviewModal({
         onClick={onClose}
       />
 
-      {/* content */}
       <div className="absolute inset-0 flex items-center justify-center p-3">
         <div
           className="relative w-full max-w-3xl rounded-2xl bg-black/30 ring-1 ring-white/10 shadow-2xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* header */}
           <div className="flex items-center justify-between px-3 py-2 bg-black/40">
             <div className="text-xs font-extrabold text-white/90">{title}</div>
             <button
@@ -306,20 +339,12 @@ function ImagePreviewModal({
             </button>
           </div>
 
-          {/* image area */}
           <div className="w-full h-[78vh] bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt="preview"
-              className="w-full h-full object-contain"
-            />
+            <img src={src} alt="preview" className="w-full h-full object-contain" />
           </div>
 
-          {/* hint */}
-          <div className="px-3 py-2 bg-black/40 text-[11px] text-white/70">
-            แตะ/คลิกพื้นหลังเพื่อปิด
-          </div>
+          <div className="px-3 py-2 bg-black/40 text-[11px] text-white/70">แตะ/คลิกพื้นหลังเพื่อปิด</div>
         </div>
       </div>
     </div>
@@ -334,9 +359,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <p className="text-gray-600 text-sm">{label}</p>
-      <div className="font-semibold text-gray-900 text-sm text-right">
-        {value}
-      </div>
+      <div className="font-semibold text-gray-900 text-sm text-right">{value}</div>
     </div>
   );
 }
@@ -352,40 +375,31 @@ function SlipUploadPanel({
   onPick: (file: File, previewUrl: string) => void;
   onSubmit: () => void;
 }) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    defaultPreview ?? null
-  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(defaultPreview ?? null);
   const [fileName, setFileName] = useState<string>("");
-
   const [openPreview, setOpenPreview] = useState(false);
 
-  // cleanup object url
   useEffect(() => {
     return () => {
       if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
 
-  // ✅ ถ้ารูปหายไป ให้ปิด modal (กันค้าง)
   useEffect(() => {
     if (!previewUrl) setOpenPreview(false);
   }, [previewUrl]);
 
   return (
     <div className="space-y-3">
-      {/* Hint */}
       <div className="text-[13px] text-black/55">
         รองรับไฟล์รูปภาพ • แนะนำให้เป็นรูปชัดเจน (mock ตอนนี้ยังไม่อัปโหลดจริง)
       </div>
 
-      {/* Card เหมือนบน */}
       <div className="rounded-2xl border border-black/10 bg-white p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-extrabold text-gray-900">แนบสลิปใหม่</p>
-            <p className="text-xs text-black/45 mt-0.5">
-              กรุณาตรวจสอบรูปและข้อมูลก่อนกดส่ง
-            </p>
+            <p className="text-xs text-black/45 mt-0.5">กรุณาตรวจสอบรูปและข้อมูลก่อนกดส่ง</p>
           </div>
 
           {previewUrl ? (
@@ -399,18 +413,11 @@ function SlipUploadPanel({
           )}
         </div>
 
-        {/* Fields แบบเดียวกับด้านบน */}
         <div className="text-sm text-gray-700 space-y-1">
-          {/* <Row label="ไฟล์" value={fileName || "-"} /> */}
           <Row label="แนบโดย" value="ลูกค้า: (mock)" />
-          <Row
-            label="เวลาแนบ"
-            value={previewUrl ? new Date().toLocaleString("th-TH") : "-"}
-          />
-          {/* <Row label="สถานะ" value={previewUrl ? "รอส่ง" : "-"} /> */}
+          <Row label="เวลาแนบ" value={previewUrl ? new Date().toLocaleString("th-TH") : "-"} />
         </div>
 
-        {/* Preview */}
         {previewUrl ? (
           <div className="rounded-2xl overflow-hidden ring-1 ring-black/10 bg-white">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -427,7 +434,6 @@ function SlipUploadPanel({
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
           <label
             className={[
@@ -448,10 +454,8 @@ function SlipUploadPanel({
                 if (!f) return;
 
                 setFileName(f.name);
-
                 const url = URL.createObjectURL(f);
                 setPreviewUrl(url);
-
                 onPick(f, url);
               }}
             />
@@ -475,13 +479,9 @@ function SlipUploadPanel({
           </button>
         </div>
 
-        {/* Small footnote */}
-        <p className="text-xs text-black/45">
-          * หลังส่งแล้ว staff จะตรวจสอบและอัปเดตสถานะการชำระเงิน
-        </p>
+        <p className="text-xs text-black/45">* หลังส่งแล้ว staff จะตรวจสอบและอัปเดตสถานะการชำระเงิน</p>
       </div>
 
-      {/* ✅ ใส่ modal เปิดรูปเต็ม ตามที่คุณต้องการ */}
       <ImagePreviewModal
         open={openPreview}
         src={previewUrl}
@@ -502,16 +502,14 @@ export default function BookingDetailPage() {
   const id = decodeURIComponent(params?.id ?? "");
 
   const booking = useMemo<Booking | undefined>(() => {
-    return bookingMock.find((b) => b.id === id);
+    return bookingMock.find((bb) => bb.id === id);
   }, [id]);
 
   const [localStatus, setLocalStatus] = useState<BookingStatus | null>(null);
 
-  // modal states
   const [openHistory, setOpenHistory] = useState(false);
   const [openSlip, setOpenSlip] = useState(false);
 
-  // slip state (mock)
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [slipPreview, setSlipPreview] = useState<string | null>(null);
 
@@ -538,41 +536,90 @@ export default function BookingDetailPage() {
   const canCancel = b.status === "pending";
   const canUploadSlip = b.status === "WaitingSlip" || b.status === "slip_uploaded";
 
+  const showQr = b.status === "slip_verified" || b.status === "check-in" || b.status === "finished";
+
+  // ✅ map booking serviceType -> walkin serviceType ("boarding" | "swimming")
+  const walkinServiceType: ServiceType = b.serviceType === "boarding" ? "boarding" : "swimming";
+
+  // ✅ 1) ดึง pets ให้ถูกกับ booking.mock (petId/petName/petSize)
+  const pickedPets = useMemo<PetPicked[]>(() => {
+    const arr = (b as any).pets as Array<any> | undefined;
+
+    if (Array.isArray(arr) && arr.length > 0) {
+      return arr.map((p) => ({
+        id: Number(p.petId ?? p.id),
+        name: String(p.petName ?? p.name ?? `ID:${p.petId ?? p.id}`),
+        size: ((p.petSize ?? p.size) === "large" ? "large" : "small") as "small" | "large",
+        breed: (p.breed ?? null) as string | null,
+        weightKg: (p.weightKg ?? null) as number | null,
+      }));
+    }
+
+    const singleName = String((b as any).petName ?? "").trim();
+    if (singleName) {
+      return [{ id: 1, name: singleName, size: "small", breed: null, weightKg: null }];
+    }
+
+    return [];
+  }, [b]);
+
+  // ✅ 2) หา plan (ประเภทห้อง)
+  const plan = useMemo(() => {
+    const p = (b as any).plan as 1 | 2 | 3 | undefined;
+    return (p === 1 || p === 2 || p === 3 ? p : 1) as 1 | 2 | 3;
+  }, [b]);
+
+  // ✅ 3) สร้าง roomAssignments เฉพาะ boarding
+  const roomAssignments = useMemo(() => {
+    if (b.serviceType !== "boarding") return undefined;
+    if (!pickedPets.length) return undefined;
+
+    // buildRoomAssignments ต้องการ {id,name,size,breed}
+    const petsForRoom = pickedPets.map((p) => ({
+      id: p.id,
+      name: p.name,
+      size: p.size,
+      breed: p.breed ?? null,
+    }));
+
+    return buildRoomAssignments({ pets: petsForRoom, plan });
+  }, [b.serviceType, pickedPets, plan]);
+
   const rows = useMemo(() => {
-    const isBoarding = b.serviceType === "boarding" && !!b.endAt;
+    const isBoarding = b.serviceType === "boarding";
+
     return [
       { label: "สถานะ", value: STATUS_LABEL[b.status] },
       { label: "รายการจอง", value: b.id },
       { label: "ประเภทบริการ", value: serviceLabel(b.serviceType) },
-      {
-        label: "วันที่จองใช้บริการ",
-        value: isBoarding ? (
-          <div className="text-right">
-            <div>{b.startAt}</div>
-            <div className="text-center">ถึง {b.endAt}</div>
-          </div>
-        ) : (
-          <div className="text-right">
-            <div>{b.startAt}</div>
-            {b.slotLabel ? <div className="text-center">{b.slotLabel}</div> : null}
-          </div>
-        ),
-      },
-      { label: "ราคา", value: `${b.price.toLocaleString()} บาท` },
+
+      ...(b.serviceType === "boarding" ? [{ label: "ประเภทห้อง", value: planLabel(plan) }] : []),
+
+      ...(isBoarding
+        ? [
+            { label: "วันที่เข้า", value: (b as any).startAt || "-" },
+            { label: "วันที่ออก", value: (b as any).endAt || "-" },
+          ]
+        : [
+            { label: "วันที่ใช้บริการ", value: (b as any).startAt || "-" },
+            { label: "รอบเวลา", value: (b as any).slotLabel || "-" },
+          ]),
+
+      { label: "ราคา", value: `${(b as any).price?.toLocaleString?.() ?? (b as any).price ?? 0} บาท` },
     ];
-  }, [b]);
+  }, [b, plan]);
 
   const historyItems = useMemo(() => {
     const items = buildMockHistory(b.status);
 
-    if (b.verifiedBy || b.verifiedAt) {
+    if ((b as any).verifiedBy || (b as any).verifiedAt) {
       return items.map((it) => {
         if (it.key !== "slip_verified") return it;
         return {
           ...it,
           note: [
-            b.verifiedBy ? `ผู้ตรวจ: ${b.verifiedBy}` : null,
-            b.verifiedAt ? `เวลา: ${b.verifiedAt}` : null,
+            (b as any).verifiedBy ? `ผู้ตรวจ: ${(b as any).verifiedBy}` : null,
+            (b as any).verifiedAt ? `เวลา: ${(b as any).verifiedAt}` : null,
           ]
             .filter(Boolean)
             .join(" • "),
@@ -580,14 +627,12 @@ export default function BookingDetailPage() {
       });
     }
 
-    if (b.cancelledReason) {
-      return items.map((it) =>
-        it.key === "cancelled" ? { ...it, note: b.cancelledReason } : it
-      );
+    if ((b as any).cancelledReason) {
+      return items.map((it) => (it.key === "cancelled" ? { ...it, note: (b as any).cancelledReason } : it));
     }
 
     return items;
-  }, [b.status, b.verifiedBy, b.verifiedAt, b.cancelledReason]);
+  }, [b]);
 
   const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
 
@@ -596,14 +641,11 @@ export default function BookingDetailPage() {
       <SuccessHeader serviceLabel="รายละเอียดการจอง" />
 
       <div className="mx-auto w-full max-w-md space-y-4">
-        {/* 0) Status strip */}
         <div className="rounded-2xl bg-white/80 ring-1 ring-black/5 shadow-sm px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs text-black/45">Booking ID</p>
-              <p className="text-sm font-extrabold text-black/90 truncate">
-                {b.id}
-              </p>
+              <p className="text-sm font-extrabold text-black/90 truncate">{b.id}</p>
             </div>
 
             <span className="shrink-0 rounded-full bg-black/[0.06] px-3 py-1 text-xs font-bold text-black/70">
@@ -612,13 +654,10 @@ export default function BookingDetailPage() {
           </div>
 
           <p className="mt-2 text-xs text-black/45">
-            {canUploadSlip
-              ? "แนบสลิปเพื่อให้พนักงานตรวจสอบ"
-              : "การแนบสลิปจะเปิดได้เฉพาะสถานะที่กำหนด"}
+            {canUploadSlip ? "แนบสลิปเพื่อให้พนักงานตรวจสอบ" : "การแนบสลิปจะเปิดได้เฉพาะสถานะที่กำหนด"}
           </p>
         </div>
 
-        {/* 1) Primary actions */}
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
@@ -643,23 +682,41 @@ export default function BookingDetailPage() {
           </button>
         </div>
 
-        {/* 2) Details card */}
+        {/* ✅ QR */}
+        {showQr ? (
+          <div className="rounded-2xl bg-white ring-1 ring-black/10 p-4">
+            <p className="font-extrabold text-gray-900 mb-2">QR การจอง</p>
+
+            <div className="rounded-2xl border border-black/10 bg-white p-4 flex flex-col items-center gap-2">
+              <QRCodeSVG value={`BOOKING:${b.id}`} size={180} marginSize={2} />
+              <p className="text-xs text-black/55 text-center">
+                แสดงหลังตรวจสลิปแล้ว (Slip Verified) • รหัส:{" "}
+                <span className="font-semibold break-all">{b.id}</span>
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {/* ✅ Details card */}
         <SuccessSummaryCard
-          title="รายละเอียดการจอง"
-          subtitle="สรุปรายการ"
+          title=""
+          subtitle=""
           rows={rows}
-          selectedTitle="สัตว์เลี้ยงที่ใช้บริการ"
-          selectedContent={b.petName}
-          totalValue={<span className="text-black/60">{b.cancelledReason ?? "-"}</span>}
-          refCode="RSV-20260004"
+          // selectedContent={
+          //   <span className="text-sm font-semibold text-black/70">
+          //     {pickedPets.length ? pickedPets.map((p) => p.name).join(", ") : "-"}
+          //   </span>
+          // }
+          totalValue={<span className="text-black/60">{(b as any).cancelledReason ?? "-"}</span>}
+          refCode={b.id}
+          serviceType={walkinServiceType} // ✅ ส่งเป็น "boarding" | "swimming"
+          petsPicked={pickedPets} // ✅ ส่งตรง ๆ (PetPicked รองรับ null แล้ว)
+          roomAssignments={roomAssignments}
         />
 
-        {/* 3) Danger zone */}
         <div className="rounded-2xl bg-white/70 ring-1 ring-black/5 p-4">
           <p className="text-sm font-extrabold text-black/80">การจัดการ</p>
-          <p className="text-xs text-black/45 mt-1">
-            การยกเลิกทำได้เฉพาะสถานะ “รออนุมัติ”
-          </p>
+          <p className="text-xs text-black/45 mt-1">การยกเลิกทำได้เฉพาะสถานะ “รออนุมัติ”</p>
 
           <button
             type="button"
@@ -667,16 +724,13 @@ export default function BookingDetailPage() {
             onClick={() => setOpenCancelConfirm(true)}
             className={[
               "mt-3 w-full rounded-2xl py-4 text-base font-extrabold transition",
-              canCancel
-                ? "bg-white text-red-600 ring-1 ring-red-200 active:scale-[0.99]"
-                : "bg-gray-200 text-gray-500",
+              canCancel ? "bg-white text-red-600 ring-1 ring-red-200 active:scale-[0.99]" : "bg-gray-200 text-gray-500",
             ].join(" ")}
           >
             {b.status === "cancelled" ? "ยกเลิกแล้ว" : "ยกเลิกการจอง"}
           </button>
         </div>
 
-        {/* 4) Back */}
         <button
           type="button"
           className="w-full rounded-2xl bg-white ring-1 ring-black/10 py-4 text-base font-extrabold text-black/80 active:scale-[0.99] transition"
@@ -685,45 +739,28 @@ export default function BookingDetailPage() {
           กลับไปหน้ารายการจอง
         </button>
 
-        {/* debug */}
-        {slipFile ? (
-          <div className="text-center text-xs text-black/40">
-            debug slip: {slipFile.name}
-          </div>
-        ) : null}
+        {slipFile ? <div className="text-center text-xs text-black/40">debug slip: {slipFile.name}</div> : null}
       </div>
 
-      {/* ✅ Modal: ประวัติสถานะ */}
       <BottomSheet
         open={openHistory}
         title="สถานะบิล"
         onClose={() => setOpenHistory(false)}
-        rightAction={
-          <span className="text-[12px] text-black/45 font-semibold">
-            ปัจจุบัน: {STATUS_LABEL[b.status]}
-          </span>
-        }
+        rightAction={<span className="text-[12px] text-black/45 font-semibold">ปัจจุบัน: {STATUS_LABEL[b.status]}</span>}
       >
         <TimelineList items={historyItems} />
       </BottomSheet>
 
-      {/* ✅ Modal: แนบสลิป */}
-      <BottomSheet
-        open={openSlip}
-        title="แนบหลักฐานการชำระเงิน"
-        onClose={() => setOpenSlip(false)}
-      >
+      <BottomSheet open={openSlip} title="แนบหลักฐานการชำระเงิน" onClose={() => setOpenSlip(false)}>
         <SlipUploadPanel
           disabled={!canUploadSlip}
-          defaultPreview={slipPreview ?? b.slipUrl ?? null}
+          defaultPreview={slipPreview ?? (b as any).slipUrl ?? null}
           onPick={(file, previewUrl) => {
             setSlipFile(file);
             setSlipPreview(previewUrl);
             setLocalStatus("slip_uploaded");
           }}
-          onSubmit={() => {
-            setOpenSlip(false);
-          }}
+          onSubmit={() => setOpenSlip(false)}
         />
       </BottomSheet>
 
@@ -737,19 +774,13 @@ export default function BookingDetailPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-4 border-b border-black/5">
-              <p className="text-base font-extrabold text-gray-900">
-                ยืนยันการยกเลิกการจอง
-              </p>
-              <p className="mt-1 text-sm text-black/55">
-                การยกเลิกไม่สามารถย้อนกลับได้
-              </p>
+              <p className="text-base font-extrabold text-gray-900">ยืนยันการยกเลิกการจอง</p>
+              <p className="mt-1 text-sm text-black/55">การยกเลิกไม่สามารถย้อนกลับได้</p>
             </div>
 
             <div className="px-5 py-4">
               <div className="rounded-2xl bg-red-50 ring-1 ring-red-100 p-4">
-                <p className="text-sm text-red-700">
-                  คุณต้องการยกเลิกรายการจองนี้ใช่หรือไม่?
-                </p>
+                <p className="text-sm text-red-700">คุณต้องการยกเลิกรายการจองนี้ใช่หรือไม่?</p>
               </div>
 
               <div className="mt-4 flex gap-3">

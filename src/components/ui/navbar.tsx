@@ -66,7 +66,7 @@ export default function Navbar({
               aria-label="โปรไฟล์"
             >
               <Image
-                src="/avatar.png"   // เปลี่ยนเป็น path รูปของคุณ
+                src="/images/user.png"   // เปลี่ยนเป็น path รูปของคุณ
                 alt="Profile"
                 fill
                 className="object-cover"

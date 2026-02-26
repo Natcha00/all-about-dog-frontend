@@ -25,7 +25,7 @@ export default function StepService(props: {
         <button
           type="button"
           onClick={() => onPick("boarding")}
-          className="rounded-3xl px-3 py-4 ring-2 ring-black/10 bg-[#F7F4E8] hover:bg-black/[0.03] transition"
+          className="rounded-3xl px-3 py-4 ring-2 ring-black/10 bg-[#fff7ea] hover:bg-black/[0.03] transition"
         >
           <div className="text-3xl">🏠</div>
           <div className="mt-1 font-extrabold">ฝากเลี้ยง</div>
@@ -35,7 +35,7 @@ export default function StepService(props: {
         <button
           type="button"
           onClick={() => onPick("swimming")}
-          className="rounded-3xl px-3 py-4 ring-2 ring-black/10 bg-[#F7F4E8] hover:bg-black/[0.03] transition"
+          className="rounded-3xl px-3 py-4 ring-2 ring-black/10 bg-[#fff7ea] hover:bg-black/[0.03] transition"
         >
           <div className="text-3xl">🏊</div>
           <div className="mt-1 font-extrabold">สระว่ายน้ำ</div>

@@ -139,7 +139,7 @@ export default function StepCustomer(props: {
           className={[
             "rounded-2xl py-3 text-sm font-extrabold ring-2 transition active:scale-[0.99]",
             mode === "new"
-              ? "bg-[#F7F4E8] ring-[#F0A23A] text-gray-900"
+              ? "bg-[#fff7ea] ring-[#F0A23A] text-gray-900"
               : "bg-white ring-black/10 text-black/60 hover:bg-black/5",
           ].join(" ")}
         >
@@ -152,7 +152,7 @@ export default function StepCustomer(props: {
           className={[
             "rounded-2xl py-3 text-sm font-extrabold ring-2 transition active:scale-[0.99]",
             mode === "existing"
-              ? "bg-[#F7F4E8] ring-[#F0A23A] text-gray-900"
+              ? "bg-[#fff7ea] ring-[#F0A23A] text-gray-900"
               : "bg-white ring-black/10 text-black/60 hover:bg-black/5",
           ].join(" ")}
         >
@@ -269,7 +269,7 @@ export default function StepCustomer(props: {
                       onClick={() => setSelectedExistingId(c.id)}
                       className={[
                         "w-full px-4 py-4 text-left transition",
-                        active ? "bg-[#F7F4E8]" : "bg-white hover:bg-black/[0.03]",
+                        active ? "bg-[#fff7ea]" : "bg-white hover:bg-black/[0.03]",
                       ].join(" ")}
                     >
                       <div className="flex items-center justify-between gap-3">

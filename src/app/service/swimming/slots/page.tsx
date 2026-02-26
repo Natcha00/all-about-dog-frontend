@@ -138,7 +138,7 @@ function SwimSlotsPage() {
   
         {/* Summary (ถ้าเลือกแล้ว) */}
         {selectedTime && (
-          <div className="rounded-2xl bg-[#F7F4E8] ring-1 ring-black/5 p-4">
+          <div className="rounded-2xl bg-[#fff7ea] ring-1 ring-black/5 p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-black/60">รอบที่เลือก</p>
               <p className="text-base font-extrabold text-black/90">
@@ -150,7 +150,7 @@ function SwimSlotsPage() {
       </div>
   
       {/* Bottom CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#F7F4E8]/95 backdrop-blur border-t border-black/5">
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#fff7ea]/95 backdrop-blur border-t border-black/5">
         <div className="mx-auto max-w-md px-6 py-4">
           <button
             type="button"

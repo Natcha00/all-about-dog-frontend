@@ -1,6 +1,6 @@
 export type Gender = "male" | "female";
 
-export type PetSize = "เล็ก" | "กลาง" | "ใหญ่";
+export type PetSize = "เล็ก" | "ใหญ่";
 
 export type NeuterStatus = "ยังไม่เคยทำหมัน" | "ทำหมันแล้ว";
 export type MicrochipStatus = "ไม่มี" | "มี";

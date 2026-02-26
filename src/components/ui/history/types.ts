@@ -1,13 +1,21 @@
-export type ServiceKind = "swimming" | "boarding";
+export type ServiceKind = "SWIMMING" | "BOARDING";
 
 export type HistoryStatus = "completed" | "cancelled";
 
-export interface ServiceHistoryItem {
-  id: string; // booking reference
-  kind: ServiceKind;
-  kindLabel: string; // "สระว่ายน้ำ" / "อาบน้ำตัดขน"
-  iconSrc?: string; // path รูปไอคอน (png/svg)
-  startAt: string; // ISO: "2023-03-17T14:45:00"
-  endAt: string;   // ISO: "2023-03-17T16:00:00"
-  status?: HistoryStatus;
-}
+export type ServiceHistoryItem =
+  | {
+      type: "BOARDING";
+      id: string;
+      kindLabel: string;
+      iconSrc?: string;
+      startAt: string;
+      endAt: string;
+    }
+  | {
+      type: "SWIMMING";
+      id: string;
+      kindLabel: string;
+      iconSrc?: string;
+      date: string;       // วันที่
+      slotLabel: string;  // รอบ เช่น 12:00
+    };

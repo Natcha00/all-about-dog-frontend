@@ -66,9 +66,9 @@ export default function StepBooking({
           onClick={() => onChange(p => ({ ...p, serviceType: "boarding" }))}
           className={`rounded-2xl py-4 ring-2 ${
             value.serviceType === "boarding"
-              ? "ring-[#399199]"
+              ? "ring-[#f0a23a]"
               : "ring-black/10"
-          } bg-[#F7F4E8]`}
+          } bg-[#fff7ea]`}
         >
           🏠 ฝากเลี้ยง
         </button>
@@ -78,9 +78,9 @@ export default function StepBooking({
           onClick={() => onChange(p => ({ ...p, serviceType: "swimming" }))}
           className={`rounded-2xl py-4 ring-2 ${
             value.serviceType === "swimming"
-              ? "ring-[#399199]"
+              ? "ring-[#f0a23a]"
               : "ring-black/10"
-          } bg-[#F7F4E8]`}
+          } bg-[#fff7ea]`}
         >
           🏊 สระว่ายน้ำ
         </button>
@@ -131,7 +131,7 @@ export default function StepBooking({
       )}
 
       {/* ราคา */}
-      <div className="rounded-2xl bg-[#F7F4E8] p-4 font-bold text-lg flex justify-between">
+      <div className="rounded-2xl bg-[#fff7ea] p-4 font-bold text-lg flex justify-between">
         <span>ราคารวม</span>
         <span>{totalPrice.toLocaleString()} บาท</span>
       </div>

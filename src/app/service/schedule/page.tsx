@@ -12,22 +12,23 @@ import MonthCalendar from "@/components/ui/schedule/MonthCalendar";
 import BookingList from "@/components/ui/schedule/BookingList";
 
 export default function SchedulePage() {
-  // 🔁 ปรับเดือนให้ตรงกับ mock (ม.ค. 2569 = 2026)
   const [anchorMonth, setAnchorMonth] = useState(() => new Date("2026-01-01T00:00:00"));
   const [selectedDate, setSelectedDate] = useState(() => new Date("2026-01-16T00:00:00"));
   const [petFilter, setPetFilter] = useState<string>("ทั้งหมด");
 
-  // ✅ รวมรายชื่อสัตว์เลี้ยง (booking.types = petName เป็น string)
+  // ✅ รวมรายชื่อสัตว์เลี้ยงจาก pets[]
   const allPets = useMemo(() => {
     const set = new Set<string>();
-    bookingMock.forEach((b) => set.add(b.petName));
+    bookingMock.forEach((b) => {
+      b.pets.forEach((p) => set.add(p.petName));
+    });
     return ["ทั้งหมด", ...Array.from(set)];
   }, []);
 
-  // ✅ filter ตามสัตว์เลี้ยง
+  // ✅ filter ตามสัตว์เลี้ยง: booking ผ่านถ้ามีอย่างน้อย 1 pet ตรง
   const filteredBookings = useMemo(() => {
     if (petFilter === "ทั้งหมด") return bookingMock;
-    return bookingMock.filter((b) => b.petName === petFilter);
+    return bookingMock.filter((b) => b.pets.some((p) => p.petName === petFilter));
   }, [petFilter]);
 
   // ✅ Map วัน -> bookings (boarding = หลายวัน, swim = วันเดียว)
@@ -52,8 +53,6 @@ export default function SchedulePage() {
   return (
     <main className="min-h-screen bg-[#F7F4E8]">
       <div className="mx-auto w-full max-w-md px-4 pt-6 pb-10 space-y-5">
-
-        {/* 1️⃣ Header */}
         <ScheduleHeader
           monthLabel={format(anchorMonth, "MMMM yyyy")}
           pets={allPets}
@@ -63,15 +62,12 @@ export default function SchedulePage() {
           onChangePet={setPetFilter}
         />
 
-        {/* 2️⃣ Calendar Section */}
         <section className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm p-4">
           <MonthCalendar
             anchorMonth={anchorMonth}
             selectedDate={selectedDate}
             onSelectDate={(d) => {
               setSelectedDate(d);
-
-              // รอ render เสร็จนิดนึงแล้วค่อย scroll
               setTimeout(() => {
                 bookingSectionRef.current?.scrollIntoView({
                   behavior: "smooth",
@@ -83,7 +79,6 @@ export default function SchedulePage() {
           />
         </section>
 
-        {/* 3️⃣ Selected Day */}
         <section ref={bookingSectionRef}>
           <div className="flex items-end justify-between gap-3">
             <div>

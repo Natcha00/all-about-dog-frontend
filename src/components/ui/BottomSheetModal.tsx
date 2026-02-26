@@ -19,7 +19,7 @@ export default function BottomSheetModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-3xl bg-[#F7F4E8] p-4 shadow-xl"
+        className="w-full max-w-md rounded-t-3xl bg-[#fff7ea] p-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {children}

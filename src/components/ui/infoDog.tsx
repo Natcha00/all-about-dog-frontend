@@ -22,7 +22,7 @@ export interface PetInfoMock {
     color: string;
     weightKg: number;
     heightCm: number;
-    size: "เล็ก" | "กลาง" | "ใหญ่";
+    size: "เล็ก" | "ใหญ่";
     birthDate: string;
     age: number;
 
@@ -129,9 +129,56 @@ function Section({
         </div>
     );
 }
-
+function parseBirthDate(birthDate: string): Date | null {
+    if (!birthDate) return null;
+  
+    // ISO: 2029-07-02
+    if (/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+      const d = new Date(`${birthDate}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  
+    // DD/MM/YYYY: 02/07/2029
+    const m = birthDate.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) {
+      const dd = Number(m[1]);
+      const mm = Number(m[2]);
+      const yyyy = Number(m[3]);
+      const d = new Date(yyyy, mm - 1, dd); // ✅ ระวัง: month ต้อง -1
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  
+    return null;
+  }
+  
+  function calcAgeThai(birthDate: string): { label: string; years: number; months: number } {
+    const birth = parseBirthDate(birthDate);
+    if (!birth) return { label: "-", years: 0, months: 0 };
+  
+    const now = new Date();
+    // ✅ กันวันเกิดอนาคต
+    if (birth > now) return { label: "ยังไม่เกิด", years: 0, months: 0 };
+  
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+  
+    // ถ้าวันของเดือนยังไม่ถึง ให้ลดเดือนลง 1
+    if (now.getDate() < birth.getDate()) months -= 1;
+  
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+  
+    const label =
+      years <= 0 ? `${months} เดือน` : months === 0 ? `${years} ปี` : `${years} ปี ${months} เดือน`;
+  
+    return { label, years, months };
+  }
+  
 export default function InfoDog({ currentItem, petInfoMock }: InfoDogProps) {
     if (currentItem !== "info") return null;
+    const age = calcAgeThai(petInfoMock.birthDate);
 
     const genderText = petInfoMock.gender === "male" ? "ผู้" : "เมีย";
     const mealTimeText =
@@ -153,7 +200,7 @@ export default function InfoDog({ currentItem, petInfoMock }: InfoDogProps) {
             <div className="space-y-3">
                 <Section title="ข้อมูลพื้นฐาน" subtitle="รายละเอียดทั่วไปของน้อง">
                     <Row icon={<PawPrint className="h-4 w-4" />} label="ชื่อ" value={petInfoMock.name} />
-                    <Row icon={<CalendarDays className="h-4 w-4" />} label="อายุ" value={`${petInfoMock.age} ปี`} />
+                    <Row icon={<CalendarDays className="h-4 w-4" />} label="อายุ" value={age.label} />
                     <Row icon={<Weight className="h-4 w-4" />} label="น้ำหนัก" value={`${petInfoMock.weightKg} กก.`} />
                     <Row icon={<Ruler className="h-4 w-4" />} label="ส่วนสูง" value={`${petInfoMock.heightCm} ซม.`} />
                     <Row icon={<Dog className="h-4 w-4" />} label="สายพันธุ์" value={petInfoMock.breed || "-"} />

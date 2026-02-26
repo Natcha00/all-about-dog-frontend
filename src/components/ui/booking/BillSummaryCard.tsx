@@ -37,11 +37,9 @@ export default function BillSummaryCard({ b }: { b: Booking }) {
       <div className="mt-4 flex items-start gap-4">
         <div className="h-16 w-16 rounded-2xl overflow-hidden bg-black/5 ring-1 ring-black/5 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={b.petImage || "/images/facedog.png"} alt={b.petName} className="h-full w-full object-cover" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[18px] font-semibold text-black/90 truncate">{b.petName}</p>
           <p className="mt-1 text-[14px] text-black/55">
             {serviceLabel(b.serviceType)} · {formatDateRange(b)}
           </p>

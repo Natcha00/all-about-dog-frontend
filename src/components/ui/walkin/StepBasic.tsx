@@ -1,11 +1,8 @@
 "use client";
 
-import { mockFetchSwimBreeds } from "@/lib/walkin/swimming/swimming.price.logic";
-import { useEffect, useState } from "react";
+import type React from "react";
 import PetAvatarPicker from "./PetAvatarPicker";
-import { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
-
-
+import type { Gender, PetCreateForm } from "@/lib/pets/pet.types";
 
 function Label({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-gray-900 mb-1.5">{children}</p>;
@@ -62,28 +59,42 @@ function SegButton(props: { active: boolean; children: React.ReactNode; onClick:
   );
 }
 
+/** ✅ คำนวณอายุจาก ISO ของ input[type=date] */
+function calcAgeFromISO(birthISO: string): { label: string; isFuture: boolean } {
+  if (!birthISO) return { label: "", isFuture: false };
+
+  const birth = new Date(`${birthISO}T00:00:00`);
+  if (Number.isNaN(birth.getTime())) return { label: "", isFuture: false };
+
+  const now = new Date();
+  if (birth > now) return { label: "ยังไม่เกิด", isFuture: true };
+
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+
+  if (now.getDate() < birth.getDate()) months -= 1;
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  const label =
+    years <= 0 ? `${months} เดือน` : months === 0 ? `${years} ปี` : `${years} ปี ${months} เดือน`;
+
+  return { label, isFuture: false };
+}
+
 export default function StepBasic(props: {
   form: PetCreateForm;
   setForm: React.Dispatch<React.SetStateAction<PetCreateForm>>;
   errors: Record<string, string>;
 }) {
   const { form, setForm, errors } = props;
-  const [breedOptions, setBreedOptions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      const breeds = await mockFetchSwimBreeds();
-      if (!alive) return;
-      setBreedOptions(breeds);
-      setLoading(false);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+  // ✅ ไม่เก็บ ageLabel ใน state แล้ว คำนวณสดจาก birthDate
+  const derivedAge = calcAgeFromISO(form.birthDate);
+
   return (
     <div className="space-y-5">
       <PetAvatarPicker
@@ -107,10 +118,7 @@ export default function StepBasic(props: {
         <div>
           <Label>เพศ*</Label>
           <div className="grid grid-cols-2 gap-3">
-            <SegButton
-              active={form.gender === "male"}
-              onClick={() => setForm((p) => ({ ...p, gender: "male" as Gender }))}
-            >
+            <SegButton active={form.gender === "male"} onClick={() => setForm((p) => ({ ...p, gender: "male" as Gender }))}>
               ผู้
             </SegButton>
             <SegButton
@@ -125,20 +133,12 @@ export default function StepBasic(props: {
 
         <div>
           <Label>พันธุ์*</Label>
-          <Select
-            value={form.breed}
-            onChange={(e) => setForm((p: any) => ({ ...p, breed: e.target.value }))}
-            disabled={loading}
-          >
-            <option value="">{loading ? "กำลังโหลด..." : "โปรดระบุ"}</option>
-
-            {breedOptions.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-
-            {/* ถ้าคุณยังอยากมี "อื่นๆ" */}
+          <Select value={form.breed} onChange={(e) => setForm((p) => ({ ...p, breed: e.target.value }))}>
+            <option value="">โปรดระบุ</option>
+            <option value="คอร์กี้">คอร์กี้</option>
+            <option value="ชิวาวา">ชิวาวา</option>
+            <option value="โกลเด้นรีทรีฟเวอร์">โกลเด้นรีทรีฟเวอร์</option>
+            <option value="ไซบีเรียนฮัสกี้">ไซบีเรียนฮัสกี้</option>
             <option value="อื่นๆ">อื่นๆ</option>
           </Select>
           {errors.breed ? <p className="mt-1 text-xs text-rose-600">{errors.breed}</p> : null}
@@ -192,9 +192,10 @@ export default function StepBasic(props: {
               className="appearance-none text-[14px]"
             />
           </div>
+
           <div>
             <Label>อายุ</Label>
-            <Input value={form.ageLabel} disabled className="bg-black/5 text-gray-700" />
+            <Input value={derivedAge.label || "-"} disabled className="bg-black/5 text-gray-700" />
           </div>
         </div>
       </div>

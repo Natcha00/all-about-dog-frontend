@@ -64,7 +64,7 @@ function BoardingSuccessPage() {
             },
             { label: "แพ็กเกจ", value: planLabel },
           ]}
-          selectedContent={petList.length > 0 ? petList.join(", ") : "-"}
+          // selectedContent={petList.length > 0 ? petList.join(", ") : "-"}
           totalValue={`${total.toLocaleString()} บาท`}
           booking={booking}  
         />

@@ -76,8 +76,8 @@ function SwimmingSuccessPage() {
 
       <div className="mx-auto w-full max-w-md space-y-4">
         <SuccessSummaryCard
-          title="รายละเอียดการจอง"
-          subtitle="ตรวจสอบข้อมูลก่อนกลับหน้า service"
+          title=""
+          subtitle=""
           rows={[
             { label: "รายการจอง", value: ref || "-" },
             { label: "วันที่ใช้บริการ", value: formatThaiDate(date) },

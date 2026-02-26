@@ -121,10 +121,10 @@ export function calcPricing(params: {
     const rooms = countRooms(assignments);
     const roomCosts = [
       ...(rooms.SMALL > 0
-        ? [{ label: `ห้องเล็ก (${rooms.SMALL} ห้อง)`, perNight: rooms.SMALL * price.PLAN1.SMALL }]
+        ? [{ label: `ตึกหมาเล็ก (${rooms.SMALL} ห้อง)`, perNight: rooms.SMALL * price.PLAN1.SMALL }]
         : []),
       ...(rooms.LARGE > 0
-        ? [{ label: `ห้องใหญ่ (${rooms.LARGE} ห้อง)`, perNight: rooms.LARGE * price.PLAN1.LARGE }]
+        ? [{ label: `ตึกหมาใหญ่ (${rooms.LARGE} ห้อง)`, perNight: rooms.LARGE * price.PLAN1.LARGE }]
         : []),
       ...(rooms.VIP > 0
         ? [{ label: `VIP (${rooms.VIP} ห้อง)`, perNight: rooms.VIP * price.PLAN1.VIP }]

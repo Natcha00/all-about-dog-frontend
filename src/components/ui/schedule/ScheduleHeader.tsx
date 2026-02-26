@@ -52,7 +52,7 @@ export default function ScheduleHeader({
           <select
             value={selectedPet}
             onChange={(e) => onChangePet(e.target.value)}
-            className="h-10 rounded-xl border border-black/40 bg-[#F7F4E8] px-3 text-base font-semibold outline-none"
+            className="h-10 rounded-xl border border-black/40 bg-[#fff7ea] px-3 text-base font-semibold outline-none"
           >
             {pets.map((p) => (
               <option key={p} value={p}>
@@ -62,7 +62,7 @@ export default function ScheduleHeader({
           </select>
           <Link
             href="/service/booking"
-            className="rounded-xl border border-black/40 bg-[#F7F4E8]
+            className="rounded-xl border border-black/40 bg-[#fff7ea]
           p-2 shadow-sm hover:bg-black/5 active:scale-[0.98]"
             aria-label="ไปหน้ารายการจองทั้งหมด"
           >
