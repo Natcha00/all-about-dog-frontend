@@ -1,12 +1,22 @@
 "use client";
 
-
-
 import { calcBoardingTotal } from "@/lib/walkin/boarding/boarding.price.logic";
 import { BoardingDraft, PetPicked } from "@/lib/walkin/walkin/types.mock";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 type Plan = 1 | 2 | 3;
 type RoomType = "SMALL" | "LARGE" | "VIP";
+
+type BoardingAvailableResponse = {
+  available: boolean;
+  message: string;
+  hint: string;
+  range: { start: string; end: string };
+  nights: number;
+  roomPerNight: { LARGE: number; SMALL: number; VIP: number };
+  package: string;
+  need: { LARGE: number; SMALL: number; VIP: number };
+  fails: Array<{ date?: string; message?: string; need?: Record<string, number>; cap?: Record<string, number> }>;
+};
 
 type RoomAssign = {
   type: RoomType;
@@ -94,80 +104,8 @@ function requiredRoomsPerNight(pets: PetPicked[], plan: Plan) {
   };
 }
 
-type DailyCapacity = {
-  SMALL: number; // ห้องว่างฝั่งหมาเล็ก
-  LARGE: number; // ห้องว่างฝั่งหมาใหญ่
-  VIP: number;   // ห้องว่าง VIP
-};
-
-// ✅ mock: ความจุห้องว่างในแต่ละคืน (คุณแทนด้วย backend ได้ทีหลัง)
-const CAPACITY_BY_DATE: Record<string, DailyCapacity> = {
-  "2026-03-16": { SMALL: 5, LARGE: 2, VIP: 1 },
-  "2026-03-17": { SMALL: 1, LARGE: 2, VIP: 1 }, // ตัวอย่าง: หมดห้องเล็ก
-  "2026-03-18": { SMALL: 7, LARGE: 0, VIP: 1 }, // ตัวอย่าง: หมดห้องใหญ่
-  "2026-03-19": { SMALL: 7, LARGE: 0, VIP: 1 }, // ตัวอย่าง: หมดห้องใหญ่
-  "2026-03-20": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
-  "2026-03-21": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
-  "2026-03-22": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
-  "2026-03-23": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
-  "2026-03-24": { SMALL: 8, LARGE: 8, VIP: 0 }, // ตัวอย่าง: VIP เต็ม
-};
-
-// คืนลิสต์คืน (คืนที่ 1..คืนสุดท้าย) เช่น start=1 end=10 => ได้คืน 1..9
-function listNights(start: string, end: string): string[] {
-  if (!start || !end) return [];
-  const s = new Date(`${start}T00:00:00`);
-  const e = new Date(`${end}T00:00:00`);
-  const out: string[] = [];
-
-  for (let d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    out.push(`${yyyy}-${mm}-${dd}`);
-  }
-  return out;
-}
-
-function checkAvailabilityRange(params: {
-  pets: PetPicked[];
-  plan: Plan;
-  start: string;
-  end: string;
-}) {
-  const { pets, plan, start, end } = params;
-  const nights = listNights(start, end);
-
-  const need = requiredRoomsPerNight(pets, plan);
-
-  const fails = nights
-    .map((date) => {
-      const cap = CAPACITY_BY_DATE[date] ?? { SMALL: 0, LARGE: 0, VIP: 0 }; // ถ้าไม่มีข้อมูล mock ให้ถือว่าว่าง (กัน dev ง่าย)
-      const ok =
-        need.SMALL <= cap.SMALL &&
-        need.LARGE <= cap.LARGE &&
-        need.VIP <= cap.VIP;
-
-      return ok
-        ? null
-        : {
-          date,
-          need,
-          cap,
-        };
-    })
-    .filter(Boolean) as Array<{
-      date: string;
-      need: { SMALL: number; LARGE: number; VIP: number };
-      cap: DailyCapacity;
-    }>;
-
-  return {
-    ok: fails.length === 0,
-    nightsCount: nights.length,
-    need,
-    fails,
-  };
+function planToPackage(plan: Plan): string {
+  return plan === 3 ? "vip" : "standard";
 }
 
 function todayISO() {
@@ -198,6 +136,10 @@ export default function StepBoarding(props: {
   const [endTime, setEndTime] = useState("18:00");
   const [plan, setPlan] = useState<1 | 2 | 3>(1);
 
+  const [availabilityResult, setAvailabilityResult] = useState<BoardingAvailableResponse | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+
   const nights = useMemo(() => (start && end ? calcNights(start, end) : 0), [start, end]);
 
   // ✅ ใช้ pricing logic จากไฟล์เดียว (อ้างอิง PetPicked size จาก mock)
@@ -212,14 +154,45 @@ export default function StepBoarding(props: {
     !!end &&
     new Date(end) > new Date(start);
 
+  useEffect(() => {
+    if (!canCheckAvailability) {
+      setAvailabilityResult(null);
+      setAvailabilityError(null);
+      return;
+    }
+    const startDateTime = `${start}T${startTime}:00`;
+    const endDateTime = `${end}T${endTime}:00`;
+    const dogIds = pets.map((p) => p.id).join(",");
+    const pkg = planToPackage(plan);
 
-  const availability = useMemo(() => {
-    if (!canCheckAvailability) return null;
-    return checkAvailabilityRange({ pets, plan, start, end });
-  }, [canCheckAvailability, pets, plan, start, end]);
+    setAvailabilityLoading(true);
+    setAvailabilityError(null);
+    const url = `/api/offering/boarding/available?${new URLSearchParams({
+      dogIds,
+      offeringType: "boarding",
+      start: startDateTime,
+      end: endDateTime,
+      package: pkg,
+    }).toString()}`;
 
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.error ?? d.detail ?? res.statusText)));
+        return res.json();
+      })
+      .then((data: BoardingAvailableResponse) => {
+        setAvailabilityResult(data);
+      })
+      .catch((e: Error) => {
+        setAvailabilityResult(null);
+        setAvailabilityError(e.message ?? "ไม่สามารถเช็คห้องว่างได้");
+      })
+      .finally(() => {
+        setAvailabilityLoading(false);
+      });
+  }, [canCheckAvailability, pets, start, end, startTime, endTime, plan]);
 
-  const isAvailableAllNights = availability?.ok ?? false;
+  const isAvailableAllNights = availabilityResult?.available ?? false;
 
   const canShowSummary =
     pets.length > 0 &&
@@ -373,45 +346,59 @@ export default function StepBoarding(props: {
 
       {/* ✅ Availability card */}
       {canCheckAvailability ? (
-        availability ? (
-          availability.ok ? (
+        availabilityLoading ? (
+          <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-4">
+            <p className="text-sm font-extrabold text-black/70">กำลังเช็คห้องว่าง...</p>
+          </div>
+        ) : availabilityError ? (
+          <div className="rounded-2xl bg-rose-50 ring-1 ring-rose-200 p-4">
+            <p className="text-sm font-extrabold text-rose-900">เกิดข้อผิดพลาด</p>
+            <p className="text-xs text-rose-800/80 mt-1">{availabilityError}</p>
+          </div>
+        ) : availabilityResult ? (
+          availabilityResult.available ? (
             <div className="rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 p-4">
-              <p className="text-sm font-extrabold text-emerald-900">ห้องว่างตลอดช่วงที่เลือก ✅</p>
+              <p className="text-sm font-extrabold text-emerald-900">{availabilityResult.message}</p>
+              {availabilityResult.hint ? (
+                <p className="text-xs text-emerald-800/80 mt-1">{availabilityResult.hint}</p>
+              ) : null}
               <p className="text-xs font-semibold  text-emerald-800/80 mt-1 ">
-                {start} ถึง {end} = {availability.nightsCount} คืน
+                {start} ถึง {end} = {availabilityResult.nights} คืน
               </p>
               <p className="text-xs text-emerald-800/80 mt-1">
                 ชนิดห้องต่อคืน:
                 {" "}
                 {plan === 3
-                  ? `VIP ${availability.need.VIP} ห้อง`
-                  : `ตึกหมาเล็ก ${availability.need.SMALL} ห้อง, ตึกหมาใหญ่ ${availability.need.LARGE} ห้อง`}
+                  ? `VIP ${availabilityResult.need.VIP} ห้อง`
+                  : `ตึกหมาเล็ก ${availabilityResult.need.SMALL} ห้อง, ตึกหมาใหญ่ ${availabilityResult.need.LARGE} ห้อง`}
               </p>
             </div>
           ) : (
             <div className="rounded-2xl bg-rose-50 ring-1 ring-rose-200 p-4">
-              <p className="text-sm font-extrabold text-rose-900">รอบการจองไม่พร้อมให้บริการ</p>
-              <p className="text-xs text-rose-800/80 mt-1">
-                กรุณาเลือกวันใหม่
-              </p>
+              <p className="text-sm font-extrabold text-rose-900">{availabilityResult.message}</p>
+              {availabilityResult.hint ? (
+                <p className="text-xs text-rose-800/80 mt-1">{availabilityResult.hint}</p>
+              ) : null}
 
               <div className="mt-2 rounded-2xl bg-white/70 ring-1 ring-black/5 p-3 space-y-2">
                 <p className="text-xs font-extrabold text-black/70">คืนที่มีปัญหา</p>
 
                 <div className="space-y-2 overflow-y-auto max-h-56 m-1 p-1">
-                  {availability.fails.map((f) => {
-                    const smallNotEnough = f.need.SMALL > f.cap.SMALL;
-                    const largeNotEnough = f.need.LARGE > f.cap.LARGE;
-                    const vipNotEnough = f.need.VIP > f.cap.VIP;
+                  {availabilityResult.fails.map((f, idx) => {
+                    const smallNotEnough = (f.need?.SMALL ?? 0) > (f.cap?.SMALL ?? 0);
+                    const largeNotEnough = (f.need?.LARGE ?? 0) > (f.cap?.LARGE ?? 0);
+                    const vipNotEnough = (f.need?.VIP ?? 0) > (f.cap?.VIP ?? 0);
+                    const need = f.need ?? { SMALL: 0, LARGE: 0, VIP: 0 };
+                    const cap = f.cap ?? { SMALL: 0, LARGE: 0, VIP: 0 };
 
                     return (
                       <div
-                        key={f.date}
+                        key={f.date ?? idx}
                         className="rounded-2xl bg-white ring-1 ring-rose-200 p-3 space-y-2"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-extrabold text-gray-900">
-                            {f.date}
+                            {f.date ?? "—"}
                           </span>
 
                           <span className="rounded-full bg-rose-100 px-2 py-1 text-xs font-extrabold text-rose-700">
@@ -419,56 +406,50 @@ export default function StepBoarding(props: {
                           </span>
                         </div>
 
-                        {/* ต้องใช้ */}
                         <div className="text-xs text-gray-600">
                           <span className="font-semibold text-gray-800">ต้องการจอง:</span>{" "}
                           {plan === 3 ? (
                             <span className={vipNotEnough ? "text-rose-600 font-bold" : ""}>
-                              VIP {f.need.VIP}
+                              VIP {need.VIP}
                             </span>
                           ) : (
                             <>
                               <span className={smallNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ตึกหมาเล็ก {f.need.SMALL}
+                                ตึกหมาเล็ก {need.SMALL}
                               </span>
                               {" • "}
                               <span className={largeNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ตึกหมาใหญ่ {f.need.LARGE}
+                                ตึกหมาใหญ่ {need.LARGE}
                               </span>
                             </>
                           )}
                         </div>
 
-                        {/* ว่าง */}
                         <div className="text-xs text-gray-600">
                           <span className="font-semibold text-gray-800">ห้องคงเหลือ:</span>{" "}
                           {plan === 3 ? (
                             <span className={vipNotEnough ? "text-rose-600 font-bold" : ""}>
-                              VIP {f.cap.VIP}
+                              VIP {cap.VIP}
                             </span>
                           ) : (
                             <>
                               <span className={smallNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ตึกหมาเล็ก {f.cap.SMALL}
+                                ตึกหมาเล็ก {cap.SMALL}
                               </span>
                               {" • "}
                               <span className={largeNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ตึกหมาใหญ่ {f.cap.LARGE}
+                                ตึกหมาใหญ่ {cap.LARGE}
                               </span>
                             </>
                           )}
                         </div>
+                        {f.message ? (
+                          <p className="text-xs text-rose-700">{f.message}</p>
+                        ) : null}
                       </div>
                     );
                   })}
-
                 </div>
-
-                {/* {availability.fails.length > 3 ? (
-                  <p className="text-[11px] text-black/45">
-                    และอีก {availability.fails.length - 3} คืน…
-                  </p>
-                ) : null} */}
               </div>
             </div>
           )
