@@ -60,18 +60,36 @@ function calcNights(start: string, end: string) {
   return Math.max(1, Math.ceil(diff));
 }
 
+export type BoardingFormState = {
+  start: string;
+  end: string;
+  startTime: string;
+  endTime: string;
+  plan: 1 | 2 | 3;
+  note: string;
+};
+
 export default function StepBoarding(props: {
   pets: PetPicked[];
+  form: BoardingFormState;
+  setForm: React.Dispatch<React.SetStateAction<BoardingFormState>>;
   onBack: () => void;
   onNext: (draft: BoardingDraft) => void;
 }) {
-  const { pets, onBack, onNext } = props;
+  const { pets, form, setForm, onBack, onNext } = props;
 
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("18:00");
-  const [plan, setPlan] = useState<1 | 2 | 3>(1);
+  const start = form.start;
+  const setStart = (v: string) => setForm((p) => ({ ...p, start: v }));
+  const end = form.end;
+  const setEnd = (v: string) => setForm((p) => ({ ...p, end: v }));
+  const startTime = form.startTime;
+  const setStartTime = (v: string) => setForm((p) => ({ ...p, startTime: v }));
+  const endTime = form.endTime;
+  const setEndTime = (v: string) => setForm((p) => ({ ...p, endTime: v }));
+  const plan = form.plan;
+  const setPlan = (v: 1 | 2 | 3) => setForm((p) => ({ ...p, plan: v }));
+  const note = form.note;
+  const setNote = (v: string) => setForm((p) => ({ ...p, note: v }));
 
   const [availabilityResult, setAvailabilityResult] = useState<BoardingAvailableResponse | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
@@ -180,7 +198,6 @@ export default function StepBoarding(props: {
   const roomGroups = pricingResult?.groups ?? [];
 
 
-  const [note, setNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
 
 
@@ -541,6 +558,8 @@ export default function StepBoarding(props: {
               endTime,
               plan,
               total,
+              package: planToPackage(plan),
+              lines: pricingResult?.lines ?? [],
               customerNote: note,
             })
           }

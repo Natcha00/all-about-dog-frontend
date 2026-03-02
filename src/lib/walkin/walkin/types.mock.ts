@@ -19,6 +19,14 @@ export type PetPicked = {
 
 export type ServiceType = "boarding" | "swimming";
 
+export type ReservationConfirmLine = {
+  offeringId: number;
+  dogId: number;
+  price: number;
+  quantity: number;
+  groupNumber: number;
+};
+
 export type BoardingDraft = {
   serviceType: "boarding";
   start: string;
@@ -27,8 +35,9 @@ export type BoardingDraft = {
   endTime: string;
   plan: 1 | 2 | 3;
   total: number;
-
-  customerNote?: string; // ✅ หมายเหตุจากลูกค้า
+  package?: string;
+  lines?: ReservationConfirmLine[];
+  customerNote?: string;
 };
 
 export type SwimmingDraft = {
@@ -38,8 +47,9 @@ export type SwimmingDraft = {
   isVip: boolean;
   ownerPlay: boolean;
   total: number;
-
-  customerNote?: string; // ✅ หมายเหตุจากลูกค้า
+  package?: string;
+  lines?: ReservationConfirmLine[];
+  customerNote?: string;
 };
 
 export type BookingDraft = BoardingDraft | SwimmingDraft;

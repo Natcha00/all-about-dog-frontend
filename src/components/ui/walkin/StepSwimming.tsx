@@ -1,18 +1,31 @@
 "use client";
 
-import { swimPricePerDog, swimTotalPrice } from "@/lib/walkin/swimming/swimming.price.logic";
 import { PetPicked, SwimmingDraft } from "@/lib/walkin/walkin/types.mock";
 import React, { useEffect, useMemo, useState } from "react";
 
-/**
- * ✅ Slot แบบแยกขนาดเพื่อกัน "กัดกัน"
- * capacity: โควต้าต่อรอบแยก small/large
- * booked: จำนวนที่ถูกจองแล้วแยก small/large
- */
-type Slot = {
+type SwimmingSlot = {
   time: string;
-  capacity: { small: number; large: number };
-  booked: { small: number; large: number };
+  capacity: number;
+  booked: number;
+  remaining: number;
+  statusLabel: string;
+  isFull: boolean;
+  isEmpty: boolean;
+  sizeBooked: { large: number; small: number };
+};
+
+type SwimmingPackagePricingResponse = {
+  offerType: string;
+  date: string;
+  petsSummary: { total: number; small: number; large: number; label: string };
+  rules: { ownerPlayHint: string; slotHint: string };
+  slots: SwimmingSlot[];
+  pricing: {
+    currency: string;
+    items: Array<{ dogId: number; name: string; breed: string; price: number }>;
+    total: number;
+  };
+  lines: unknown[];
 };
 
 function todayISO() {
@@ -23,148 +36,109 @@ function todayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function countPicked(pets: PetPicked[]) {
-  return pets.reduce(
-    (acc, p) => {
-      if (p.size === "large") acc.large += 1;
-      else acc.small += 1;
-      return acc;
-    },
-    { small: 0, large: 0 },
-  );
+function isSlotSelectable(slot: SwimmingSlot, isVip: boolean, petCount: number) {
+  if (isVip) return slot.isEmpty;
+  return !slot.isFull && slot.remaining >= petCount;
 }
 
-/**
- * ✅ เลือกได้ไหม
- * - VIP: ต้องว่างสนิททั้ง small/large และต้องพอจุตามขนาด
- * - ปกติ: ต้องมีที่ว่างพอตามขนาด
- */
-function isSelectable(slot: Slot, isVip: boolean, pets: PetPicked[]) {
-  const need = countPicked(pets);
-
-  const totalCap = slot.capacity.small + slot.capacity.large;
-  const totalBooked = slot.booked.small + slot.booked.large;
-
-  // ถ้าเลือกมาเกินความจุรวม (กันเคสแปลก ๆ)
-  if (need.small + need.large > totalCap) return false;
-
-  if (isVip) {
-    const empty = totalBooked === 0;
-    const enough =
-      need.small <= slot.capacity.small &&
-      need.large <= slot.capacity.large;
-    return empty && enough;
-  }
-
-  const availSmall = slot.capacity.small - slot.booked.small;
-  const availLarge = slot.capacity.large - slot.booked.large;
-
-  return need.small <= availSmall && need.large <= availLarge;
-}
-
-/**
- * ✅ mock slots by date
- * (ทำให้เลขใน UI สื่อว่า: จองแล้ว x/y + แยก small/large)
- */
-const SLOTS_BY_DATE: Record<string, Slot[]> = {
-  "2026-03-20": [
-    { time: "10:00", capacity: { small: 3, large: 2 }, booked: { small: 2, large: 0 } }, // จองแล้ว 2/5 (เล็ก2 ใหญ่0)
-    { time: "11:00", capacity: { small: 2, large: 3 }, booked: { small: 0, large: 3 } }, // จองแล้ว 3/5 (เล็ก0 ใหญ่3)
-    { time: "12:00", capacity: { small: 3, large: 2 }, booked: { small: 0, large: 0 } }, // ว่าง
-    { time: "13:00", capacity: { small: 3, large: 2 }, booked: { small: 0, large: 2 } }, // จองแล้ว 2/5 (เล็ก0 ใหญ่2)
-    { time: "14:00", capacity: { small: 2, large: 3 }, booked: { small: 2, large: 3 } }, // เต็ม 5/5
-    { time: "15:00", capacity: { small: 3, large: 2 }, booked: { small: 0, large: 3 } }, // (ถ้าเกิน capacity.large ให้ปรับ)
-    { time: "16:00", capacity: { small: 2, large: 3 }, booked: { small: 0, large: 4 } }, // (ตัวอย่างเลข—ควรไม่เกิน capacity.large)
-    { time: "17:00", capacity: { small: 4, large: 1 }, booked: { small: 1, large: 0 } },
-  ],
-  "2026-03-21": [
-    { time: "10:00", capacity: { small: 4, large: 2 }, booked: { small: 1, large: 0 } },
-    { time: "11:00", capacity: { small: 4, large: 2 }, booked: { small: 4, large: 2 } }, // เต็ม
-    { time: "12:00", capacity: { small: 4, large: 2 }, booked: { small: 1, large: 1 } },
-    { time: "13:00", capacity: { small: 4, large: 2 }, booked: { small: 2, large: 2 } },
-    { time: "14:00", capacity: { small: 4, large: 2 }, booked: { small: 0, large: 0 } }, // ว่าง
-    { time: "15:00", capacity: { small: 4, large: 2 }, booked: { small: 3, large: 0 } },
-  ],
-  "2026-03-22": [
-    { time: "10:00", capacity: { small: 2, large: 2 }, booked: { small: 2, large: 2 } }, // เต็ม
-    { time: "11:00", capacity: { small: 2, large: 2 }, booked: { small: 1, large: 1 } },
-    { time: "12:00", capacity: { small: 2, large: 2 }, booked: { small: 1, large: 0 } },
-    { time: "13:00", capacity: { small: 2, large: 2 }, booked: { small: 0, large: 0 } },
-    { time: "14:00", capacity: { small: 2, large: 2 }, booked: { small: 1, large: 2 } },
-    { time: "15:00", capacity: { small: 2, large: 2 }, booked: { small: 1, large: 0 } },
-  ],
+export type SwimmingFormState = {
+  dateISO: string;
+  selectedTime: string;
+  isVip: boolean;
+  ownerPlay: boolean;
+  note: string;
 };
 
 export default function StepSwimming(props: {
   pets: PetPicked[];
+  form: SwimmingFormState;
+  setForm: React.Dispatch<React.SetStateAction<SwimmingFormState>>;
   onBack: () => void;
   onNext: (draft: SwimmingDraft) => void;
 }) {
-  const { pets, onBack, onNext } = props;
+  const { pets, form, setForm, onBack, onNext } = props;
 
-  const [dateISO, setDateISO] = useState<string>(todayISO());
-  const [selectedTime, setSelectedTime] = useState<string>("");
+  const dateISO = form.dateISO;
+  const setDateISO = (v: string) => setForm((p) => ({ ...p, dateISO: v }));
+  const selectedTime = form.selectedTime;
+  const setSelectedTime = (v: string) => setForm((p) => ({ ...p, selectedTime: v }));
+  const isVip = form.isVip;
+  const setIsVip = (v: boolean) => setForm((p) => ({ ...p, isVip: v }));
+  const ownerPlay = form.ownerPlay;
+  const setOwnerPlay = (v: boolean) => setForm((p) => ({ ...p, ownerPlay: v }));
+  const note = form.note;
+  const setNote = (v: string) => setForm((p) => ({ ...p, note: v }));
 
-  const [isVip, setIsVip] = useState<boolean>(false);
-  const [ownerPlay, setOwnerPlay] = useState<boolean>(false);
+  const [swimmingResult, setSwimmingResult] = useState<SwimmingPackagePricingResponse | null>(null);
+  const [swimmingLoading, setSwimmingLoading] = useState(false);
+  const [swimmingError, setSwimmingError] = useState<string | null>(null);
 
-  const slots: Slot[] = useMemo(() => {
-    return SLOTS_BY_DATE[dateISO] ?? [];
-  }, [dateISO]);
+  const canFetchSwimming = !!dateISO && pets.length > 0;
 
-  // ✅ เปลี่ยนวันแล้วล้างเวลาที่เลือก
+  useEffect(() => {
+    if (!canFetchSwimming) {
+      setSwimmingResult(null);
+      setSwimmingError(null);
+      return;
+    }
+    const dogIds = pets.map((p) => p.id).join(",");
+    const pkg = isVip ? "vip" : "standard";
+
+    setSwimmingLoading(true);
+    setSwimmingError(null);
+    const url = `/api/offering/swimming/package-pricing?${new URLSearchParams({
+      dogIds,
+      offeringType: "swimming",
+      date: dateISO,
+      package: pkg,
+    }).toString()}`;
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.error ?? d.detail ?? res.statusText)));
+        return res.json();
+      })
+      .then((data: SwimmingPackagePricingResponse) => {
+        setSwimmingResult(data);
+      })
+      .catch((e: Error) => {
+        setSwimmingResult(null);
+        setSwimmingError(e.message ?? "ไม่สามารถโหลดรอบและราคาได้");
+      })
+      .finally(() => {
+        setSwimmingLoading(false);
+      });
+  }, [canFetchSwimming, dateISO, pets, isVip]);
+
+  const slots: SwimmingSlot[] = swimmingResult?.slots ?? [];
+
+  // เปลี่ยนวันแล้วล้างเวลาที่เลือก
   useEffect(() => {
     setSelectedTime("");
   }, [dateISO]);
 
-  // ✅ ถ้าเปิด VIP แล้ว "รอบนี้เลือกไม่ได้" -> reset
+  // ถ้าเปิด VIP แล้ว "รอบนี้เลือกไม่ได้" -> reset
   useEffect(() => {
-    if (!isVip) return;
-    if (!selectedTime) return;
-
+    if (!isVip || !selectedTime) return;
     const slot = slots.find((s) => s.time === selectedTime);
     if (!slot) return;
+    if (!isSlotSelectable(slot, true, pets.length)) setSelectedTime("");
+  }, [isVip, selectedTime, slots, pets.length]);
 
-    if (!isSelectable(slot, true, pets)) setSelectedTime("");
-  }, [isVip, selectedTime, slots, pets]);
-
-  // ✅ ทำข้อมูลให้ตรง SwimPetInfo (breed/weight เป็น optional ได้)
-  const petsForPricing = useMemo(
-    () =>
-      pets.map((p) => ({
-        breed: p.breed?.trim() || undefined,
-        weightKg: typeof p.weightKg === "number" && Number.isFinite(p.weightKg) ? p.weightKg : undefined,
-      })),
-    [pets],
-  );
-
-  // ✅ คิดเงินตาม breed/weight
-  const total: number = useMemo(() => {
-    return swimTotalPrice(petsForPricing);
-  }, [petsForPricing]);
+  const total = swimmingResult?.pricing?.total ?? 0;
+  const priceBreakdown = swimmingResult?.pricing?.items ?? [];
+  const petsSummaryLabel = swimmingResult?.petsSummary?.label ?? `สุนัขของฉัน เล็ก ${pets.filter((p) => p.size === "small").length} • ใหญ่ ${pets.filter((p) => p.size === "large").length}`;
+  const slotHint = swimmingResult?.rules?.slotHint ?? "เลือกรอบที่รองรับขนาดใกล้เคียงกับน้อง ๆ เพื่อป้องกันอุบัติเหตุ";
+  const ownerPlayHint = swimmingResult?.rules?.ownerPlayHint ?? "ฟรี (เลือกได้)";
 
   const canNext = useMemo(() => {
-    if (!dateISO || !selectedTime) return false;
+    if (!dateISO || !selectedTime || !swimmingResult) return false;
     const slot = slots.find((s) => s.time === selectedTime);
     if (!slot) return false;
-    return isSelectable(slot, isVip, pets);
-  }, [dateISO, selectedTime, isVip, slots, pets]);
+    return isSlotSelectable(slot, isVip, pets.length);
+  }, [dateISO, selectedTime, isVip, slots, pets.length, swimmingResult]);
 
-  const priceBreakdown = useMemo(() => {
-    return pets.map((p) => ({
-      id: p.id,
-      name: p.name,
-      breed: p.breed,
-      price: swimPricePerDog({breed: p.breed ?? undefined, weightKg: p.weightKg ?? undefined, }),
-    }));
-  }, [
-    pets.map(p => `${p.id}|${p.breed ?? ""}|${p.weightKg ?? ""}`).join("::")
-  ]);
-
-  const [note, setNote] = useState<string>("");
   const [noteOpen, setNoteOpen] = useState<boolean>(false);
-
-  const need = useMemo(() => countPicked(pets), [pets]);
 
   return (
     <section className="rounded-3xl bg-white/70 ring-1 ring-black/5 shadow-sm p-5 space-y-4">
@@ -189,31 +163,30 @@ export default function StepSwimming(props: {
           <div>
             <p className="text-sm font-extrabold text-gray-900">เลือกรอบ</p>
             <p className="text-xs text-black/45 mt-0.5">
-              เลือกรอบที่รองรับขนาดใกล้เคียงกับน้อง ๆ เพื่อป้องกันอุบัติเหตุ
+              {slotHint}
             </p>
           </div>
 
           <div className="shrink-0 rounded-2xl bg-black/[0.03] ring-1 ring-black/5 px-3 py-2 text-xs font-extrabold text-black/60">
-            สุนัขของฉัน เล็ก {need.small} • ใหญ่ {need.large}
+            {petsSummaryLabel}
           </div>
         </div>
 
+        {swimmingLoading ? (
+          <p className="text-sm text-black/50 py-4">กำลังโหลดรอบ...</p>
+        ) : swimmingError ? (
+          <p className="text-sm text-rose-600 py-4">{swimmingError}</p>
+        ) : slots.length === 0 ? (
+          <p className="text-sm text-black/50 py-4">ไม่มีรอบในวันนี้</p>
+        ) : (
         <div className="grid grid-cols-3 gap-3">
           {slots.map((s) => {
-            const disabled = !isSelectable(s, isVip, pets);
+            const disabled = !isSlotSelectable(s, isVip, pets.length);
             const active = selectedTime === s.time;
 
-            const totalCap = s.capacity.small + s.capacity.large;
-            const totalBooked = s.booked.small + s.booked.large;
-            const remaining = Math.max(0, totalCap - totalBooked);
-
-            const statusText =
-              totalBooked >= totalCap ? "เต็ม" : totalBooked === 0 ? "ว่าง" : `เหลืออีก ${remaining} ที่`;
-
             return (
-              <div className="flex flex-col items-center justify-center h-full">
+              <div key={s.time} className="flex flex-col items-center justify-center h-full">
                 <button
-                  key={s.time}
                   type="button"
                   disabled={disabled}
                   onClick={() => setSelectedTime(s.time)}
@@ -229,15 +202,16 @@ export default function StepSwimming(props: {
                   <div className="text-center">{s.time}</div>
                 </button>
                 <div className="mt-2 w-full text-center text-[11px] font-semibold leading-4">
-                  <div className={totalBooked >= totalCap ? "text-black/45" : "text-black/70"}>{statusText}</div>
-                  <div className="text-black/45">จองแล้ว {totalBooked}/{totalCap}</div>
-                  <div className="text-black/45">พันธุ์ใหญ่: {s.booked.large}</div>
-                  <div className="text-black/45">พันธุ์เล็ก: {s.booked.small}</div>
+                  <div className={s.isFull ? "text-black/45" : "text-black/70"}>{s.statusLabel}</div>
+                  <div className="text-black/45">จองแล้ว {s.booked}/{s.capacity}</div>
+                  <div className="text-black/45">พันธุ์ใหญ่: {s.sizeBooked.large}</div>
+                  <div className="text-black/45">พันธุ์เล็ก: {s.sizeBooked.small}</div>
                 </div>
               </div>
             );
           })}
         </div>
+        )}
 
         <div className="flex items-start gap-3 pt-2">
           <input
@@ -255,12 +229,12 @@ export default function StepSwimming(props: {
         <div className="flex items-start justify-between gap-3 pt-1">
           <div>
             <p className="text-sm font-extrabold text-gray-900">เจ้าของลงเล่นกับสุนัข</p>
-            <p className="text-xs text-black/45">ฟรี (เลือกได้)</p>
+            <p className="text-xs text-black/45">{ownerPlayHint}</p>
           </div>
 
           <button
             type="button"
-            onClick={() => setOwnerPlay((v) => !v)}
+            onClick={() => setOwnerPlay(!ownerPlay)}
             className={[
               "relative inline-flex h-9 w-16 items-center rounded-full transition",
               ownerPlay ? "bg-emerald-500" : "bg-gray-200",
@@ -284,7 +258,7 @@ export default function StepSwimming(props: {
           <div className="rounded-2xl bg-white ring-1 ring-black/10 p-4 space-y-3 shadow-sm mt-2">
             <div className="space-y-2">
               {priceBreakdown.map((item) => (
-                <div key={item.id} className="flex items-center justify-between text-sm">
+                <div key={item.dogId} className="flex items-center justify-between text-sm">
                   <div className="text-black/70">
                     <span className="font-semibold text-gray-900">{item.name}</span>{" "}
                     <span className="text-xs text-black/45">({item.breed || "-"})</span>
@@ -372,6 +346,8 @@ export default function StepSwimming(props: {
               isVip,
               ownerPlay,
               total,
+              package: isVip ? "vip" : "standard",
+              lines: swimmingResult?.lines ?? [],
               customerNote: note.trim() || undefined,
             })
           }

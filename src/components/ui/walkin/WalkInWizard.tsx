@@ -26,8 +26,35 @@ import type {
 import { EMPTY_CUSTOMER } from "@/lib/walkin/walkin/types.mock";
 import ServiceRulesModal from "./ServiceRulesModal";
 import StepPetCustomer from "./stepsPet/StepPet";
+import type { BoardingFormState } from "./StepBoarding";
+import type { SwimmingFormState } from "./StepSwimming";
 
 type Step = "pet" | "service" | "boarding" | "swimming" | "confirm" | "success";
+
+function getTodayISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+const initialBoardingForm: BoardingFormState = {
+  start: "",
+  end: "",
+  startTime: "09:00",
+  endTime: "18:00",
+  plan: 1,
+  note: "",
+};
+
+const getInitialSwimmingForm = (): SwimmingFormState => ({
+  dateISO: getTodayISO(),
+  selectedTime: "",
+  isVip: false,
+  ownerPlay: false,
+  note: "",
+});
 
 const initialPetForm: PetCreateForm = {
   imageFile: null,
@@ -83,6 +110,12 @@ export default function WalkInWizardCustomer() {
   // booking draft
   const [booking, setBooking] = useState<BookingDraft | null>(null);
 
+  // boarding form (เก็บเมื่อย้อนกลับจาก confirm)
+  const [boardingForm, setBoardingForm] = useState<BoardingFormState>(initialBoardingForm);
+
+  // swimming form (เก็บเมื่อย้อนกลับจาก confirm)
+  const [swimmingForm, setSwimmingForm] = useState<SwimmingFormState>(getInitialSwimmingForm);
+
   // success
   const [successRef, setSuccessRef] = useState("");
 
@@ -133,6 +166,8 @@ export default function WalkInWizardCustomer() {
     setPetErrors({});
     setServiceType(null);
     setBooking(null);
+    setBoardingForm(initialBoardingForm);
+    setSwimmingForm(getInitialSwimmingForm());
     setSuccessRef("");
   };
 
@@ -194,6 +229,15 @@ export default function WalkInWizardCustomer() {
           onPick={(t) => {
             setServiceType(t);
             setStep(t); // "boarding" | "swimming"
+            // เมื่อเปลี่ยนบริการ ให้เคลียร์ฟอร์มและ draft ของบริการที่ไม่ได้เลือก
+            if (t === "boarding") {
+              setSwimmingForm(getInitialSwimmingForm());
+              setBooking(null);
+            }
+            if (t === "swimming") {
+              setBoardingForm(initialBoardingForm);
+              setBooking(null);
+            }
           }}
         />
       )}
@@ -202,6 +246,8 @@ export default function WalkInWizardCustomer() {
       {step === "boarding" && serviceType === "boarding" && (
         <StepBoarding
           pets={selectedPets}
+          form={boardingForm}
+          setForm={setBoardingForm}
           onBack={() => setStep("service")}
           onNext={(draft) => {
             setBooking(draft);
@@ -214,6 +260,8 @@ export default function WalkInWizardCustomer() {
       {step === "swimming" && serviceType === "swimming" && (
         <StepSwimming
           pets={selectedPets}
+          form={swimmingForm}
+          setForm={setSwimmingForm}
           onBack={() => setStep("service")}
           onNext={(draft) => {
             setBooking(draft);
