@@ -11,29 +11,23 @@ export type PetCreateForm = {
   // basic
   imageFile?: File | null;
   imagePreview?: string;
-
   name: string;
   gender: Gender | "";
   breed: string;
-
   color: string;
   weightKg: string;   // เก็บเป็น string เพื่อ input ง่าย
   heightCm: string;
-
   size: PetSize;      // คำนวณอัตโนมัติจาก weight
   birthDate: string;  // yyyy-mm-dd
   ageLabel: string;   // คำนวณจาก birthDate
 
   // health
-  neuterStatus: NeuterStatus;
-  microchipStatus: MicrochipStatus;
+  neuterStatus: NeuterStatus | "";
+  microchipStatus: MicrochipStatus | "";
   bloodType: string;
-
   disease: string;
   allergies: string;
-
   meals: Record<MealKey, boolean>;
   mealCount: number;
-
   notes: string;
 };

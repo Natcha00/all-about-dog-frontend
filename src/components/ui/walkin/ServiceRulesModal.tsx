@@ -1,6 +1,7 @@
 "use client";
 
-import { fetchServiceRules, ServiceKey, ServiceRulesDTO } from "@/lib/walkin/walkin/mockServiceRules";
+import type { ServiceKey, ServiceRulesDTO } from "@/lib/walkin/walkin/mockServiceRules";
+import { mapAnnouncementToServiceRules } from "@/lib/walkin/walkin/announcementApi";
 import React, { useEffect, useRef, useState } from "react";
 import SwimmingRulesTab from "./SwimmingRulesTab";
 import BoardingRulesTab from "./BoardingRulesTab";
@@ -14,14 +15,31 @@ export default function ServiceRulesModal(props: {
 
   const [tab, setTab] = useState<ServiceKey>(defaultTab);
   const [rules, setRules] = useState<Record<ServiceKey, ServiceRulesDTO> | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // ✅ แยก ref ของ scroll แต่ละ tab
   const swimRef = useRef<HTMLDivElement | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-    fetchServiceRules().then(setRules);
+    if (!open) {
+      setRules(null);
+      setError(null);
+      return;
+    }
+    fetch("/api/offering/announcement")
+      .then((res) => {
+        if (!res.ok) return res.json().then((b) => Promise.reject(new Error(b.detail ?? b.error ?? res.statusText)));
+        return res.json();
+      })
+      .then((data) => {
+        setRules(mapAnnouncementToServiceRules(data));
+        setError(null);
+      })
+      .catch((e) => {
+        setRules(null);
+        setError(e instanceof Error ? e.message : "โหลดข้อมูลไม่สำเร็จ");
+      });
   }, [open]);
 
   // ✅ ทุกครั้งที่เปลี่ยน tab ให้ "tab ที่ถูกเปิด" เด้งบนสุด
@@ -89,7 +107,30 @@ export default function ServiceRulesModal(props: {
 
         {/* Body: แยก scroll container ต่อ tab */}
         <div className="px-5 py-4">
-          {!rules ? (
+          {error ? (
+            <div className="text-sm text-red-600 rounded-2xl bg-red-50 ring-1 ring-red-100 p-4">
+              {error}
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  fetch("/api/offering/announcement")
+                    .then((res) => {
+                      if (!res.ok) return res.json().then((b) => Promise.reject(new Error(b.detail ?? b.error ?? res.statusText)));
+                      return res.json();
+                    })
+                    .then((data) => {
+                      setRules(mapAnnouncementToServiceRules(data));
+                      setError(null);
+                    })
+                    .catch((e) => setError(e instanceof Error ? e.message : "โหลดข้อมูลไม่สำเร็จ"));
+                }}
+                className="mt-2 block text-[#F0A23A] font-semibold hover:underline"
+              >
+                ลองใหม่
+              </button>
+            </div>
+          ) : !rules ? (
             <div className="text-sm text-black/60">กำลังโหลดข้อมูล...</div>
           ) : (
             <>

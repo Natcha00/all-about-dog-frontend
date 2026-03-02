@@ -1,12 +1,7 @@
-"use client";
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Prompt } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/ui/navbar";
-import BottomBar from "@/components/ui/bottombar";
-import { usePathname } from "next/navigation";
-
+import AppShell from "@/components/layout/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,20 +19,19 @@ const prompt = Prompt({
   variable: "--font-prompt",
 });
 
+export const metadata: Metadata = {
+  title: { default: "All About Dog", template: "%s | All About Dog" },
+  description: "บริการดูแลสุนัข All About Dog",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const normalized = pathname.replace(/\/$/, ""); // ตัด / ท้ายออก
-  const showBottomBar = ["/service", "/my-dogs", "/notifications", "/account",""].includes(normalized);
   return (
     <html lang="th" className="h-full">
-      <body className={`${prompt.variable} ${geistMono.variable} font-prompt antialiased min-h-screen overflow-x-hidden`}>
-        <Navbar />
-        <main className="px-6 py-4 md:px-10 lg:px-16 pb-[calc(4rem+env(safe-area-inset-bottom))]">
-          {children}
-        </main>
-        {showBottomBar && <BottomBar />}
+      <body
+        className={`${prompt.variable} ${geistMono.variable} font-prompt antialiased min-h-screen overflow-x-hidden`}
+      >
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
 }
-

@@ -41,9 +41,9 @@ const initialPetForm: PetCreateForm = {
   size: "เล็ก",
   birthDate: "",
   ageLabel: "-",
-  neuterStatus: "ยังไม่เคยทำหมัน",
-  microchipStatus: "ไม่มี",
-  bloodType: "DEA 1",
+  neuterStatus: "",
+  microchipStatus: "",
+  bloodType: "",
   disease: "",
   allergies: "",
   meals: {
@@ -136,6 +136,11 @@ export default function WalkInWizardCustomer() {
     setSuccessRef("");
   };
 
+  const resetCreateForm = () => {
+    setPetForm(initialPetForm);
+    setPetErrors({});
+  };
+
 
 
   return (
@@ -172,12 +177,12 @@ export default function WalkInWizardCustomer() {
           setPetErrors={setPetErrors}
           onBack={() => {
             // ✅ ฝั่งลูกค้า: ไม่มี step ก่อนหน้า
-            // จะทำเป็นปุ่ม "ยกเลิก" ก็ได้ แต่ตอนนี้ไม่ทำอะไร
           }}
           onNext={() => {
             if (!canGoService) return;
             setStep("service");
           }}
+          onResetCreateForm={resetCreateForm}
         />
       )}
 

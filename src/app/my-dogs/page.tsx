@@ -1,47 +1,38 @@
-"use client";
+import type { CircleItemProps } from "@/components/ui/circleProfile";
+import type { DogApiItem } from "@/lib/dogs/dog.type";
+import { getDogs } from "@/lib/dogs/dog.api";
+import MyDogsGrid from "./MyDogsGrid";
 
-import React, { useState } from "react";
-import { CircleAdd, CircleItemProps, CircleProfiles } from "@/components/ui/circleProfile";
+function mapDogToCircleItem(dog: DogApiItem): CircleItemProps {
+  return {
+    id: dog.id,
+    image: dog.dogPictureUrl || "/images/landingDog.png",
+    name: dog.name,
+  };
+}
 
-const listDog: CircleItemProps[] = [
-  { id: 1, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria ferguson" },
-  { id: 2, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria ferguson" },
-  { id: 3, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria ferguson" },
-  { id: 4, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria fergusonnnnnnnnnnnn" },
-  { id: 5, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria ferguson" },
-  { id: 6, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria fergusonnnnnnnnnnnn" },
-  { id: 7, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria fergusonnnnnnnnnnnn" },
-  { id: 8, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria fergusonnnnnnnnnnnn" },
-  { id: 9, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria fergusonnnnnnnnnnnn" },
-  { id: 10, image: "https://www.course-api.com/images/people/person-1.jpeg", name: "maria fergusonnnnnnnnnnnn" },
-];
-
-export default function MyPets() {
-  const [dogs] = useState<CircleItemProps[]>(listDog);
+export default async function MyPetsPage() {
+  let dogs: CircleItemProps[] = [];
+  let errorMessage: string | null = null;
+  try {
+    const list = await getDogs();
+    dogs = list.map(mapDogToCircleItem);
+  } catch (e) {
+    console.error("getDogs failed:", e);
+    errorMessage = "โหลดรายการสัตว์เลี้ยงไม่สำเร็จ กรุณาลองใหม่ภายหลัง";
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
-      
       <h1 className="text-center text-2xl font-extrabold text-gray-900 mb-6">
         สัตว์เลี้ยงของฉัน
       </h1>
-
-      <div className="grid grid-cols-2 gap-6 place-items-center">
-        
-        {/* Add Button */}
-        <div className="w-28 text-center">
-          <CircleAdd />
-        </div>
-
-        {/* Dogs */}
-        {dogs.map((dog) => (
-          <div key={dog.id} className="w-28 text-center">
-            <CircleProfiles items={[dog]} />
-          </div>
-        ))}
-
-      </div>
+      {errorMessage && (
+        <p className="text-center text-amber-700 bg-amber-100 rounded-lg px-4 py-2 mb-4 text-sm">
+          {errorMessage}
+        </p>
+      )}
+      <MyDogsGrid dogs={dogs} />
     </div>
   );
 }
-

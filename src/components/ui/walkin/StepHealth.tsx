@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { MealKey, PetCreateForm } from "@/lib/dogs/dog.type";
+
+type BloodGroupOption = { value: string; label: string };
 
 
 
@@ -72,8 +75,18 @@ function Pill(props: { active: boolean; label: string; onClick: () => void }) {
 export default function StepHealth(props: {
   form: PetCreateForm;
   setForm: React.Dispatch<React.SetStateAction<PetCreateForm>>;
+  errors?: Record<string, string>;
 }) {
-  const { form, setForm } = props;
+  const { form, setForm, errors = {} } = props;
+
+  const [bloodGroups, setBloodGroups] = useState<BloodGroupOption[]>([]);
+
+  useEffect(() => {
+    fetch("/api/dog/options/blood-groups")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
+      .then((data: BloodGroupOption[]) => setBloodGroups(Array.isArray(data) ? data : []))
+      .catch(() => setBloodGroups([]));
+  }, []);
 
   const toggleMeal = (k: MealKey) => {
     setForm((p) => ({ ...p, meals: { ...p.meals, [k]: !p.meals[k] } }));
@@ -82,49 +95,56 @@ export default function StepHealth(props: {
   return (
     <div className="space-y-5">
       <div>
-        <Label>ประวัติการทำหมัน</Label>
+        <Label>ประวัติการทำหมัน<span className="text-red-500">*</span></Label>
         <Select
           value={form.neuterStatus}
-          onChange={(e) => setForm((p) => ({ ...p, neuterStatus: e.target.value as any }))}
+          onChange={(e) => setForm((p) => ({ ...p, neuterStatus: e.target.value as PetCreateForm["neuterStatus"] }))}
         >
+          <option value="">โปรดเลือก</option>
           <option value="ยังไม่เคยทำหมัน">ยังไม่เคยทำหมัน</option>
           <option value="ทำหมันแล้ว">ทำหมันแล้ว</option>
         </Select>
+        {errors.neuterStatus ? <p className="mt-1 text-xs text-rose-600">{errors.neuterStatus}</p> : null}
       </div>
 
       <div>
-        <Label>การฝังไมโครชิป</Label>
+        <Label>การฝังไมโครชิป<span className="text-red-500">*</span></Label>
         <Select
           value={form.microchipStatus}
-          onChange={(e) => setForm((p) => ({ ...p, microchipStatus: e.target.value as any }))}
+          onChange={(e) => setForm((p) => ({ ...p, microchipStatus: e.target.value as PetCreateForm["microchipStatus"] }))}
         >
+          <option value="">โปรดเลือก</option>
           <option value="ไม่มี">ไม่มี</option>
           <option value="มี">มี</option>
         </Select>
+        {errors.microchipStatus ? <p className="mt-1 text-xs text-rose-600">{errors.microchipStatus}</p> : null}
       </div>
 
       <div>
-        <Label>หมู่เลือด</Label>
+        <Label>หมู่เลือด<span className="text-red-500">*</span></Label>
         <Select value={form.bloodType} onChange={(e) => setForm((p) => ({ ...p, bloodType: e.target.value }))}>
-          <option value="DEA 1">DEA 1</option>
-          <option value="DEA 3">DEA 3</option>
-          <option value="DEA 4">DEA 4</option>
-          <option value="ไม่ทราบ">ไม่ทราบ</option>
+          <option value="">โปรดเลือก</option>
+          {bloodGroups.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </Select>
+        {errors.bloodType ? <p className="mt-1 text-xs text-rose-600">{errors.bloodType}</p> : null}
       </div>
 
       <div>
         <Label>โรคประจำตัว</Label>
-        <Input placeholder="-" value={form.disease} onChange={(e) => setForm((p) => ({ ...p, disease: e.target.value }))} />
+        <Input placeholder="ถ้ามีให้ระบุ" value={form.disease} onChange={(e) => setForm((p) => ({ ...p, disease: e.target.value }))} />
       </div>
 
       <div>
-        <Label>สิ่งที่แพ้ (เช่นอาหาร/สิ่งแวดล้อม)</Label>
-        <Input placeholder="-" value={form.allergies} onChange={(e) => setForm((p) => ({ ...p, allergies: e.target.value }))} />
+        <Label>สิ่งที่แพ้</Label>
+        <Input placeholder="ถ้ามีให้ระบุ" value={form.allergies} onChange={(e) => setForm((p) => ({ ...p, allergies: e.target.value }))} />
       </div>
 
       <div>
-        <Label>กรุณาเลือกมื้ออาหาร</Label>
+        <Label>มื้ออาหาร<span className="text-red-500">*</span></Label>
         <div className="flex flex-wrap gap-2">
           <Pill active={form.meals.breakfast} label="เช้า" onClick={() => toggleMeal("breakfast")} />
           <Pill active={form.meals.lateMorning} label="สาย" onClick={() => toggleMeal("lateMorning")} />
@@ -132,6 +152,7 @@ export default function StepHealth(props: {
           <Pill active={form.meals.afternoon} label="บ่าย" onClick={() => toggleMeal("afternoon")} />
           <Pill active={form.meals.dinner} label="เย็น" onClick={() => toggleMeal("dinner")} />
         </div>
+        {errors.meals ? <p className="mt-1 text-xs text-rose-600">{errors.meals}</p> : null}
       </div>
 
       <div>
@@ -142,7 +163,7 @@ export default function StepHealth(props: {
       <div>
         <Label>รายละเอียดเพิ่มเติม</Label>
         <Textarea
-          placeholder="เช่น ชอบเห่าหมาพันธุ์ใหญ่ ร่าเริงเวลาไปวิ่งเล่น กลัวฟ้าร้อง"
+          placeholder="เช่น ชอบเห่าหมาพันธุ์ใหญ่ กลัวฟ้าร้อง"
           value={form.notes}
           onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
         />

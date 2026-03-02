@@ -14,6 +14,13 @@ type Props = {
   canNext: boolean;
 
   onGoCreate: () => void;
+
+  /** กำลังโหลดรายการจาก API */
+  loading?: boolean;
+  /** ข้อความ error จาก API (เช่น ไม่ได้ล็อกอิน) */
+  error?: string | null;
+  /** กดลองโหลดใหม่ */
+  onRetry?: () => void;
 };
 
 function cn(...parts: Array<string | false | null | undefined>) {
@@ -28,6 +35,9 @@ export default function PetPickPanel({
   onNext,
   canNext,
   onGoCreate,
+  loading = false,
+  error = null,
+  onRetry,
 }: Props) {
   const togglePet = (p: PetPicked) => {
     setSelectedPets((prev) =>
@@ -42,7 +52,24 @@ export default function PetPickPanel({
           สุนัขของฉัน ({myPets.length})
         </div>
 
-        {myPets.length === 0 ? (
+        {loading ? (
+          <div className="px-4 py-6 text-sm text-black/60 text-center">
+            กำลังโหลดรายการสุนัข...
+          </div>
+        ) : error ? (
+          <div className="px-4 py-4 text-sm text-red-600 rounded-b-2xl bg-red-50/80">
+            {error}
+            {onRetry ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="mt-2 block text-[#F0A23A] font-semibold hover:underline"
+              >
+                ลองใหม่
+              </button>
+            ) : null}
+          </div>
+        ) : myPets.length === 0 ? (
           <div className="px-4 py-4 text-sm text-black/60">
             ยังไม่มีสุนัขในระบบ → กด “เพิ่มสุนัขใหม่”
             <div className="mt-3">

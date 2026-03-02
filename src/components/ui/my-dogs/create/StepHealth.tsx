@@ -107,7 +107,7 @@ export default function StepHealth(props: {
           <option value="DEA 1">DEA 1</option>
           <option value="DEA 3">DEA 3</option>
           <option value="DEA 4">DEA 4</option>
-          <option value="ไม่ทราบ">ไม่ทราบ</option>
+          <option value="UNKNOWN">ไม่ทราบ</option>
         </Select>
       </div>
 

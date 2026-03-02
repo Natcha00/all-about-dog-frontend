@@ -3,6 +3,12 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "ลงทะเบียนสมาชิก",
+  description: "ลงทะเบียนสมาชิก All About Dog",
+};
 
 export default function RegisterPage() {
   return (

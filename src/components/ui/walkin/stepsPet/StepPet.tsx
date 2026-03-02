@@ -1,10 +1,11 @@
 "use client";
 
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { PetCreateForm } from "@/lib/dogs/dog.type";
-import { MOCK_MY_PETS, type PetPicked } from "@/lib/walkin/walkin/types.mock";
+import type { PetPicked } from "@/lib/walkin/walkin/types.mock";
+import { mapDogApiListToPetPicked } from "@/lib/walkin/walkin/dogToPetPicked";
 
 import PetPickPanel from "./PetPickPanel";
 import PetCreatePanel from "./PetCreatePanel";
@@ -23,6 +24,8 @@ type Props = {
 
   onBack: () => void; // ฝั่งลูกค้าอาจไม่ใช้ก็ได้
   onNext: () => void;
+  /** เรียกหลังสร้างสุนัขสำเร็จ เพื่อล้างฟอร์มเมื่อกลับมาเพิ่มตัวใหม่ */
+  onResetCreateForm?: () => void;
 };
 
 function cn(...parts: Array<string | false | null | undefined>) {
@@ -40,9 +43,38 @@ export default function StepPetCustomer({
   setPetErrors,
   onBack,
   onNext,
+  onResetCreateForm,
 }: Props) {
-  // ✅ ฝั่งลูกค้า: เก็บ list หมาของฉันไว้ใน state (เพิ่มตัวใหม่แล้วเห็นทันที)
-  const [myPets, setMyPets] = useState<PetPicked[]>(MOCK_MY_PETS);
+  // ฝั่งลูกค้า: โหลดรายการหมาจาก API GET /dog แล้วแมปเป็น PetPicked สำหรับ PICK MODE
+  const [myPets, setMyPets] = useState<PetPicked[]>([]);
+  const [petsLoading, setPetsLoading] = useState(true);
+  const [petsError, setPetsError] = useState<string | null>(null);
+
+  const loadPets = useCallback(() => {
+    setPetsError(null);
+    setPetsLoading(true);
+    fetch("/api/dog")
+      .then((res) => {
+        if (!res.ok) {
+          if (res.status === 401) return Promise.reject(new Error("กรุณาเข้าสู่ระบบ"));
+          return res.json().then((b) => Promise.reject(new Error(b.detail ?? b.error ?? res.statusText)));
+        }
+        return res.json();
+      })
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        setMyPets(mapDogApiListToPetPicked(list));
+      })
+      .catch((e) => {
+        setMyPets([]);
+        setPetsError(e instanceof Error ? e.message : "โหลดรายการสุนัขไม่สำเร็จ");
+      })
+      .finally(() => setPetsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    loadPets();
+  }, [loadPets]);
 
   const canNext = selectedPets.length > 0;
 
@@ -92,6 +124,9 @@ export default function StepPetCustomer({
           onNext={onNext}
           canNext={canNext}
           onGoCreate={() => onTabChange("create")}
+          loading={petsLoading}
+          error={petsError}
+          onRetry={loadPets}
         />
       ) : null}
 
@@ -103,19 +138,12 @@ export default function StepPetCustomer({
           petErrors={petErrors}
           setPetErrors={setPetErrors}
           onCreated={(newPet) => {
-            // ✅ เพิ่มเข้ารายการหมาของฉันทันที
             setMyPets((prev) => [newPet, ...prev]);
-
-            // ✅ auto select
-            setSelectedPets((prev) => {
-              if (prev.some((x) => x.id === newPet.id)) return prev;
-              return [...prev, newPet];
-            });
-
-            // ✅ กลับไป pick
+            onResetCreateForm?.();
             onTabChange("pick");
           }}
           onBackToPick={() => onTabChange("pick")}
+          onLoadPets={loadPets}
         />
       ) : null}
     </section>

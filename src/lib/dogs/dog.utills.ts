@@ -47,7 +47,7 @@ export function buildPetPayload(form: PetCreateForm) {
     gender: form.gender,
     breed: form.breed.trim(),
 
-    color: form.color.trim() || null,
+    color: (form.color ?? "").trim(),
     weightKg: Number(form.weightKg) || null,
     heightCm: Number(form.heightCm) || null,
     size: form.size,
@@ -58,12 +58,12 @@ export function buildPetPayload(form: PetCreateForm) {
     microchipStatus: form.microchipStatus,
     bloodType: form.bloodType.trim() || null,
 
-    disease: form.disease.trim() || null,
-    allergies: form.allergies.trim() || null,
+    disease: (form.disease?? "").trim() ,
+    allergies: (form.allergies?? "").trim() ,
 
     meals: form.meals,
     mealCount: form.mealCount,
 
-    notes: form.notes.trim() || null,
+    notes: (form.notes?? "").trim()
   };
 }

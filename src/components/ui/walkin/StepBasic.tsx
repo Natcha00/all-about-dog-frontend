@@ -1,8 +1,11 @@
 "use client";
 
 import type React from "react";
+import { useEffect, useState } from "react";
 import PetAvatarPicker from "./PetAvatarPicker";
-import type { Gender, PetCreateForm } from "@/lib/pets/pet.types";
+import type { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
+
+export type BreedOption = { id: number; nameTh: string; nameEng: string; size: string };
 
 function Label({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-gray-900 mb-1.5">{children}</p>;
@@ -89,8 +92,21 @@ export default function StepBasic(props: {
   form: PetCreateForm;
   setForm: React.Dispatch<React.SetStateAction<PetCreateForm>>;
   errors: Record<string, string>;
+  /** When provided (e.g. from PetCreatePanel), use this list; otherwise fetch from API */
+  breeds?: BreedOption[];
 }) {
-  const { form, setForm, errors } = props;
+  const { form, setForm, errors, breeds: breedsProp } = props;
+
+  const [breedsFetched, setBreedsFetched] = useState<BreedOption[]>([]);
+  const breeds = breedsProp ?? breedsFetched;
+
+  useEffect(() => {
+    if (breedsProp != null) return;
+    fetch("/api/dog/breeds")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
+      .then((data: BreedOption[]) => setBreedsFetched(Array.isArray(data) ? data : []))
+      .catch(() => setBreedsFetched([]));
+  }, [breedsProp]);
 
   // ✅ ไม่เก็บ ageLabel ใน state แล้ว คำนวณสดจาก birthDate
   const derivedAge = calcAgeFromISO(form.birthDate);
@@ -134,12 +150,12 @@ export default function StepBasic(props: {
         <div>
           <Label>พันธุ์*</Label>
           <Select value={form.breed} onChange={(e) => setForm((p) => ({ ...p, breed: e.target.value }))}>
-            <option value="">โปรดระบุ</option>
-            <option value="คอร์กี้">คอร์กี้</option>
-            <option value="ชิวาวา">ชิวาวา</option>
-            <option value="โกลเด้นรีทรีฟเวอร์">โกลเด้นรีทรีฟเวอร์</option>
-            <option value="ไซบีเรียนฮัสกี้">ไซบีเรียนฮัสกี้</option>
-            <option value="อื่นๆ">อื่นๆ</option>
+            <option value="">โปรดเลือก</option>
+            {breeds.map((b) => (
+              <option key={b.id} value={String(b.id)}>
+                {b.nameTh}
+              </option>
+            ))}
           </Select>
           {errors.breed ? <p className="mt-1 text-xs text-rose-600">{errors.breed}</p> : null}
         </div>
@@ -169,7 +185,7 @@ export default function StepBasic(props: {
             <Input
               placeholder="เช่น 30"
               inputMode="numeric"
-              value={form.heightCm}
+              value={form.heightCm ?? ""}
               onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))}
               error={errors.heightCm}
             />
