@@ -1,10 +1,33 @@
 "use client";
 
-import { calcBoardingTotal } from "@/lib/walkin/boarding/boarding.price.logic";
 import { BoardingDraft, PetPicked } from "@/lib/walkin/walkin/types.mock";
 import { useEffect, useMemo, useState } from "react";
 type Plan = 1 | 2 | 3;
-type RoomType = "SMALL" | "LARGE" | "VIP";
+
+type BoardingPackagePricingResponse = {
+  offerType: string;
+  period: { start: string; end: string; nights: number };
+  package: string;
+  dogs: Array<{
+    dogId: number;
+    name: string;
+    groupNumber: number;
+    sizeLabel: string;
+    breed: string;
+    size: string;
+    perNight: number;
+    subtotal: number;
+  }>;
+  groups: Array<{
+    groupNumber: number;
+    offerCode: string;
+    offerLabel: string;
+    capacity: number;
+    dogIds: Array<{ dogId: number; name: string; sizeLabel: string }>;
+  }>;
+  pricingSummary: { total: number; currency: string };
+  lines: Array<{ offeringId: number; dogId: number; price: number; quantity: number; groupNumber: number }>;
+};
 
 type BoardingAvailableResponse = {
   available: boolean;
@@ -17,92 +40,6 @@ type BoardingAvailableResponse = {
   need: { LARGE: number; SMALL: number; VIP: number };
   fails: Array<{ date?: string; message?: string; need?: Record<string, number>; cap?: Record<string, number> }>;
 };
-
-type RoomAssign = {
-  type: RoomType;
-  roomNo: number;
-  pets: PetPicked[];
-};
-
-function chunkPets<T>(arr: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
-function buildRoomAssignments(pets: PetPicked[], plan: Plan): RoomAssign[] {
-  if (!pets.length) return [];
-
-  // plan 3: VIP บ้านเดียว
-  if (plan === 3) {
-    return [{ type: "VIP", roomNo: 1, pets }];
-  }
-
-  const small = pets.filter((p) => p.size === "small");
-  const large = pets.filter((p) => p.size === "large");
-
-  // plan 1: 1 ตัว/ห้อง
-  if (plan === 1) {
-    const smallRooms = small.map((p, idx) => ({ type: "SMALL" as const, roomNo: idx + 1, pets: [p] }));
-    const largeRooms = large.map((p, idx) => ({ type: "LARGE" as const, roomNo: idx + 1, pets: [p] }));
-    return [...smallRooms, ...largeRooms];
-  }
-
-  // plan 2: เล็ก 3/ห้อง, ใหญ่ 2/ห้อง
-  const smallRooms = chunkPets(small, 3).map((group, idx) => ({
-    type: "SMALL" as const,
-    roomNo: idx + 1,
-    pets: group,
-  }));
-
-  const largeRooms = chunkPets(large, 2).map((group, idx) => ({
-    type: "LARGE" as const,
-    roomNo: idx + 1,
-    pets: group,
-  }));
-
-  return [...smallRooms, ...largeRooms];
-}
-
-function roomTypeLabel(t: RoomType) {
-  if (t === "VIP") return "ห้อง VIP";
-  if (t === "SMALL") return "ตึกหมาเล็ก";
-  return "ตึกหมาใหญ่";
-}
-
-function chunkCount(count: number, size: number) {
-  return Math.ceil(Math.max(0, count) / size);
-}
-
-// จำนวนห้องที่ต้องใช้ "ต่อคืน"
-function requiredRoomsPerNight(pets: PetPicked[], plan: Plan) {
-  const smallCount = pets.filter((p) => p.size === "small").length;
-  const largeCount = pets.filter((p) => p.size === "large").length;
-
-  if (plan === 1) {
-    return {
-      SMALL: smallCount, // 1 ตัว/ห้อง
-      LARGE: largeCount, // 1 ตัว/ห้อง
-      VIP: 0,
-    };
-  }
-
-  if (plan === 2) {
-    // ตาม logic ที่คุณเคยใช้: small 3 ตัว/ห้อง, large 2 ตัว/ห้อง
-    return {
-      SMALL: chunkCount(smallCount, 3),
-      LARGE: chunkCount(largeCount, 2),
-      VIP: 0,
-    };
-  }
-
-  // plan 3: VIP บ้านเดียว (1 ห้อง)
-  return {
-    SMALL: 0,
-    LARGE: 0,
-    VIP: pets.length > 0 ? 1 : 0,
-  };
-}
 
 function planToPackage(plan: Plan): string {
   return plan === 3 ? "vip" : "standard";
@@ -140,13 +77,11 @@ export default function StepBoarding(props: {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
 
-  const nights = useMemo(() => (start && end ? calcNights(start, end) : 0), [start, end]);
+  const [pricingResult, setPricingResult] = useState<BoardingPackagePricingResponse | null>(null);
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
 
-  // ✅ ใช้ pricing logic จากไฟล์เดียว (อ้างอิง PetPicked size จาก mock)
-  const total = useMemo(() => {
-    if (!nights || pets.length === 0) return 0;
-    return calcBoardingTotal({ pets, plan, nights }).total;
-  }, [nights, pets, plan]);
+  const nights = useMemo(() => (start && end ? calcNights(start, end) : 0), [start, end]);
 
   const canCheckAvailability =
     pets.length > 0 &&
@@ -202,66 +137,47 @@ export default function StepBoarding(props: {
     !!plan &&
     isAvailableAllNights; // ✅ ต้องว่างครบทุกคืนเท่านั้น
 
-  const priceBreakdown = useMemo(() => {
-    if (!canShowSummary || !nights) return [];
-
-    // 👑 VIP
-    if (plan === 3) {
-      return pets.map((p, index) => ({
-        id: p.id,
-        name: p.name,
-        breed: p.breed,
-        price: nights * (index === 0 ? 1500 : 500),
-      }));
+  useEffect(() => {
+    if (!canShowSummary) {
+      setPricingResult(null);
+      setPricingError(null);
+      return;
     }
+    const startDateTime = `${start}T${startTime}:00`;
+    const endDateTime = `${end}T${endTime}:00`;
+    const dogIds = pets.map((p) => p.id).join(",");
+    const pkg = planToPackage(plan);
 
-    // Plan 1 และ 2
-    const smallPets = pets.filter((p) => p.size === "small");
-    const largePets = pets.filter((p) => p.size === "large");
+    setPricingLoading(true);
+    setPricingError(null);
+    const url = `/api/offering/boarding/package-pricing?${new URLSearchParams({
+      dogIds,
+      offeringType: "boarding",
+      start: startDateTime,
+      end: endDateTime,
+      package: pkg,
+    }).toString()}`;
 
-    const result: any[] = [];
-
-    if (plan === 1) {
-      pets.forEach((p) => {
-        const perNight = p.size === "small" ? 450 : 600;
-        result.push({
-          id: p.id,
-          name: p.name,
-          breed: p.breed,
-          price: nights * perNight,
-        });
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.error ?? d.detail ?? res.statusText)));
+        return res.json();
+      })
+      .then((data: BoardingPackagePricingResponse) => {
+        setPricingResult(data);
+      })
+      .catch((e: Error) => {
+        setPricingResult(null);
+        setPricingError(e.message ?? "ไม่สามารถโหลดราคาได้");
+      })
+      .finally(() => {
+        setPricingLoading(false);
       });
-    }
+  }, [canShowSummary, pets, start, end, startTime, endTime, plan]);
 
-    if (plan === 2) {
-      smallPets.forEach((p, i) => {
-        const perNight = i === 0 ? 450 : 380;
-        result.push({
-          id: p.id,
-          name: p.name,
-          breed: p.breed,
-          price: nights * perNight,
-        });
-      });
-
-      largePets.forEach((p, i) => {
-        const perNight = i === 0 ? 600 : 510;
-        result.push({
-          id: p.id,
-          name: p.name,
-          breed: p.breed,
-          price: nights * perNight,
-        });
-      });
-    }
-
-    return result;
-  }, [pets, plan, nights, canShowSummary]);
-
-  const roomAssignments = useMemo(() => {
-    if (!canShowSummary) return [];
-    return buildRoomAssignments(pets, plan);
-  }, [pets, plan, canShowSummary]);
+  const total = pricingResult?.pricingSummary?.total ?? 0;
+  const priceBreakdown = pricingResult?.dogs ?? [];
+  const roomGroups = pricingResult?.groups ?? [];
 
 
   const [note, setNote] = useState("");
@@ -274,7 +190,9 @@ export default function StepBoarding(props: {
     !!start &&
     !!end &&
     new Date(end) > new Date(start) &&
-    isAvailableAllNights;
+    isAvailableAllNights &&
+    !!pricingResult &&
+    !pricingLoading;
 
 
   return (
@@ -465,81 +383,83 @@ export default function StepBoarding(props: {
       {canShowSummary && (
         <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-4">
           <p className="text-sm font-extrabold text-gray-900">สรุป</p>
-          <p className="text-sm font-extrabold text-gray-900">
-            รายละเอียดราคา ({nights} คืน)
-          </p>
-          <div className="rounded-2xl bg-white ring-1 ring-black/10 p-4 space-y-3 shadow-sm mt-2">
-
-
-            <div className="space-y-2">
-              {/* ✅ แผนผังห้อง: หมาตัวไหนนอนห้องไหน */}
-              {roomAssignments.length > 0 ? (
-                <div className="mt-3 rounded-2xl bg-white ring-1 ring-black/10 p-4 overflow-y-auto max-h-56">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-extrabold text-gray-900">รูปแบบเข้าพัก</p>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    {roomAssignments.map((r) => (
-                      <div key={`${r.type}-${r.roomNo}`} className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-3">
-                        <div className="flex justify-between">
-                        <p className="text-xs font-extrabold text-black/70">
-                          {roomTypeLabel(r.type)} • ห้อง {r.roomNo} 
-                        </p>
-                        <p className="text-xs font-extrabold text-black/70">
-                          {r.pets.length} ตัว
-                        </p>
-                        </div>
-
-                        <div className="mt-1 text-sm text-black/70">
-                          {r.pets.map((p) => (
-                            <div key={p.id} className="flex items-center justify-between text-black/45">
-                              <span className="font-semibold">{p.name}</span>
-                              <span className="text-xs">{p.size}</span>
-                            </div>
-                          ))}
-                        </div>
+          {pricingLoading ? (
+            <p className="text-sm text-black/50 mt-2">กำลังโหลดราคา...</p>
+          ) : pricingError ? (
+            <p className="text-sm text-rose-600 mt-2">{pricingError}</p>
+          ) : pricingResult ? (
+            <>
+              <p className="text-sm font-extrabold text-gray-900">
+                รายละเอียดราคา ({pricingResult.period.nights} คืน)
+              </p>
+              <div className="rounded-2xl bg-white ring-1 ring-black/10 p-4 space-y-3 shadow-sm mt-2">
+                <div className="space-y-2">
+                  {roomGroups.length > 0 ? (
+                    <div className="mt-3 rounded-2xl bg-white ring-1 ring-black/10 p-4 overflow-y-auto max-h-56">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-extrabold text-gray-900">รูปแบบเข้าพัก</p>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* ช่วยบอกว่าเป็น “แนะนำ” */}
-                  <p className="mt-2 text-[11px] text-black/45">
-                    * เป็นการจัดห้องแบบแนะนำอัตโนมัติ
-                  </p>
+                      <div className="mt-3 space-y-2">
+                        {roomGroups.map((g) => (
+                          <div key={g.groupNumber} className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-3">
+                            <div className="flex justify-between">
+                              <p className="text-xs font-extrabold text-black/70">
+                                {g.offerLabel}
+                              </p>
+                              <p className="text-xs font-extrabold text-black/70">
+                                {g.dogIds.length} ตัว
+                              </p>
+                            </div>
+
+                            <div className="mt-1 text-sm text-black/70">
+                              {g.dogIds.map((d) => (
+                                <div key={d.dogId} className="flex items-center justify-between text-black/45">
+                                  <span className="font-semibold">{d.name}</span>
+                                  <span className="text-xs">{d.sizeLabel}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <p className="mt-2 text-[11px] text-black/45">
+                        * เป็นการจัดห้องจากระบบ
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
 
+                <div className="h-px bg-black/10" />
+                {priceBreakdown.map((item) => (
+                  <div
+                    key={item.dogId}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <div className="text-black/70">
+                      <span className="font-semibold text-gray-900">
+                        {item.name}
+                      </span>{" "}
+                      <span className="text-xs text-black/45">
+                        ({item.breed || "-"})
+                      </span>
+                    </div>
 
-            </div>
-
-            <div className="h-px bg-black/10" />
-            {priceBreakdown.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <div className="text-black/70">
-                    <span className="font-semibold text-gray-900">
-                      {item.name}
-                    </span>{" "}
-                    <span className="text-xs text-black/45">
-                      ({item.breed || "-"})
+                    <span className="font-extrabold text-gray-900">
+                      {item.subtotal.toLocaleString()} บาท
                     </span>
                   </div>
-
-                  <span className="font-extrabold text-gray-900">
-                    {item.price.toLocaleString()} บาท
+                ))}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-gray-900">รวมทั้งหมด</span>
+                  <span className="text-lg font-extrabold text-[#F0A23A]">
+                    {(pricingResult.pricingSummary?.total ?? 0).toLocaleString()} บาท
                   </span>
                 </div>
-              ))}
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-gray-900">รวมทั้งหมด</span>
-              <span className="text-lg font-extrabold text-[#F0A23A]">
-                {total.toLocaleString()} บาท
-              </span>
-            </div>
-          </div>
+              </div>
+            </>
+          ) : null}
         </div>
       )}
       {/* ✅ Note (toggle box) */}
