@@ -8,9 +8,9 @@ import SuccessHeader from "@/components/ui/success/SuccessHeader";
 import SuccessSummaryCard from "@/components/ui/success/SuccessSummaryCard";
 
 import type { Booking } from "@/lib/booking/booking.types";
-import { bookingMock } from "@/lib/booking/booking.mock";
 import { QRCodeSVG } from "qrcode.react";
 import type { PetPicked, ServiceType } from "@/lib/walkin/walkin/types.mock";
+import type { ReservationDetailResult } from "@/app/api/reservation/detail/route";
 
 /* ===== labels ===== */
 
@@ -102,6 +102,105 @@ function planLabel(plan: 1 | 2 | 3) {
   if (plan === 1) return "แบบ 1 : มาตรฐาน";
   if (plan === 2) return "แบบ 2 : นอนด้วยกัน";
   return "แบบ 3 : VIP บ้านเดี่ยว";
+}
+
+/* =========================
+   mapping: backend -> Booking
+========================= */
+
+function mapStatusFromBackend(status: string): BookingStatus {
+  switch (status) {
+    case "pending":
+      return "pending";
+    case "waiting_slip":
+      return "WaitingSlip";
+    case "slip_uploaded":
+      return "slip_uploaded";
+    case "slip_verified":
+      return "slip_verified";
+    case "check_in":
+    case "check-in":
+      return "check-in";
+    case "finished":
+      return "finished";
+    case "cancelled":
+      return "cancelled";
+    case "rejected":
+      return "rejected";
+    default:
+      return status as BookingStatus;
+  }
+}
+
+function mapServiceType(apiType: string): Booking["serviceType"] {
+  if (apiType === "boarding") return "boarding";
+  if (apiType === "swimming") return "swimming";
+  return apiType as Booking["serviceType"];
+}
+
+function mapDetailToBooking(detail: ReservationDetailResult): Booking {
+  const serviceType = mapServiceType(detail.serviceType);
+
+  const pets =
+    detail.groups?.flatMap((g) =>
+      g.petIds?.map((p) => ({
+        petId: p.petId,
+        petName: p.name,
+        petSize: (p.sizeLabel === "large" ? "large" : "small") as "small" | "large",
+      })) ?? []
+    ) ?? [];
+
+  let startAt = "";
+  let endAt: string | undefined;
+  let slotLabel: string | undefined;
+
+  if (serviceType === "boarding") {
+    // ฝากเลี้ยง: period.start / period.end คือวันที่เข้า–ออก
+    startAt = detail.period?.start ?? "";
+    endAt = detail.period?.end;
+  } else {
+    // ว่ายน้ำ:
+    // - ถ้ามีฟิลด์ date/timeSlot ให้ใช้เหมือน list API
+    // - ถ้าไม่มี ให้ fallback ไปใช้วันที่จาก bookingCode (RSV-YYYYMMDD-XXXX) ก่อน แล้วจึงค่อยใช้ period.*
+    const anyDetail = detail as any;
+    const dateFromApi = anyDetail.date as string | undefined;
+
+    let dateFromCode: string | undefined;
+    const m = /^RSV-(\d{4})(\d{2})(\d{2})-/.exec(detail.bookingCode);
+    if (m) {
+      const [, y, mm, dd] = m;
+      dateFromCode = `${y}-${mm}-${dd}`;
+    }
+
+    const date = dateFromApi ?? dateFromCode ?? detail.period?.start ?? "";
+    const slotStart = (anyDetail.timeSlot?.start as string | undefined) ?? detail.period?.start ?? "";
+    const slotEnd = (anyDetail.timeSlot?.end as string | undefined) ?? detail.period?.end ?? "";
+
+    startAt = date;
+    if (slotStart && slotEnd) {
+      slotLabel = `${slotStart} - ${slotEnd}`;
+    }
+  }
+
+  const booking: Booking = {
+    id: detail.bookingCode,
+    status: mapStatusFromBackend(detail.status),
+    serviceType,
+    pets,
+    startAt,
+    endAt,
+    slotLabel,
+    price: detail.totalPrice ?? 0,
+  } as Booking;
+
+  (booking as any).groups = detail.groups ?? [];
+  (booking as any).note = detail.note ?? null;
+  (booking as any).actions = detail.actions ?? null;
+  (booking as any).slip = detail.slip ?? null;
+  (booking as any).timeline = detail.timeline ?? [];
+  (booking as any).plan = 1;
+
+  return booking;
 }
 
 /* =========================
@@ -470,10 +569,7 @@ function SlipUploadPanel({
                 ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                 : "bg-[#F0A23A] text-white hover:bg-[#e99625]",
             ].join(" ")}
-            onClick={() => {
-              onSubmit();
-              alert(fileName ? `ส่งสลิปแล้ว: ${fileName}` : "ส่งสลิปแล้ว");
-            }}
+            onClick={onSubmit}
           >
             ส่ง
           </button>
@@ -501,9 +597,9 @@ export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
   const id = decodeURIComponent(params?.id ?? "");
 
-  const booking = useMemo<Booking | undefined>(() => {
-    return bookingMock.find((bb) => bb.id === id);
-  }, [id]);
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [localStatus, setLocalStatus] = useState<BookingStatus | null>(null);
 
@@ -512,37 +608,61 @@ export default function BookingDetailPage() {
 
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [slipPreview, setSlipPreview] = useState<string | null>(null);
+  const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
+  const [uploadingSlip, setUploadingSlip] = useState(false);
 
-  if (!booking) {
-    return (
-      <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
-        <div className="mx-auto w-full max-w-md space-y-4">
-          <div className="text-black/70 text-center">ไม่พบรายการจอง</div>
-          <button
-            type="button"
-            className="w-full rounded-2xl bg-[#F0A23A] py-4 text-xl font-bold text-white"
-            onClick={() => router.push("/service/schedule")}
-          >
-            กลับไปหน้าปฏิทิน
-          </button>
-          <div className="text-center text-xs text-black/40">debug id: {id}</div>
-        </div>
-      </main>
-    );
-  }
+  useEffect(() => {
+    if (!id) return;
 
-  const b: Booking = localStatus ? { ...booking, status: localStatus } : booking;
+    let cancelled = false;
 
-  const canCancel = b.status === "pending";
-  const canUploadSlip = b.status === "WaitingSlip" || b.status === "slip_uploaded";
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const url = `/api/reservation/detail?code=${encodeURIComponent(id)}`;
+        const res = await fetch(url);
+        const data = await res.json().catch(() => ({}));
 
-  const showQr = b.status === "slip_verified" || b.status === "check-in" || b.status === "finished";
+        if (!res.ok) {
+          if (cancelled) return;
+          setError((data as any)?.error ?? "ไม่สามารถโหลดรายละเอียดการจองได้");
+          setBooking(null);
+          return;
+        }
 
-  // ✅ map booking serviceType -> walkin serviceType ("boarding" | "swimming")
-  const walkinServiceType: ServiceType = b.serviceType === "boarding" ? "boarding" : "swimming";
+        const detail = (data as any)?.result as ReservationDetailResult | undefined;
+        if (!detail) {
+          if (cancelled) return;
+          setError("ไม่พบรายละเอียดการจอง");
+          setBooking(null);
+          return;
+        }
+
+        if (cancelled) return;
+        setBooking(mapDetailToBooking(detail));
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการโหลดรายละเอียดการจอง");
+        setBooking(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const b = localStatus && booking ? ({ ...booking, status: localStatus } as Booking) : booking;
 
   // ✅ 1) ดึง pets ให้ถูกกับ booking.mock (petId/petName/petSize)
   const pickedPets = useMemo<PetPicked[]>(() => {
+    if (!b) return [];
+
     const arr = (b as any).pets as Array<any> | undefined;
 
     if (Array.isArray(arr) && arr.length > 0) {
@@ -565,12 +685,14 @@ export default function BookingDetailPage() {
 
   // ✅ 2) หา plan (ประเภทห้อง)
   const plan = useMemo(() => {
+    if (!b) return 1 as 1;
     const p = (b as any).plan as 1 | 2 | 3 | undefined;
     return (p === 1 || p === 2 || p === 3 ? p : 1) as 1 | 2 | 3;
   }, [b]);
 
   // ✅ 3) สร้าง roomAssignments เฉพาะ boarding
   const roomAssignments = useMemo(() => {
+    if (!b) return undefined;
     if (b.serviceType !== "boarding") return undefined;
     if (!pickedPets.length) return undefined;
 
@@ -583,9 +705,11 @@ export default function BookingDetailPage() {
     }));
 
     return buildRoomAssignments({ pets: petsForRoom, plan });
-  }, [b.serviceType, pickedPets, plan]);
+  }, [b, pickedPets, plan]);
 
   const rows = useMemo(() => {
+    if (!b) return [];
+
     const isBoarding = b.serviceType === "boarding";
 
     return [
@@ -610,6 +734,8 @@ export default function BookingDetailPage() {
   }, [b, plan]);
 
   const historyItems = useMemo(() => {
+    if (!b) return [];
+
     const items = buildMockHistory(b.status);
 
     if ((b as any).verifiedBy || (b as any).verifiedAt) {
@@ -634,7 +760,76 @@ export default function BookingDetailPage() {
     return items;
   }, [b]);
 
-  const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
+  async function handleSubmitSlip() {
+    if (!slipFile || !b || uploadingSlip) return;
+    try {
+      setUploadingSlip(true);
+      const form = new FormData();
+      form.append("code", b.id);
+      form.append("file", slipFile);
+
+      const res = await fetch("/api/reservation/slip", {
+        method: "POST",
+        body: form,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // simple alert for now; can replace with toast later
+        alert((data as any)?.error ?? "อัปโหลดสลิปไม่สำเร็จ");
+        return;
+      }
+
+      alert("อัปโหลดสลิปสำเร็จ");
+      setLocalStatus("slip_uploaded");
+      setOpenSlip(false);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการอัปโหลดสลิป");
+    } finally {
+      setUploadingSlip(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="rounded-3xl bg-white/60 ring-1 ring-black/5 p-6 text-center text-black/60">
+            กำลังโหลดรายละเอียดการจอง...
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !b) {
+    return (
+      <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="text-black/70 text-center">
+            {error ?? "ไม่พบรายการจอง"}
+          </div>
+          <button
+            type="button"
+            className="w-full rounded-2xl bg-[#F0A23A] py-4 text-xl font-bold text-white"
+            onClick={() => router.push("/service/booking")}
+          >
+            กลับไปหน้ารายการจอง
+          </button>
+          <div className="text-center text-xs text-black/40">debug code: {id}</div>
+        </div>
+      </main>
+    );
+  }
+
+  const canCancel = b.status === "pending";
+  const canUploadSlip = b.status === "WaitingSlip" || b.status === "slip_uploaded";
+
+  const showQr = b.status === "slip_verified" || b.status === "check-in" || b.status === "finished";
+
+  // ✅ map booking serviceType -> walkin serviceType ("boarding" | "swimming")
+  const walkinServiceType: ServiceType = b.serviceType === "boarding" ? "boarding" : "swimming";
 
   return (
     <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
@@ -753,14 +948,14 @@ export default function BookingDetailPage() {
 
       <BottomSheet open={openSlip} title="แนบหลักฐานการชำระเงิน" onClose={() => setOpenSlip(false)}>
         <SlipUploadPanel
-          disabled={!canUploadSlip}
+          disabled={!canUploadSlip || uploadingSlip}
           defaultPreview={slipPreview ?? (b as any).slipUrl ?? null}
           onPick={(file, previewUrl) => {
             setSlipFile(file);
             setSlipPreview(previewUrl);
             setLocalStatus("slip_uploaded");
           }}
-          onSubmit={() => setOpenSlip(false)}
+          onSubmit={handleSubmitSlip}
         />
       </BottomSheet>
 

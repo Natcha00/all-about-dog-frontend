@@ -38,11 +38,26 @@ function FilterChip({
 
 export default function HistoryList({ items }: { items: ServiceHistoryItem[] }) {
   const [filter, setFilter] = useState<"all" | ServiceKind>("all");
+  const [sortOrder, setSortOrder] = useState<"latest" | "oldest">("latest");
 
-  const visible = useMemo(() => {
+  const filtered = useMemo(() => {
     if (filter === "all") return items;
     return items.filter((x) => x.type === filter);
   }, [items, filter]);
+
+  const visible = useMemo(() => {
+    const copy = [...filtered];
+
+    const getDate = (it: ServiceHistoryItem) => (it.type === "BOARDING" ? it.startAt : it.date);
+
+    copy.sort((a, b) => {
+      const da = new Date(getDate(a) ?? "").getTime() || 0;
+      const db = new Date(getDate(b) ?? "").getTime() || 0;
+      return sortOrder === "latest" ? db - da : da - db;
+    });
+
+    return copy;
+  }, [filtered, sortOrder]);
 
   return (
     <div className="space-y-4">
@@ -53,6 +68,37 @@ export default function HistoryList({ items }: { items: ServiceHistoryItem[] }) 
             {f.label}
           </FilterChip>
         ))}
+      </div>
+
+      {/* Sort + count */}
+      <div className="flex items-center justify-between text-xs text-black/60 mt-1 px-1">
+        <span>แสดง {visible.length} รายการ</span>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            className={[
+              "px-3 py-1.5 rounded-full border text-[11px] font-semibold",
+              sortOrder === "latest"
+                ? "bg-black text-white border-black"
+                : "bg-white text-black/65 border-black/15",
+            ].join(" ")}
+            onClick={() => setSortOrder("latest")}
+          >
+            ล่าสุด
+          </button>
+          <button
+            type="button"
+            className={[
+              "px-3 py-1.5 rounded-full border text-[11px] font-semibold",
+              sortOrder === "oldest"
+                ? "bg-black text-white border-black"
+                : "bg-white text-black/65 border-black/15",
+            ].join(" ")}
+            onClick={() => setSortOrder("oldest")}
+          >
+            เก่าสุด
+          </button>
+        </div>
       </div>
 
       {/* List */}

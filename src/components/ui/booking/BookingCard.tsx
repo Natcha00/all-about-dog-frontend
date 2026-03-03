@@ -36,6 +36,16 @@ function getUseAtRows(b: Booking) {
   ];
 }
 
+function serviceTypeBadgeClass(b: Booking) {
+  if (b.serviceType === "boarding") {
+    return "bg-amber-50 text-amber-800 ring-1 ring-amber-200";
+  }
+  if (b.serviceType === "swimming") {
+    return "bg-sky-50 text-sky-800 ring-1 ring-sky-200";
+  }
+  return "bg-slate-50 text-slate-800 ring-1 ring-slate-200";
+}
+
 export default function BookingCardItem({
   b,
   onViewDetail,
@@ -90,6 +100,18 @@ export default function BookingCardItem({
             <span className="text-gray-500">สัตว์เลี้ยง</span>
             <span className="font-semibold text-right truncate max-w-[60%]">
               {petsText}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-gray-500">ประเภทบริการ</span>
+            <span
+              className={[
+                "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                serviceTypeBadgeClass(b),
+              ].join(" ")}
+            >
+              {serviceLabel(b.serviceType)}
             </span>
           </div>
 

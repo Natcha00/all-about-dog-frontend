@@ -107,7 +107,9 @@ export default function BookingCard({ booking }: { booking: Booking }) {
         {/* pet */}
         <div className="flex items-start justify-between gap-4">
           <p className="text-black/55">สัตว์เลี้ยงที่ใช้บริการ</p>
-          <p className="font-extrabold text-black/85 text-right">{booking.petName}</p>
+          <p className="font-extrabold text-black/85 text-right">
+            {booking.pets?.map((p) => p.petName).join(", ") ?? "-"}
+          </p>
         </div>
 
         {/* price */}

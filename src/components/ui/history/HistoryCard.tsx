@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 import type { ServiceHistoryItem } from "./types";
 
 function formatThaiDate(iso: string) {
@@ -24,18 +25,15 @@ function formatThaiDateTime(iso: string) {
 }
 
 export default function HistoryCard({ item }: { item: ServiceHistoryItem }) {
-  return (
-    <div className="rounded-3xl bg-white ring-1 ring-[#f0a23a]/60 shadow-sm px-4 py-4">
-      <div className="flex items-center gap-4">
-        {/* Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-[#f7efdb] ring-1 ring-[#f0a23a] grid place-items-center overflow-hidden">
-          {item.iconSrc ? (
-            <img src={item.iconSrc} alt={item.kindLabel} className="w-10 h-10 object-contain" />
-          ) : (
-            <div className="text-[#399199] font-bold">P</div>
-          )}
-        </div>
+  const router = useRouter();
 
+  return (
+    <button
+      type="button"
+      onClick={() => router.push(`/service/booking/${item.id}`)}
+      className="w-full text-left rounded-3xl bg-white ring-1 ring-[#f0a23a]/60 shadow-sm px-4 py-4 hover:bg-[#fff7ea] transition cursor-pointer"
+    >
+      <div className="flex items-center gap-4">
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="text-lg font-extrabold text-gray-900">
@@ -48,12 +46,12 @@ export default function HistoryCard({ item }: { item: ServiceHistoryItem }) {
               <>
                 <div className="flex gap-1">
                   <span className="font-extrabold">ใช้บริการ:</span>
-                  <span>{formatThaiDateTime(item.startAt)} น.</span>
+                  <span>{formatThaiDate(item.startAt)}</span>
                 </div>
 
                 <div className="flex gap-1">
                   <span className="font-extrabold">ออกบริการ:</span>
-                  <span>{formatThaiDateTime(item.endAt)} น.</span>
+                  <span>{formatThaiDate(item.endAt)}</span>
                 </div>
               </>
             )}
@@ -79,6 +77,6 @@ export default function HistoryCard({ item }: { item: ServiceHistoryItem }) {
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

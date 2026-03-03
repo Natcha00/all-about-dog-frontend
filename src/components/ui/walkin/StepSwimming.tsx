@@ -1,6 +1,6 @@
 "use client";
 
-import { PetPicked, SwimmingDraft } from "@/lib/walkin/walkin/types.mock";
+import { PetPicked, ReservationConfirmLine, SwimmingDraft } from "@/lib/walkin/walkin/types.mock";
 import React, { useEffect, useMemo, useState } from "react";
 
 type SwimmingSlot = {
@@ -25,7 +25,7 @@ type SwimmingPackagePricingResponse = {
     items: Array<{ dogId: number; name: string; breed: string; price: number }>;
     total: number;
   };
-  lines: unknown[];
+  lines: ReservationConfirmLine[];
 };
 
 function todayISO() {
@@ -347,6 +347,7 @@ export default function StepSwimming(props: {
               ownerPlay,
               total,
               package: isVip ? "vip" : "standard",
+              // lines จาก API package-pricing ฝากไว้ใน draft เพื่อส่งไป POST /reservation/confirm
               lines: swimmingResult?.lines ?? [],
               customerNote: note.trim() || undefined,
             })

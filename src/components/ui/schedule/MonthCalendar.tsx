@@ -37,7 +37,7 @@ export default function MonthCalendar({
           const k = dayKey(d);
           const bookings = markersByDay.get(k) ?? [];
 
-          const hasSwim = bookings.some((b) => b.serviceType === "swim");
+          const hasSwim = bookings.some((b) => b.serviceType === "swimming" || b.serviceType === "swim");
           const hasBoarding = bookings.some((b) => b.serviceType === "boarding");
 
           return (

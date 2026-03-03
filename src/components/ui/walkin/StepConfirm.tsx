@@ -1,8 +1,76 @@
-"use client";
-
-import { swimPricePerDog } from "@/lib/walkin/swimming/swimming.price.logic";
 import type { BookingDraft, CustomerDraft, PetPicked } from "@/lib/walkin/walkin/types.mock";
+import { swimPricePerDog } from "@/lib/walkin/swimming/swimming.price.logic";
 import React, { useMemo, useState } from "react";
+
+type ConfirmBody = {
+  offerType: "boarding" | "swimming";
+  period: { start: string; end: string };
+  remark: string;
+  package: string;
+  lines: Array<{ offeringId: number; dogId: number; price: number; quantity: number; groupNumber: number }>;
+};
+
+// แปลงวันที่ (YYYY-MM-DD) + เวลา (HH:mm) ในเวลาไทย (UTC+7) → ISO UTC (เช่น ...Z)
+function toUtcIsoFromBangkok(dateISO: string, timeHHmm: string): string {
+  const localWithOffset = `${dateISO}T${timeHHmm}:00+07:00`;
+  const d = new Date(localWithOffset);
+  if (Number.isNaN(d.getTime())) return localWithOffset;
+  return d.toISOString();
+}
+
+// แปลงปลายชั่วโมงในเวลาไทย (HH:59:59.999, UTC+7) → ISO UTC
+function toUtcIsoEndOfHourFromBangkok(dateISO: string, hour: string): string {
+  const hh = hour.padStart(2, "0");
+  const localWithOffset = `${dateISO}T${hh}:59:59.999+07:00`;
+  const d = new Date(localWithOffset);
+  if (Number.isNaN(d.getTime())) return localWithOffset;
+  return d.toISOString();
+}
+
+function buildConfirmBody(booking: BookingDraft): ConfirmBody | null {
+  const remark = (booking.customerNote ?? "").trim();
+  const pkg = booking.package ?? "standard";
+  // lines มาจาก package-pricing API (ฝากเลี้ยง/ว่ายน้ำ) ฝากไว้ใน draft แล้วส่งตรงไป POST /reservation/confirm
+  const lines = booking.lines ?? [];
+  if (!lines.length) return null;
+
+  if (booking.serviceType === "boarding") {
+    const startTime = booking.startTime || "09:00";
+    const endTime = booking.endTime || "18:00";
+    return {
+      offerType: "boarding",
+      period: {
+        // ส่งเป็น UTC ISO string ตามมาตรฐาน (เช่น 2026-03-30T02:00:00.000Z)
+        start: toUtcIsoFromBangkok(booking.start, startTime),
+        end: toUtcIsoFromBangkok(booking.end, endTime),
+      },
+      remark,
+      package: pkg,
+      lines,
+    };
+  }
+
+  if (booking.serviceType === "swimming") {
+    // ใช้เวลารอบที่เลือกในเวลาไทย แล้วแปลงเป็น UTC ISO ก่อนส่งให้ backend
+    const slotTime = (booking.time ?? "10:00").trim(); // เช่น "12:00"
+    const [hRaw = "10"] = slotTime.split(":");
+    const hour = hRaw.padStart(2, "0");
+    return {
+      offerType: "swimming",
+      period: {
+        // ตัวอย่าง: ผู้ใช้เลือก 12:00 (ไทย) → start = 2026-03-30T05:00:00.000Z
+        start: toUtcIsoFromBangkok(booking.date, slotTime),
+        // และ end = 2026-03-30T05:59:59.999Z (1 ชั่วโมงเต็มใน UTC)
+        end: toUtcIsoEndOfHourFromBangkok(booking.date, hour),
+      },
+      remark,
+      package: pkg,
+      lines,
+    };
+  }
+
+  return null;
+}
 
 /* =========================
    ✅ type guards (แก้ union access)
@@ -231,6 +299,8 @@ export default function StepConfirm(props: {
   const { pets, booking, onBack, onConfirm } = props;
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmSubmitting, setConfirmSubmitting] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   // ✅ ซ่อนเฉพาะ 2 ส่วนใหญ่
   const [openRooms, setOpenRooms] = useState(false);
@@ -465,7 +535,10 @@ export default function StepConfirm(props: {
 
         <button
           type="button"
-          onClick={() => setShowConfirm(true)}
+          onClick={() => {
+            setConfirmError(null);
+            setShowConfirm(true);
+          }}
           className="w-full rounded-2xl bg-[#F0A23A] py-3 font-extrabold text-white active:scale-[0.99] transition"
         >
           ยืนยัน
@@ -476,7 +549,7 @@ export default function StepConfirm(props: {
       {showConfirm ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm p-4"
-          onClick={() => setShowConfirm(false)}
+          onClick={() => !confirmSubmitting && setShowConfirm(false)}
         >
           <div
             className="w-full max-w-sm rounded-3xl bg-white ring-1 ring-black/10 shadow-[0_20px_60px_rgba(0,0,0,0.25)] overflow-hidden"
@@ -488,6 +561,9 @@ export default function StepConfirm(props: {
             </div>
 
             <div className="px-5 py-4">
+              {confirmError ? (
+                <p className="text-sm text-rose-600 mb-4">{confirmError}</p>
+              ) : null}
               <div className="rounded-2xl bg-[#fff7ea]/60 ring-1 ring-black/5 p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-black/60">ราคารวม</p>
@@ -499,7 +575,8 @@ export default function StepConfirm(props: {
               <div className="mt-4 flex gap-3">
                 <button
                   type="button"
-                  className="flex-1 rounded-2xl bg-black/[0.06] py-3 font-extrabold text-black/70 active:scale-[0.99] transition"
+                  disabled={confirmSubmitting}
+                  className="flex-1 rounded-2xl bg-black/[0.06] py-3 font-extrabold text-black/70 active:scale-[0.99] transition disabled:opacity-50"
                   onClick={() => setShowConfirm(false)}
                 >
                   ยกเลิก
@@ -507,13 +584,37 @@ export default function StepConfirm(props: {
 
                 <button
                   type="button"
-                  className="flex-1 rounded-2xl bg-[#F0A23A] py-3 font-extrabold text-white active:scale-[0.99] transition"
-                  onClick={() => {
-                    setShowConfirm(false);
-                    onConfirm(ref);
+                  disabled={confirmSubmitting}
+                  className="flex-1 rounded-2xl bg-[#F0A23A] py-3 font-extrabold text-white active:scale-[0.99] transition disabled:opacity-50"
+                  onClick={async () => {
+                    const body = buildConfirmBody(booking);
+                    if (!body) {
+                      setConfirmError("ไม่มีรายการยืนยัน (กรุณากลับไปเลือกบริการใหม่)");
+                      return;
+                    }
+                    setConfirmError(null);
+                    setConfirmSubmitting(true);
+                    try {
+                      const res = await fetch("/api/reservation/confirm", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body),
+                      });
+                      const data = await res.json().catch(() => ({}));
+                      if (!res.ok) {
+                        setConfirmError(data?.error ?? data?.detail ?? "ยืนยันไม่สำเร็จ");
+                        return;
+                      }
+                      setShowConfirm(false);
+                      onConfirm(data?.ref ?? data?.referenceCode ?? ref);
+                    } catch (e) {
+                      setConfirmError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+                    } finally {
+                      setConfirmSubmitting(false);
+                    }
                   }}
                 >
-                  ยืนยัน
+                  {confirmSubmitting ? "กำลังยืนยัน..." : "ยืนยัน"}
                 </button>
               </div>
             </div>

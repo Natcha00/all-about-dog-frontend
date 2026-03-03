@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import BookingCard from "./BookingCard";
 import { Booking, TabKey } from "@/lib/booking/booking.types";
-import { statusToTab } from "@/lib/booking/booking.logic";
 
 export default function BookingList({
   bookings,
-  tab,
+  tab, // ตอนนี้ใช้สำหรับข้อความ/behavior ภายนอกเท่านั้น ข้อมูลที่ส่งเข้ามาถือว่า filtered แล้วจาก API
   onUploadSlip,
   onViewDetail,
   onViewHistory,
@@ -18,11 +17,7 @@ export default function BookingList({
   onViewDetail?: (bookingId: string) => void;
   onViewHistory?: (bookingId: string) => void;
 }) {
-  const filtered = useMemo(() => {
-    return bookings.filter((b) => statusToTab(b.status) === tab);
-  }, [bookings, tab]);
-
-  if (filtered.length === 0) {
+  if (bookings.length === 0) {
     return (
       <div className="px-4">
         <div className="rounded-3xl bg-white/60 ring-1 ring-black/5 p-6 text-center text-black/50">
@@ -33,8 +28,8 @@ export default function BookingList({
   }
 
   return (
-    <div className="px-4 space-y-3">
-      {filtered.map((b) => (
+    <div className="space-y-3">
+      {bookings.map((b) => (
         <BookingCard
           key={b.id}
           b={b}

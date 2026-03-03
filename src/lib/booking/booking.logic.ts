@@ -12,7 +12,7 @@ export function statusToTab(status: BookingStatus): TabKey {
 export function tabMeta(tab: TabKey) {
   switch (tab) {
     case "pending":
-      return { label: "รอดำเนินการ", hint: "รอร้านอนุมัติ", tone: "neutral" as const };
+      return { label: "รออนุมัติ", hint: "รอร้านอนุมัติ", tone: "neutral" as const };
     case "waitingSlip":
       return { label: "รอชำระเงิน", hint: "แนบสลิป/รอตรวจ", tone: "warning" as const };
     case "slipVerified":

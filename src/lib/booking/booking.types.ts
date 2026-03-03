@@ -41,7 +41,7 @@ export type Booking = {
   petsSummary?: any;
   id: string;
   status: BookingStatus;
-  serviceType: "boarding" | "swim";
+  serviceType: "boarding" | "swimming";
 
   pets: {
     petId: number;

@@ -39,12 +39,22 @@ export function parseThaiDate(dmy: string): Date {
   return new Date(yearCE, (mm ?? 1) - 1, dd ?? 1, 0, 0, 0);
 }
 
+/** รองรับทั้ง ISO (yyyy-mm-dd) จาก API และรูปแบบ dd/MM/yyyy */
+function parseDate(s: string): Date {
+  if (!s || !s.trim()) return new Date(NaN);
+  const t = s.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(t)) return new Date(t);
+  return parseThaiDate(t);
+}
+
 /** คืน day keys ที่ booking ครอบคลุม */
 export function bookingDayKeys(b: Booking): string[] {
-  const start = startOfDay(parseThaiDate(b.startAt));
+  const start = startOfDay(parseDate(b.startAt));
+  if (Number.isNaN(start.getTime())) return [];
 
   if (b.serviceType === "boarding" && b.endAt) {
-    const end = startOfDay(parseThaiDate(b.endAt));
+    const end = startOfDay(parseDate(b.endAt));
+    if (Number.isNaN(end.getTime())) return [dayKey(start)];
     return eachDayOfInterval({ start, end }).map(dayKey);
   }
 
