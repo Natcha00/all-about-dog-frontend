@@ -14,9 +14,10 @@ export type ServiceType = "boarding" | "swim";
 
 export type TabKey =
   | "pending"
-  | "waitingSlip"
-  | "slipVerified"
-  | "active"
+  | "waiting_slip"
+  | "slip_uploaded"
+  | "slip_verified"
+  | "check_in"
   | "finished"
   | "cancelled";
 
@@ -63,7 +64,12 @@ export type Booking = {
   checkInAt?: string;
   checkOutAt?: string;
 
+  /** เหตุผลที่ยกเลิก (จากลูกค้าหรือพนักงาน) */
   cancelledReason?: string;
+  /** ใครยกเลิก: "customer" | "staff" */
+  cancelledBy?: "customer" | "staff";
+  /** ชื่อพนักงานที่ยกเลิก (เมื่อ cancelledBy === "staff") */
+  cancelledByStaffName?: string;
 };
 
 export type Tone = "neutral" | "warning" | "info" | "success" | "danger";

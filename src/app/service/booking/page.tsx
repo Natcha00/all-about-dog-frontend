@@ -2,7 +2,6 @@
 
 import BookingList from "@/components/ui/booking/BookingList";
 import BookingTabs from "@/components/ui/booking/BookingTabs";
-import { statusToTab } from "@/lib/booking/booking.logic";
 import type { Booking, TabKey } from "@/lib/booking/booking.types";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -29,6 +28,12 @@ type ReservationApiItem = {
   timeSlot?: { start: string; end: string };
   checkInDate?: string;
   checkOutDate?: string;
+  cancelledReason?: string;
+  cancelled_reason?: string;
+  cancelledBy?: "customer" | "staff";
+  cancelled_by?: string;
+  cancelledByStaffName?: string;
+  cancelled_by_staff_name?: string;
 };
 
 type ReservationApiResponse = {
@@ -36,15 +41,25 @@ type ReservationApiResponse = {
   items: ReservationApiItem[];
 };
 
-const TAB_KEYS: TabKey[] = ["pending", "waitingSlip", "slipVerified", "active", "finished", "cancelled"];
+const TAB_KEYS: TabKey[] = [
+  "pending",
+  "waiting_slip",
+  "slip_uploaded",
+  "slip_verified",
+  "check_in",
+  "finished",
+  "cancelled",
+];
 
 function normalizeTab(param: string | null): TabKey {
   if (!param) return "pending";
   // อนุญาตให้ใช้ทั้งชื่อ tab ฝั่ง UI และ key ฝั่ง backend บางส่วนผ่าน URL
   if (TAB_KEYS.includes(param as TabKey)) return param as TabKey;
-  if (param === "waiting_slip" || param === "slip_uploaded") return "waitingSlip";
-  if (param === "slip_verified") return "slipVerified";
-  if (param === "check_in" || param === "check-in") return "active";
+  // รองรับ alias เก่าจาก URL เดิม
+  if (param === "waitingSlip") return "waiting_slip";
+  if (param === "slipVerified") return "slip_verified";
+  if (param === "active") return "check_in";
+  if (param === "check-in") return "check_in";
   if (param === "finished") return "finished";
   if (param === "cancelled") return "cancelled";
   return "pending";
@@ -76,31 +91,18 @@ function mapStatusFromBackend(status: string): Booking["status"] {
 }
 
 function mapTabToBackend(tab: TabKey): string {
-  switch (tab) {
-    case "pending":
-      return "pending";
-    case "waitingSlip":
-      return "waiting_slip";
-    case "slipVerified":
-      return "slip_verified";
-    case "active":
-      return "check_in";
-    case "finished":
-      return "finished";
-    case "cancelled":
-      return "cancelled";
-    default:
-      return tab;
-  }
+  // TabKey ตรงกับ key ฝั่ง backend อยู่แล้ว
+  return tab;
 }
 
 function mapCounts(apiCounts: ReservationApiCounts | null): Record<TabKey, number> {
   if (!apiCounts) {
     return {
       pending: 0,
-      waitingSlip: 0,
-      slipVerified: 0,
-      active: 0,
+      waiting_slip: 0,
+      slip_uploaded: 0,
+      slip_verified: 0,
+      check_in: 0,
       finished: 0,
       cancelled: 0,
     };
@@ -108,9 +110,10 @@ function mapCounts(apiCounts: ReservationApiCounts | null): Record<TabKey, numbe
 
   return {
     pending: apiCounts.pending ?? 0,
-    waitingSlip: (apiCounts.waiting_slip ?? 0) + (apiCounts.slip_uploaded ?? 0),
-    slipVerified: apiCounts.slip_verified ?? 0,
-    active: apiCounts.check_in ?? 0,
+    waiting_slip: apiCounts.waiting_slip ?? 0,
+    slip_uploaded: apiCounts.slip_uploaded ?? 0,
+    slip_verified: apiCounts.slip_verified ?? 0,
+    check_in: apiCounts.check_in ?? 0,
     finished: apiCounts.finished ?? 0,
     cancelled: apiCounts.cancelled ?? 0,
   };
@@ -147,6 +150,19 @@ function mapItemToBooking(item: ReservationApiItem): Booking {
     }
   }
 
+  const reason =
+    item.cancelledReason ??
+    (item as { cancelled_reason?: string }).cancelled_reason;
+  const by =
+    item.cancelledBy ??
+    (item as { cancelled_by?: string }).cancelled_by;
+  const byStaffName =
+    item.cancelledByStaffName ??
+    (item as { cancelled_by_staff_name?: string }).cancelled_by_staff_name;
+
+  const cancelledByNormalized: Booking["cancelledBy"] =
+    by === "staff" ? "staff" : by === "customer" ? "customer" : undefined;
+
   return {
     id: item.id,
     status: mapStatusFromBackend(item.status),
@@ -156,6 +172,9 @@ function mapItemToBooking(item: ReservationApiItem): Booking {
     endAt,
     slotLabel,
     price: item.totalPrice ?? 0,
+    ...(reason !== undefined && { cancelledReason: reason }),
+    ...(cancelledByNormalized !== undefined && { cancelledBy: cancelledByNormalized }),
+    ...(byStaffName !== undefined && { cancelledByStaffName: byStaffName }),
   };
 }
 
@@ -177,9 +196,8 @@ export default function BookingsPage() {
       setLoading(true);
       setError(null);
       try {
-        // waitingSlip: ให้ backend ส่งทุกรายการมา แล้วค่อยกรองฝั่ง frontend
-        const backendTab = tab === "waitingSlip" ? undefined : mapTabToBackend(tab);
-        const url = backendTab ? `/api/reservation?tab=${encodeURIComponent(backendTab)}` : `/api/reservation`;
+        const backendTab = mapTabToBackend(tab);
+        const url = `/api/reservation?tab=${encodeURIComponent(backendTab)}`;
         const res = await fetch(url);
         const data: ReservationApiResponse = await res.json().catch(() => ({ counts: null, items: [] } as any));
         if (!res.ok) {
@@ -192,12 +210,7 @@ export default function BookingsPage() {
         if (cancelled) return;
         setCountsRaw(data.counts);
         const mapped = data.items.map(mapItemToBooking);
-        // รวม waiting_slip + slip_uploaded อยู่ในแท็บ "รอชำระเงิน" / "รอตรวจสลิป"
-        const next =
-          tab === "waitingSlip"
-            ? mapped.filter((b) => statusToTab(b.status) === "waitingSlip")
-            : mapped;
-        setBookings(next);
+        setBookings(mapped);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการโหลดรายการจอง");

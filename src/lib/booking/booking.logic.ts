@@ -1,26 +1,39 @@
 import type { Booking, BookingStatus, TabKey, BillStatusEvent } from "./booking.types";
 
 export function statusToTab(status: BookingStatus): TabKey {
-  if (status === "pending") return "pending";
-  if (status === "WaitingSlip" || status === "slip_uploaded") return "waitingSlip";
-  if (status === "slip_verified") return "slipVerified";
-  if (status === "check-in") return "active";
-  if (status === "finished") return "finished";
-  return "cancelled";
+  switch (status) {
+    case "pending":
+      return "pending";
+    case "WaitingSlip":
+      return "waiting_slip";
+    case "slip_uploaded":
+      return "slip_uploaded";
+    case "slip_verified":
+      return "slip_verified";
+    case "check-in":
+      return "check_in";
+    case "finished":
+      return "finished";
+    default:
+      return "cancelled";
+  }
 }
 
 export function tabMeta(tab: TabKey) {
   switch (tab) {
     case "pending":
       return { label: "รออนุมัติ", hint: "รอร้านอนุมัติ", tone: "neutral" as const };
-    case "waitingSlip":
-      return { label: "รอชำระเงิน", hint: "แนบสลิป/รอตรวจ", tone: "warning" as const };
-    case "slipVerified":
+    case "waiting_slip":
+      return { label: "รอชำระเงิน", hint: "ลูกค้าต้องชำระเงิน", tone: "warning" as const };
+    case "slip_uploaded":
+      return { label: "รอตรวจสลิป", hint: "สลิปถูกอัปโหลดแล้ว", tone: "warning" as const };
+    case "slip_verified":
       return { label: "ชำระเงินแล้ว", hint: "รอเข้าใช้บริการ", tone: "success" as const };
-    case "active":
+    case "check_in":
       return { label: "กำลังใช้บริการ", hint: "ชำระแล้ว/เช็คอิน", tone: "info" as const };
     case "finished":
       return { label: "เสร็จสิ้น", hint: "จบงานแล้ว", tone: "success" as const };
+    case "cancelled":
     default:
       return { label: "ยกเลิก", hint: "ถูกยกเลิก", tone: "danger" as const };
   }

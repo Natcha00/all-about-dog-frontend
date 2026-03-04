@@ -131,12 +131,26 @@ export default function BookingCardItem({
           </div>
 
 
-          {/* cancelled reason */}
-          {b.status === "cancelled" && b.cancelledReason ? (
-            <div className="mt-2 rounded-2xl bg-rose-50 ring-1 ring-rose-100 px-3 py-2">
-              <p className="text-[12px] text-rose-800 leading-snug">
-                <span className="font-semibold">เหตุผล:</span> {b.cancelledReason}
-              </p>
+          {/* cancelled: แสดงผู้ยกเลิก (พนักงาน) และเหตุผล */}
+          {b.status === "cancelled" &&
+          (b.cancelledReason ?? b.cancelledByStaffName) ? (
+            <div className="mt-2 rounded-2xl bg-rose-50 ring-1 ring-rose-100 px-3 py-2 space-y-1">
+              {b.cancelledBy === "staff" && b.cancelledByStaffName ? (
+                <p className="text-[12px] text-rose-800 leading-snug">
+                  <span className="font-semibold">ยกเลิกโดยพนักงาน:</span>{" "}
+                  {b.cancelledByStaffName}
+                </p>
+              ) : null}
+              {b.cancelledReason ? (
+                <p className="text-[12px] text-rose-800 leading-snug">
+                  <span className="font-semibold">
+                    {b.cancelledBy === "staff"
+                      ? "เหตุผลที่พนักงานแจ้ง:"
+                      : "เหตุผลที่ยกเลิก:"}
+                  </span>{" "}
+                  {b.cancelledReason}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>

@@ -29,6 +29,15 @@ export type ReservationListItem = {
   timeSlot?: { start: string; end: string };
   checkInDate?: string;
   checkOutDate?: string;
+  /** เหตุผลที่ยกเลิก (backend อาจส่งเป็น cancelled_reason) */
+  cancelledReason?: string;
+  cancelled_reason?: string;
+  /** ใครยกเลิก: "customer" | "staff" (backend อาจส่งเป็น cancelled_by) */
+  cancelledBy?: "customer" | "staff";
+  cancelled_by?: string;
+  /** ชื่อพนักงานที่ยกเลิก (backend อาจส่งเป็น cancelled_by_staff_name) */
+  cancelledByStaffName?: string;
+  cancelled_by_staff_name?: string;
 };
 
 export type ReservationListResponse = {

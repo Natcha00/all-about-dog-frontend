@@ -13,7 +13,15 @@ export default function BookingTabs({
   onChange: (t: TabKey) => void;
   counts: Record<TabKey, number>;
 }) {
-  const tabs: TabKey[] = ["pending", "waitingSlip", "slipVerified", "active", "finished", "cancelled"];
+  const tabs: TabKey[] = [
+    "pending",
+    "waiting_slip",
+    "slip_uploaded",
+    "slip_verified",
+    "check_in",
+    "finished",
+    "cancelled",
+  ];
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-2">

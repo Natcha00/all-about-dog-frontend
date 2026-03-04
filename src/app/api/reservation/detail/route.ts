@@ -56,7 +56,14 @@ export type ReservationDetailResult = {
     label: string;
     at: string | null;
     by: string | null;
+    detail?: string | null;
   }>;
+  cancelledReason?: string | null;
+  cancelled_reason?: string | null;
+  cancelledBy?: "customer" | "staff";
+  cancelled_by?: string;
+  cancelledByStaffName?: string | null;
+  cancelled_by_staff_name?: string | null;
 };
 
 export type ReservationDetailResponse = {

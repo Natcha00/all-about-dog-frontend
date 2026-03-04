@@ -200,6 +200,21 @@ function mapDetailToBooking(detail: ReservationDetailResult): Booking {
   (booking as any).timeline = detail.timeline ?? [];
   (booking as any).plan = 1;
 
+  const anyDetail = detail as {
+    cancelledReason?: string;
+    cancelled_reason?: string;
+    cancelledBy?: "customer" | "staff";
+    cancelled_by?: string;
+    cancelledByStaffName?: string;
+    cancelled_by_staff_name?: string;
+  };
+  const reason = detail.cancelledReason ?? anyDetail.cancelled_reason;
+  const by = detail.cancelledBy ?? anyDetail.cancelled_by;
+  const byStaff = detail.cancelledByStaffName ?? anyDetail.cancelled_by_staff_name;
+  if (reason !== undefined && reason !== null) booking.cancelledReason = String(reason);
+  if (by === "staff" || by === "customer") booking.cancelledBy = by;
+  if (byStaff !== undefined && byStaff !== null) booking.cancelledByStaffName = String(byStaff);
+
   return booking;
 }
 
@@ -733,6 +748,17 @@ export default function BookingDetailPage() {
     ];
   }, [b, plan]);
 
+  const cancelledTimelineDetail = useMemo(() => {
+    const tl = (b as any)?.timeline as
+      | Array<{ key?: string; detail?: string | null }>
+      | undefined;
+
+    if (!tl) return null;
+
+    const item = tl.find((it) => it.key && it.key.toUpperCase() === "CANCELLED");
+    return item?.detail ?? null;
+  }, [b]);
+
   const historyItems = useMemo(() => {
     if (!b) return [];
 
@@ -753,12 +779,33 @@ export default function BookingDetailPage() {
       });
     }
 
-    if ((b as any).cancelledReason) {
-      return items.map((it) => (it.key === "cancelled" ? { ...it, note: (b as any).cancelledReason } : it));
+    // ใช้เหตุผลจาก backend timeline (detail) เป็นหลัก
+    if (b.status === "cancelled" && cancelledTimelineDetail) {
+      return items.map((it) =>
+        it.key === "cancelled" ? { ...it, note: cancelledTimelineDetail } : it,
+      );
+    }
+
+    // fallback: ใช้ cancelledReason / cancelledByStaffName ถ้ายังไม่มี detail
+    if (b.status === "cancelled" && (b.cancelledReason ?? b.cancelledByStaffName)) {
+      const parts: string[] = [];
+      if (b.cancelledBy === "staff" && b.cancelledByStaffName) {
+        parts.push(`ยกเลิกโดยพนักงาน: ${b.cancelledByStaffName}`);
+      }
+      if (b.cancelledReason) {
+        parts.push(
+          b.cancelledBy === "staff"
+            ? `เหตุผลที่พนักงานแจ้ง: ${b.cancelledReason}`
+            : `เหตุผล: ${b.cancelledReason}`,
+        );
+      }
+      return items.map((it) =>
+        it.key === "cancelled" ? { ...it, note: parts.join(" · ") } : it,
+      );
     }
 
     return items;
-  }, [b]);
+  }, [b, cancelledTimelineDetail]);
 
   async function handleSubmitSlip() {
     if (!slipFile || !b || uploadingSlip) return;
@@ -902,7 +949,26 @@ export default function BookingDetailPage() {
           //     {pickedPets.length ? pickedPets.map((p) => p.name).join(", ") : "-"}
           //   </span>
           // }
-          totalValue={<span className="text-black/60">{(b as any).cancelledReason ?? "-"}</span>}
+          totalValue={
+            b.status === "cancelled" && cancelledTimelineDetail ? (
+              <span className="text-black/60">
+                เหตุผลการยกเลิก: {cancelledTimelineDetail}
+              </span>
+            ) : b.status === "cancelled" &&
+              (b.cancelledReason ?? b.cancelledByStaffName) ? (
+              <span className="text-black/60 block">
+                {b.cancelledBy === "staff" && b.cancelledByStaffName ? (
+                  <>
+                    ยกเลิกโดยพนักงาน: {b.cancelledByStaffName}
+                    {b.cancelledReason ? " · " : ""}
+                  </>
+                ) : null}
+                {b.cancelledReason ? <>เหตุผล: {b.cancelledReason}</> : null}
+              </span>
+            ) : (
+              <span className="text-black/60">-</span>
+            )
+          }
           refCode={b.id}
           serviceType={walkinServiceType} // ✅ ส่งเป็น "boarding" | "swimming"
           petsPicked={pickedPets} // ✅ ส่งตรง ๆ (PetPicked รองรับ null แล้ว)
