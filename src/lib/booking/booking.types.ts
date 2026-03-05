@@ -2,7 +2,7 @@
 
 export type BookingStatus =
   | "pending"
-  | "WaitingSlip"
+  | "waiting_slip"
   | "slip_uploaded"
   | "slip_verified"
   | "check-in"
@@ -57,7 +57,9 @@ export type Booking = {
 
   price: number;
 
-  slipUrl?: string;
+  slip?: {
+    imageUrl?: string;
+  };
   verifiedBy?: string;
   verifiedAt?: string;
 
@@ -87,6 +89,6 @@ export type BillStatusEvent = {
   label: string;
   tone: Tone;
   at?: string;
-  by?: string;
+  performedByName?: string;
   note?: string;
 };

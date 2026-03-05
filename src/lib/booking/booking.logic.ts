@@ -1,10 +1,11 @@
 import type { Booking, BookingStatus, TabKey, BillStatusEvent } from "./booking.types";
+import { formatDateThai } from "../date/date.utils";
 
 export function statusToTab(status: BookingStatus): TabKey {
   switch (status) {
     case "pending":
       return "pending";
-    case "WaitingSlip":
+    case "waiting_slip":
       return "waiting_slip";
     case "slip_uploaded":
       return "slip_uploaded";
@@ -44,7 +45,7 @@ export function statusLabel(status: BookingStatus) {
   switch (status) {
     case "pending":
       return "รออนุมัติ";
-    case "WaitingSlip":
+    case "waiting_slip":
       return "รอชำระเงิน";
     case "slip_uploaded":
       return "รอตรวจสลิป";
@@ -69,18 +70,22 @@ export function serviceLabel(serviceType: Booking["serviceType"]) {
 }
 
 export function formatDateRange(b: Booking) {
-  // boarding = ช่วงวันเข้า-ออก
+  // boarding = ช่วงวันเข้า-ออก (ใช้รูปแบบวันที่ไทยจาก ISO)
   if (b.serviceType === "boarding") {
-    return b.endAt ? `${b.startAt} – ${b.endAt}` : b.startAt;
+    const start = formatDateThai(b.startAt);
+    const end = b.endAt ? formatDateThai(b.endAt) : undefined;
+    return end ? `${start} – ${end}` : start;
   }
 
   // swimming = วัน + รอบ (slotLabel)
-  return b.slotLabel ? `${b.startAt}\n ${b.slotLabel}` : b.startAt;}
+  const dateText = formatDateThai(b.startAt);
+  return b.slotLabel ? `${dateText}\n ${b.slotLabel}` : dateText;
+}
 
   export function statusTone(status: BookingStatus) {
     if (status === "cancelled" || status === "rejected") return "danger" as const;
     if (status === "finished") return "success" as const;
-    if (status === "WaitingSlip" || status === "slip_uploaded") return "warning" as const;
+    if (status === "waiting_slip" || status === "slip_uploaded") return "warning" as const;
     if (status === "slip_verified") return "success" as const;
     if (status === "check-in") return "info" as const;
     return "neutral" as const;
@@ -96,7 +101,7 @@ export function formatDateRange(b: Booking) {
         label: "ยืนยันการชำระเงินโดยพนักงาน",
         tone: "success",
         at: b.verifiedAt,
-        by: b.verifiedBy,
+        performedByName: b.verifiedBy,
       },
       { key: "checked_in", label: "Check-in", tone: "info", at: b.checkInAt },
       { key: "finished", label: "จบการใช้บริการ", tone: "success", at: b.checkOutAt },

@@ -5,6 +5,7 @@ import React, { useMemo } from "react";
 import type { Booking } from "@/lib/booking/booking.types";
 import PoikaiCard from "@/components/ui/PoikaiCard";
 import { serviceLabel, statusLabel, statusTone, petsList } from "@/lib/booking/booking.logic";
+import { formatDateThai } from "@/lib/date/date.utils";
 
 function badgeToneFromTone(tone: ReturnType<typeof statusTone>) {
   switch (tone) {
@@ -25,13 +26,13 @@ function badgeToneFromTone(tone: ReturnType<typeof statusTone>) {
 function getUseAtRows(b: Booking) {
   if (b.serviceType === "boarding") {
     return [
-      { label: "วันส่ง", value: b.startAt ?? "-" },
-      { label: "วันรับกลับ", value: b.endAt ?? "-" },
+      { label: "วันส่ง", value: formatDateThai(b.startAt) ?? "-" },
+      { label: "วันรับกลับ", value: formatDateThai(b.endAt ?? "") ?? "-" },
     ];
   }
 
   return [
-    { label: "วัน", value: b.startAt ?? "-" },
+    { label: "วัน", value: formatDateThai(b.startAt) ?? "-" },
     { label: "รอบ", value: b.slotLabel ?? "-" },
   ];
 }

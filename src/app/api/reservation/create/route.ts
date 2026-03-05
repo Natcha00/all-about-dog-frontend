@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(`${base}/reservation/confirm`, {
+    const res = await fetch(`${base}/reservation/create`, {
       method: "POST",
       cache: "no-store",
       headers,

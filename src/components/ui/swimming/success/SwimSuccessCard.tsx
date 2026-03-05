@@ -3,13 +3,7 @@
 import { CalendarDays, Clock, PawPrint, Waves } from "lucide-react";
 import PoikaiCard from "@/components/ui/PoikaiCard";
 import PoikaiChip from "@/components/ui/PoikaiChip";
-
-function formatThaiDate(raw: string) {
-  if (!raw || raw === "-") return "-";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
-}
+import { formatDateThai } from "@/lib/date/date.utils";
 
 export default function SwimSuccessCard(props: {
   bookingNo: string;
@@ -39,7 +33,7 @@ export default function SwimSuccessCard(props: {
             </div>
             <div className="min-w-0">
               <p className="text-gray-600">วันที่ใช้บริการ</p>
-              <p className="font-semibold text-gray-900">{formatThaiDate(date)}</p>
+              <p className="font-semibold text-gray-900">{formatDateThai(date)}</p>
             </div>
           </div>
 

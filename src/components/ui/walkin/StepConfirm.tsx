@@ -595,7 +595,7 @@ export default function StepConfirm(props: {
                     setConfirmError(null);
                     setConfirmSubmitting(true);
                     try {
-                      const res = await fetch("/api/reservation/confirm", {
+                      const res = await fetch("/api/reservation/create", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(body),

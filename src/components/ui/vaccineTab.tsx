@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, ImagePlus, Syringe, X, Pencil, Trash2, ZoomIn } from "lucide-react";
+import { formatDateThai } from "@/lib/date/date.utils";
 
 export type VaccineType =
   | "พิษสุนัขบ้า"
@@ -23,13 +24,6 @@ export interface VaccineRecord {
 
 interface VaccineTabProps {
   currentItem: string;
-}
-
-function formatThaiDate(iso: string) {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
 }
 
 function Chip({
@@ -225,7 +219,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{r.type}</p>
-                      <p className="text-xs text-gray-500">วันที่: {formatThaiDate(r.date)}</p>
+                      <p className="text-xs text-gray-500">วันที่: {formatDateThai(r.date)}</p>
                     </div>
                   </div>
 

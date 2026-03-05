@@ -6,13 +6,7 @@ import PoikaiChip from "@/components/ui/PoikaiChip";
 import SuccessHeader from "@/components/ui/success/SuccessHeader";
 import SuccessSummaryCard from "@/components/ui/success/SuccessSummaryCard";
 import type { BookingDraft } from "@/lib/walkin/walkin/types.mock";
-
-function formatThaiDate(iso: string) {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
-}
+import { formatDateThai } from "@/lib/date/date.utils";
 
 function formatTime(t: string) {
   if (!t) return "-";
@@ -80,7 +74,7 @@ function SwimmingSuccessPage() {
           subtitle=""
           rows={[
             { label: "รายการจอง", value: ref || "-" },
-            { label: "วันที่ใช้บริการ", value: formatThaiDate(date) },
+            { label: "วันที่ใช้บริการ", value: formatDateThai(date) },
             { label: "รอบเวลา", value: formatTime(roundTime) },
             { label: "ประเภท", value: <PoikaiChip tone="neutral">{typeLabel}</PoikaiChip> },
             {

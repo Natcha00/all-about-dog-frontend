@@ -55,7 +55,7 @@ export type ReservationDetailResult = {
     key: string;
     label: string;
     at: string | null;
-    by: string | null;
+    performedByName: string | null;
     detail?: string | null;
   }>;
   cancelledReason?: string | null;

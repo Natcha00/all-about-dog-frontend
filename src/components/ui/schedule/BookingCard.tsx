@@ -1,5 +1,6 @@
 import type { Booking } from "@/lib/booking/booking.types";
 import Link from "next/link";
+import { formatDateThai } from "@/lib/date/date.utils";
 
 /* =======================
    helpers
@@ -90,12 +91,14 @@ export default function BookingCard({ booking }: { booking: Booking }) {
           <div className="text-right font-extrabold text-black/85">
             {isBoarding ? (
               <>
-                <div>{booking.startAt}</div>
-                <div className="text-xs font-semibold text-black/50">ถึง {booking.endAt}</div>
+                <div>{formatDateThai(booking.startAt)}</div>
+                <div className="text-xs font-semibold text-black/50">
+                  ถึง {formatDateThai(booking.endAt ?? "")}
+                </div>
               </>
             ) : (
               <>
-                <div>{booking.startAt}</div>
+                <div>{formatDateThai(booking.startAt)}</div>
                 {booking.slotLabel ? (
                   <div className="text-xs font-semibold text-black/50">{booking.slotLabel}</div>
                 ) : null}

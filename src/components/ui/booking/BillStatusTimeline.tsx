@@ -45,7 +45,7 @@ export default function BillStatusTimeline({ b }: { b: Booking }) {
       <div className="mt-4 space-y-3">
         {events.map((e, idx) => {
           // heuristic: ถ้า event มี at/by/note หรือสถานะปัจจุบันอยู่หลัง ๆ ให้ถือว่า done
-          const done = Boolean(e.at || e.by || e.note) || (b.status === "finished" && e.key !== "cancelled");
+          const done = Boolean(e.at || e.performedByName || e.note) || (b.status === "finished" && e.key !== "cancelled");
           const isLast = idx === events.length - 1;
 
           return (
@@ -62,7 +62,7 @@ export default function BillStatusTimeline({ b }: { b: Booking }) {
 
                 <div className="mt-1 space-y-1">
                   {e.at ? <p className="text-[12px] text-black/45">{e.at}</p> : null}
-                  {e.by ? <p className="text-[12px] text-black/55">ผู้ตรวจ: <span className="font-semibold">{e.by}</span></p> : null}
+                  {e.performedByName ? <p className="text-[12px] text-black/55">ผู้ตรวจ: <span className="font-semibold">{e.performedByName}</span></p> : null}
                   {e.note ? <p className="text-[12px] text-black/55">หมายเหตุ: {e.note}</p> : null}
                 </div>
               </div>

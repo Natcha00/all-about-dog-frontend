@@ -1,28 +1,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import type { ServiceHistoryItem } from "./types";
-
-function formatThaiDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
-
-function formatThaiDateTime(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("th-TH", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatDateThai } from "@/lib/date/date.utils";
 
 export default function HistoryCard({ item }: { item: ServiceHistoryItem }) {
   const router = useRouter();
@@ -46,12 +25,12 @@ export default function HistoryCard({ item }: { item: ServiceHistoryItem }) {
               <>
                 <div className="flex gap-1">
                   <span className="font-extrabold">ใช้บริการ:</span>
-                  <span>{formatThaiDate(item.startAt)}</span>
+                  <span>{formatDateThai(item.startAt)}</span>
                 </div>
 
                 <div className="flex gap-1">
                   <span className="font-extrabold">ออกบริการ:</span>
-                  <span>{formatThaiDate(item.endAt)}</span>
+                  <span>{formatDateThai(item.endAt)}</span>
                 </div>
               </>
             )}
@@ -61,7 +40,7 @@ export default function HistoryCard({ item }: { item: ServiceHistoryItem }) {
               <>
                 <div className="flex gap-2">
                   <span className="font-extrabold">วันที่:</span>
-                  <span>{formatThaiDate(item.date)}</span>
+                  <span>{formatDateThai(item.date)}</span>
                 </div>
 
                 <div className="flex gap-2">

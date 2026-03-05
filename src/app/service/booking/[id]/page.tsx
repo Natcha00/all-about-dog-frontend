@@ -11,6 +11,7 @@ import type { Booking } from "@/lib/booking/booking.types";
 import { QRCodeSVG } from "qrcode.react";
 import type { PetPicked, ServiceType } from "@/lib/walkin/walkin/types.mock";
 import type { ReservationDetailResult } from "@/app/api/reservation/detail/route";
+import { formatDateThai, formatDateTimeThai } from "@/lib/date/date.utils";
 
 /* ===== labels ===== */
 
@@ -18,7 +19,7 @@ type BookingStatus = Booking["status"];
 
 const STATUS_LABEL: Record<BookingStatus, string> = {
   pending: "รออนุมัติ",
-  WaitingSlip: "รอชำระเงิน",
+  waiting_slip: "รอชำระเงิน",
   slip_uploaded: "รอตรวจสลิป",
   slip_verified: "ชำระเงินแล้ว",
   "check-in": "กำลังใช้บริการ",
@@ -113,7 +114,7 @@ function mapStatusFromBackend(status: string): BookingStatus {
     case "pending":
       return "pending";
     case "waiting_slip":
-      return "WaitingSlip";
+      return "waiting_slip";
     case "slip_uploaded":
       return "slip_uploaded";
     case "slip_verified":
@@ -253,6 +254,60 @@ function formatThaiDateTime(d: Date) {
   return `เมื่อ ${day}/${month}/${year} ${hr12}:${min} ${ampm}`;
 }
 
+type BackendTimelineEntry = {
+  key: string;
+  label: string;
+  at: string | null;
+  performedByName: string | null;
+  detail?: string | null;
+};
+
+function parseTimelineAt(at: string | null): string | undefined {
+  if (!at) return undefined;
+  try {
+    const d = new Date(at);
+    if (!Number.isNaN(d.getTime())) return formatThaiDateTime(d);
+  } catch {
+    // ignore
+  }
+  return at;
+}
+
+function toneFromKey(key: string): HistoryItem["tone"] {
+  const k = key.toUpperCase();
+  if (k === "CANCELLED" || k === "REJECTED") return "danger";
+  if (k === "SLIP_VERIFIED" || k === "FINISHED" || k === "APPROVED") return "success";
+  return "info";
+}
+
+/** สร้างรายการสถานะบิลจาก timeline จริงจาก backend (เก็บ log ทั้งหมดตั้งแต่สร้างการจอง) */
+function buildHistoryFromBackendTimeline(timeline: BackendTimelineEntry[]): HistoryItem[] {
+  if (!Array.isArray(timeline) || timeline.length === 0) return [];
+
+  const sorted = [...timeline].sort((a, b) => {
+    const tA = a.at ? new Date(a.at).getTime() : 0;
+    const tB = b.at ? new Date(b.at).getTime() : 0;
+    return tB - tA;
+  });
+
+  return sorted.map((entry) => {
+    console.log(entry);
+    const key = (entry.key?.toLowerCase?.() ?? "created") as HistoryItem["key"];
+    console.log(key);
+    const noteParts: string[] = [];
+    if (entry.performedByName) noteParts.push(`โดย: ${entry.performedByName}`);
+    if (entry.detail) noteParts.push(entry.detail);
+    const note = (noteParts.length > 0 ? noteParts.join(" · ") : undefined);
+    return {
+      key,
+      label: entry.label?.trim() || "สร้างรายการจอง",
+      at: parseTimelineAt(entry.at) ?? undefined,
+      tone: toneFromKey(entry.key),
+      note: note || undefined,
+    };
+  });
+}
+
 function buildMockHistory(status: BookingStatus): HistoryItem[] {
   const base = new Date("2025-11-02T10:50:00");
   const t1 = new Date(base.getTime() + 24 * 60 * 60 * 1000);
@@ -261,7 +316,7 @@ function buildMockHistory(status: BookingStatus): HistoryItem[] {
 
   const statusToKeys: Record<BookingStatus, HistoryItem["key"][]> = {
     pending: ["created"],
-    WaitingSlip: ["created", "waiting_slip"],
+    waiting_slip: ["created", "waiting_slip"],
     slip_uploaded: ["created", "waiting_slip", "slip_uploaded"],
     slip_verified: ["created", "waiting_slip", "slip_uploaded", "slip_verified"],
     "check-in": ["created", "waiting_slip", "slip_uploaded", "slip_verified", "check_in"],
@@ -386,11 +441,15 @@ function BottomSheet({
 
 function TimelineList({ items }: { items: HistoryItem[] }) {
   return (
-    <div className="rounded-2xl bg-black/[0.02] ring-1 ring-black/5 overflow-hidden">
+    <div className="rounded-2xl bg-black/[0.02] ring-1 ring-black/5 max-h-80 overflow-y-auto">
       <div className="divide-y divide-black/5">
-        {items.map((it) => {
-          const dot =
-            it.tone === "danger" ? "bg-red-500" : it.tone === "success" ? "bg-emerald-500" : "bg-emerald-500";
+        {items.map((it, index) => {
+          const isLatest = index === 0;
+          const dot = isLatest
+            ? it.tone === "danger"
+              ? "bg-red-500"
+              : "bg-emerald-500"
+            : "bg-gray-400";
 
           return (
             <div key={it.key} className="px-4 py-3">
@@ -494,12 +553,6 @@ function SlipUploadPanel({
   const [openPreview, setOpenPreview] = useState(false);
 
   useEffect(() => {
-    return () => {
-      if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  useEffect(() => {
     if (!previewUrl) setOpenPreview(false);
   }, [previewUrl]);
 
@@ -529,7 +582,10 @@ function SlipUploadPanel({
 
         <div className="text-sm text-gray-700 space-y-1">
           <Row label="แนบโดย" value="ลูกค้า: (mock)" />
-          <Row label="เวลาแนบ" value={previewUrl ? new Date().toLocaleString("th-TH") : "-"} />
+          <Row
+            label="เวลาแนบ"
+            value={previewUrl ? formatDateTimeThai(new Date().toISOString()) : "-"}
+          />
         </div>
 
         {previewUrl ? (
@@ -625,6 +681,7 @@ export default function BookingDetailPage() {
   const [slipPreview, setSlipPreview] = useState<string | null>(null);
   const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
   const [uploadingSlip, setUploadingSlip] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -736,11 +793,20 @@ export default function BookingDetailPage() {
 
       ...(isBoarding
         ? [
-            { label: "วันที่เข้า", value: (b as any).startAt || "-" },
-            { label: "วันที่ออก", value: (b as any).endAt || "-" },
+            {
+              label: "วันที่เข้า",
+              value: formatDateThai((b as any).startAt || "") || "-",
+            },
+            {
+              label: "วันที่ออก",
+              value: formatDateThai((b as any).endAt || "") || "-",
+            },
           ]
         : [
-            { label: "วันที่ใช้บริการ", value: (b as any).startAt || "-" },
+            {
+              label: "วันที่ใช้บริการ",
+              value: formatDateThai((b as any).startAt || "") || "-",
+            },
             { label: "รอบเวลา", value: (b as any).slotLabel || "-" },
           ]),
 
@@ -762,47 +828,15 @@ export default function BookingDetailPage() {
   const historyItems = useMemo(() => {
     if (!b) return [];
 
-    const items = buildMockHistory(b.status);
+    const backendTimeline = (b as any).timeline as BackendTimelineEntry[] | undefined;
+    const hasBackendTimeline = Array.isArray(backendTimeline) && backendTimeline.length > 0;
 
-    if ((b as any).verifiedBy || (b as any).verifiedAt) {
-      return items.map((it) => {
-        if (it.key !== "slip_verified") return it;
-        return {
-          ...it,
-          note: [
-            (b as any).verifiedBy ? `ผู้ตรวจ: ${(b as any).verifiedBy}` : null,
-            (b as any).verifiedAt ? `เวลา: ${(b as any).verifiedAt}` : null,
-          ]
-            .filter(Boolean)
-            .join(" • "),
-        };
-      });
-    }
+    // ถ้ายังไม่มี log จริงจาก backend ไม่แสดงช่องรอล่วงหน้า (mock)
+    if (!hasBackendTimeline) return [];
 
-    // ใช้เหตุผลจาก backend timeline (detail) เป็นหลัก
-    if (b.status === "cancelled" && cancelledTimelineDetail) {
-      return items.map((it) =>
-        it.key === "cancelled" ? { ...it, note: cancelledTimelineDetail } : it,
-      );
-    }
+    const items = buildHistoryFromBackendTimeline(backendTimeline);
 
-    // fallback: ใช้ cancelledReason / cancelledByStaffName ถ้ายังไม่มี detail
-    if (b.status === "cancelled" && (b.cancelledReason ?? b.cancelledByStaffName)) {
-      const parts: string[] = [];
-      if (b.cancelledBy === "staff" && b.cancelledByStaffName) {
-        parts.push(`ยกเลิกโดยพนักงาน: ${b.cancelledByStaffName}`);
-      }
-      if (b.cancelledReason) {
-        parts.push(
-          b.cancelledBy === "staff"
-            ? `เหตุผลที่พนักงานแจ้ง: ${b.cancelledReason}`
-            : `เหตุผล: ${b.cancelledReason}`,
-        );
-      }
-      return items.map((it) =>
-        it.key === "cancelled" ? { ...it, note: parts.join(" · ") } : it,
-      );
-    }
+   
 
     return items;
   }, [b, cancelledTimelineDetail]);
@@ -838,6 +872,38 @@ export default function BookingDetailPage() {
     }
   }
 
+  async function handleConfirmCancel() {
+    if (!b || cancelling) return;
+    try {
+      setCancelling(true);
+      const res = await fetch("/api/reservation/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: b.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        alert((data as any)?.error ?? "ยกเลิกรายการจองไม่สำเร็จ");
+        return;
+      }
+
+      // อัปเดตสถานะในหน้า detail ให้เห็นทันที
+      setLocalStatus("cancelled");
+      setOpenCancelConfirm(false);
+
+      // พาผู้ใช้กลับไปที่แท็บ "ยกเลิก" ของหน้ารายการจอง
+      router.replace("/service/booking?tab=cancelled");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการยกเลิกรายการจอง");
+    } finally {
+      setCancelling(false);
+    }
+  }
+  
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
@@ -871,7 +937,8 @@ export default function BookingDetailPage() {
   }
 
   const canCancel = b.status === "pending";
-  const canUploadSlip = b.status === "WaitingSlip" || b.status === "slip_uploaded";
+  const canUploadSlip = b.status === "waiting_slip" || b.status === "slip_uploaded";
+  const hasUploadedSlip = b.status === "slip_uploaded";
 
   const showQr = b.status === "slip_verified" || b.status === "check-in" || b.status === "finished";
 
@@ -920,7 +987,7 @@ export default function BookingDetailPage() {
             ].join(" ")}
           >
             <ImagePlus className="h-5 w-5" />
-            แนบสลิป
+            {hasUploadedSlip ? "แก้ไขรูปภาพสลิป" : "แนบสลิป"}
           </button>
         </div>
 
@@ -950,29 +1017,13 @@ export default function BookingDetailPage() {
           //   </span>
           // }
           totalValue={
-            b.status === "cancelled" && cancelledTimelineDetail ? (
-              <span className="text-black/60">
-                เหตุผลการยกเลิก: {cancelledTimelineDetail}
-              </span>
-            ) : b.status === "cancelled" &&
-              (b.cancelledReason ?? b.cancelledByStaffName) ? (
-              <span className="text-black/60 block">
-                {b.cancelledBy === "staff" && b.cancelledByStaffName ? (
-                  <>
-                    ยกเลิกโดยพนักงาน: {b.cancelledByStaffName}
-                    {b.cancelledReason ? " · " : ""}
-                  </>
-                ) : null}
-                {b.cancelledReason ? <>เหตุผล: {b.cancelledReason}</> : null}
-              </span>
-            ) : (
-              <span className="text-black/60">-</span>
-            )
+            <span className="text-black/60">-</span>
           }
           refCode={b.id}
           serviceType={walkinServiceType} // ✅ ส่งเป็น "boarding" | "swimming"
           petsPicked={pickedPets} // ✅ ส่งตรง ๆ (PetPicked รองรับ null แล้ว)
           roomAssignments={roomAssignments}
+          customerNote={(b as any).note ?? null}
         />
 
         <div className="rounded-2xl bg-white/70 ring-1 ring-black/5 p-4">
@@ -1009,13 +1060,19 @@ export default function BookingDetailPage() {
         onClose={() => setOpenHistory(false)}
         rightAction={<span className="text-[12px] text-black/45 font-semibold">ปัจจุบัน: {STATUS_LABEL[b.status]}</span>}
       >
-        <TimelineList items={historyItems} />
+        {historyItems.length > 0 ? (
+          <TimelineList items={historyItems} />
+        ) : (
+          <div className="rounded-2xl bg-black/[0.02] ring-1 ring-black/5 p-6 text-center text-sm text-black/50">
+            ยังไม่มีประวัติสถานะ
+          </div>
+        )}
       </BottomSheet>
 
       <BottomSheet open={openSlip} title="แนบหลักฐานการชำระเงิน" onClose={() => setOpenSlip(false)}>
         <SlipUploadPanel
           disabled={!canUploadSlip || uploadingSlip}
-          defaultPreview={slipPreview ?? (b as any).slipUrl ?? null}
+          defaultPreview={slipPreview ?? b.slip?.imageUrl ?? null}
           onPick={(file, previewUrl) => {
             setSlipFile(file);
             setSlipPreview(previewUrl);
@@ -1055,11 +1112,9 @@ export default function BookingDetailPage() {
 
                 <button
                   type="button"
-                  className="flex-1 rounded-2xl bg-red-600 py-3 font-extrabold text-white active:scale-[0.99] transition"
-                  onClick={() => {
-                    setOpenCancelConfirm(false);
-                    setLocalStatus("cancelled");
-                  }}
+                  className="flex-1 rounded-2xl bg-red-600 py-3 font-extrabold text-white active:scale-[0.99] transition disabled:opacity-60"
+                  disabled={cancelling}
+                  onClick={handleConfirmCancel}
                 >
                   ยืนยันการยกเลิก
                 </button>
