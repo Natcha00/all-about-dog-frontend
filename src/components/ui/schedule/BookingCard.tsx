@@ -10,7 +10,7 @@ function statusLabel(s: Booking["status"]) {
   switch (s) {
     case "pending":
       return "รออนุมัติ";
-    case "WaitingSlip":
+    case "waiting_slip":
       return "รอชำระเงิน";
     case "slip_uploaded":
       return "รอตรวจสลิป";

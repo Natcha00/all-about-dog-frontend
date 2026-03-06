@@ -4,7 +4,7 @@ import React, { useMemo, useRef, useState } from "react";
 import type { Booking } from "@/lib/booking/booking.types";
 
 function canUpload(b: Booking) {
-  return b.status === "WaitingSlip";
+  return b.status === "waiting_slip";
 }
 
 export default function UploadSlipCard({
@@ -95,9 +95,9 @@ export default function UploadSlipCard({
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="preview" className="w-full rounded-2xl object-cover" />
-        ) : b.slipUrl ? (
+        ) : b.slip?.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={b.slipUrl} alt="slip" className="w-full rounded-2xl object-cover" />
+          <img src={b.slip?.imageUrl} alt="slip" className="w-full rounded-2xl object-cover" />
         ) : (
           <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-6 text-center text-black/45">
             ยังไม่ได้เลือกไฟล์
