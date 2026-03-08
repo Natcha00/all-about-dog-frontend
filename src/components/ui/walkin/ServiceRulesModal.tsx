@@ -17,6 +17,11 @@ export default function ServiceRulesModal(props: {
   const [rules, setRules] = useState<Record<ServiceKey, ServiceRulesDTO> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync tab to selected service when modal opens or defaultTab changes
+  useEffect(() => {
+    if (open) setTab(defaultTab);
+  }, [open, defaultTab]);
+
   // ✅ แยก ref ของ scroll แต่ละ tab
   const swimRef = useRef<HTMLDivElement | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);

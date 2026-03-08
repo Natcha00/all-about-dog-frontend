@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
@@ -11,25 +11,73 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loginStatus, setLoginStatus] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [verifyEmailHint, setVerifyEmailHint] = useState(false);
 
-  async function handleTestLogin() {
-    setLoginStatus("กำลังยิง API...");
+  // If already verified (valid session), redirect to home and never show login
+  useEffect(() => {
+    let cancelled = false;
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        if (cancelled) return;
+        if (res.ok) {
+          router.replace("/");
+          return;
+        }
+      } catch {
+        if (!cancelled) setCheckingAuth(false);
+        return;
+      }
+      setCheckingAuth(false);
+    }
+    checkAuth();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setVerifyEmailHint(false);
+    if (!email.trim() || !password) {
+      setError("กรุณาระบุอีเมลและรหัสผ่าน");
+      return;
+    }
+    setLoading(true);
     try {
-      const res = await fetch("/api/auth/test-login", { method: "POST" });
-      const data = await res.json();
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         router.replace("/");
         return;
       }
-      setLoginStatus(`ผิดพลาด: ${data.error || res.status} - ${JSON.stringify(data.detail || data)}`);
+      const errMsg = (data.error as string) || (data.message as string) || `เกิดข้อผิดพลาด (${res.status})`;
+      setError(errMsg);
+      setVerifyEmailHint(!!errMsg && /ยืนยันอีเมล|verify.*email|email.*verify/i.test(String(errMsg)));
     } catch (e) {
-      setLoginStatus(`Error: ${e instanceof Error ? e.message : String(e)}`);
+      setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <div className="main flex flex-col w-full min-h-screen justify-center items-center">
+      {checkingAuth ? (
+        <p className="text-gray-500">กำลังตรวจสอบ...</p>
+      ) : (
+        <>
       {/* Logo Section - above-the-fold, use priority for LCP */}
       <div className="Logo flex justify-center w-full mb-8">
         <Image
@@ -43,9 +91,21 @@ export default function LoginPage() {
 
       {/* Login Form Section */}
       <div className="login flex flex-col w-full max-w-md">
-        <form>
+        <form onSubmit={handleSubmit}>
           <CardContent>
             <div className="flex flex-col gap-6">
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
+              {verifyEmailHint && email.trim() && (
+                <p className="text-sm text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
+                  <Link href={`/verify-email?email=${encodeURIComponent(email.trim())}`} className="underline font-medium">
+                    ไปยืนยันอีเมล
+                  </Link>
+                </p>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="email">อีเมล</Label>
                 <Input
@@ -54,7 +114,10 @@ export default function LoginPage() {
                   type="email"
                   placeholder="ระบุอีเมลที่ลงทะเบียน"
                   className="bg-stone-50 ring-gray-400 ring-1"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -65,13 +128,16 @@ export default function LoginPage() {
                   type="password"
                   placeholder="ระบุรหัสผ่าน"
                   className="bg-stone-50 ring-gray-400 ring-1"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
             <div className="text-right">
               <Link
-                href="#"
+                href="/forgot-password"
                 className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
               >
                 ลืมรหัสผ่าน
@@ -79,23 +145,9 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex-col gap-2">
-            <Button type="submit" className="w-full">
-              เข้าสู่ระบบ
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </Button>
-            <p className="text-xs text-gray-500 mt-2">หรือ</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleTestLogin}
-            >
-              Login ทดสอบ (maya.chen@gmail.com / x)
-            </Button>
-            {loginStatus && (
-              <pre className="w-full p-3 bg-gray-100 rounded text-sm whitespace-pre-wrap mt-2">
-                {loginStatus}
-              </pre>
-            )}
             <div className="flex items-center">
               <p>ยังไม่มีผู้ใช้งาน?</p>
               <Link href="/register">
@@ -107,6 +159,8 @@ export default function LoginPage() {
           </CardFooter>
         </form>
       </div>
+        </>
+      )}
     </div>
   );
 }

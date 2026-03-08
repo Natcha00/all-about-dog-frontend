@@ -1,11 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
-import { Camera, Mail, Phone, MapPin } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { ChevronLeft, Camera, MapPin } from "lucide-react";
 import AppImage from "@/components/ui/AppImage";
 import { DEFAULT_AVATAR_IMAGE } from "@/lib/constants";
 
 const ORANGE = "#F2A245";
+
+export type ProfileData = {
+  id: number;
+  code: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string | null;
+  address: string | null;
+  profilePictureUrl: string | null;
+  isEmailVerified: boolean;
+};
 
 function Label({ children }: { children: React.ReactNode }) {
     return <p className="text-sm font-semibold text-black/80 mb-1.5">{children}</p>;
@@ -31,28 +44,186 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { error?: st
 
 export default function ProfilePage() {
     const [showConfirm, setShowConfirm] = useState(false);
+    const [profile, setProfile] = useState<ProfileData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // mock
     const [form, setForm] = useState({
-        firstName: "จีรกา",
-        lastName: "เลา",
-        phone: "0817172354",
-        address: "71/200 Life Ladphrao 18 แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10910",
-        email: "jirapalao@gmail.com",
+        firstName: "",
+        lastName: "",
+        phone: "",
+        address: "",
+        email: "",
     });
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/account/profile", { credentials: "include" })
+            .then((res) => {
+                if (!res.ok) throw new Error(res.status === 401 ? "Unauthorized" : `${res.status}`);
+                return res.json();
+            })
+            .then((data: ProfileData) => {
+                if (cancelled) return;
+                setProfile(data);
+                setForm({
+                    firstName: data.firstName ?? "",
+                    lastName: data.lastName ?? "",
+                    phone: data.phoneNumber ?? "",
+                    address: data.address ?? "",
+                    email: data.email ?? "",
+                });
+            })
+            .catch((e) => {
+                if (!cancelled) setError(e instanceof Error ? e.message : "โหลดข้อมูลไม่สำเร็จ");
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const [avatarError, setAvatarError] = useState<string | null>(null);
+    const [uploadedProfilePictureUrl, setUploadedProfilePictureUrl] = useState<string | null>(null);
+    const [saveLoading, setSaveLoading] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
+
+    const avatarSrc = avatarPreview || uploadedProfilePictureUrl || profile?.profilePictureUrl || DEFAULT_AVATAR_IMAGE;
 
     const onSave = () => {
         setShowConfirm(false);
-        // TODO: call API save
-        alert("บันทึกแล้ว (mock)");
+        setSaveError(null);
+        setSaveLoading(true);
+        const payload: Record<string, string | null> = {};
+        if (form.firstName !== undefined) payload.firstName = form.firstName.trim();
+        if (form.lastName !== undefined) payload.lastName = form.lastName.trim();
+        if (form.phone !== undefined) payload.phoneNumber = form.phone.trim();
+        if (form.address !== undefined) payload.address = form.address.trim() || null;
+        fetch("/api/account/profile", {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        })
+            .then(async (res) => {
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error((data as { error?: string }).error || "บันทึกไม่สำเร็จ");
+                }
+                if (profile) {
+                    setProfile({
+                        ...profile,
+                        firstName: form.firstName.trim(),
+                        lastName: form.lastName.trim(),
+                        phoneNumber: form.phone.trim() || null,
+                        address: form.address.trim() || null,
+                    });
+                }
+                alert("บันทึกแล้ว");
+            })
+            .catch((e) => {
+                setSaveError(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+            })
+            .finally(() => {
+                setSaveLoading(false);
+            });
     };
-    const [avatarFile, setAvatarFile] = useState<File | null>(null);
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+    async function handleAvatarChange(file: File) {
+        const MAX_SIZE = 5 * 1024 * 1024;
+        const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+        const type = (file.type ?? "").toLowerCase();
+        if (!allowed.includes(type)) {
+            setAvatarError("รองรับเฉพาะไฟล์รูปภาพ (jpeg, png, webp)");
+            return;
+        }
+        if (file.size > MAX_SIZE) {
+            setAvatarError("ขนาดไฟล์ไม่เกิน 5 MB");
+            return;
+        }
+        setAvatarError(null);
+        const previewUrl = URL.createObjectURL(file);
+        setAvatarPreview(previewUrl);
+        setAvatarUploading(true);
+        try {
+            const form = new FormData();
+            form.append("file", file);
+            const res = await fetch("/api/account/profile-picture", {
+                method: "POST",
+                credentials: "include",
+                body: form,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const msg = (data as { error?: string }).error || (res.status === 401 ? "กรุณาเข้าสู่ระบบใหม่" : "อัปโหลดไม่สำเร็จ");
+                setAvatarError(msg);
+                return;
+            }
+            const url = (data as { profilePictureUrl?: string }).profilePictureUrl;
+            if (url) {
+                URL.revokeObjectURL(previewUrl);
+                setUploadedProfilePictureUrl(url);
+                setAvatarPreview(null);
+                if (profile) setProfile({ ...profile, profilePictureUrl: url });
+            }
+        } catch (e) {
+            setAvatarError(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ");
+        } finally {
+            setAvatarUploading(false);
+        }
+    }
+
+    if (loading) {
+        return (
+            <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto flex items-center justify-center">
+                <p className="text-black/50">กำลังโหลด...</p>
+            </main>
+        );
+    }
+
+    if (error) {
+        return (
+            <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
+                <div className="flex items-center gap-2 pt-6 px-4">
+                    <Link href="/account" className="grid h-10 w-10 place-items-center rounded-full bg-white/70 ring-1 ring-black/10" aria-label="กลับ">
+                        <ChevronLeft className="h-5 w-5 text-black/70" />
+                    </Link>
+                    <h1 className="text-[20px] font-extrabold text-black">แก้ไขข้อมูลส่วนตัว</h1>
+                </div>
+                <div className="mt-8 mx-4 rounded-2xl bg-white/70 ring-1 ring-red-100 p-5 text-center">
+                    <p className="text-red-600">{error}</p>
+                    {error === "Unauthorized" && (
+                        <Link href="/login">
+                            <button type="button" className="mt-3 text-sm font-semibold text-[#F2A245] underline">
+                                ไปหน้าเข้าสู่ระบบ
+                            </button>
+                        </Link>
+                    )}
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
             <div className="mx-auto w-full max-w-md pt-8 space-y-4">
                 <h1 className="text-center text-2xl font-extrabold text-black">แก้ไขข้อมูลส่วนตัว</h1>
+
+                {/* Back */}
+                <div className="flex justify-start">
+                    <Link
+                        href="/account"
+                        className="grid h-10 w-10 place-items-center rounded-full bg-white/70 ring-1 ring-black/10 active:scale-95 transition"
+                        aria-label="กลับ"
+                    >
+                        <ChevronLeft className="h-5 w-5 text-black/70" />
+                    </Link>
+                </div>
 
                 {/* Profile summary */}
                 <section className="rounded-3xl bg-white/70 ring-1 ring-black/5 shadow-sm p-5">
@@ -60,7 +231,7 @@ export default function ProfilePage() {
                         <div className="relative">
                             <div className="h-24 w-24 rounded-full bg-white ring-1 ring-black/10 overflow-hidden">
                                 <AppImage
-                                    src={avatarPreview || DEFAULT_AVATAR_IMAGE}
+                                    src={avatarSrc}
                                     alt="avatar preview"
                                     className="w-full h-full object-cover"
                                 />
@@ -68,27 +239,35 @@ export default function ProfilePage() {
 
                             {/* Change button */}
                             <label
-                                className="absolute -right-2 -bottom-2 grid h-10 w-10 place-items-center rounded-full bg-black text-white shadow-sm cursor-pointer active:scale-95 transition"
+                                className="absolute -right-2 -bottom-2 grid h-10 w-10 place-items-center rounded-full bg-black text-white shadow-sm cursor-pointer active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 aria-label="เปลี่ยนรูปโปรไฟล์"
+                                style={avatarUploading ? { pointerEvents: "none" } : undefined}
                             >
-                                <Camera className="h-5 w-5" />
+                                {avatarUploading ? (
+                                    <span className="text-xs">...</span>
+                                ) : (
+                                    <Camera className="h-5 w-5" />
+                                )}
 
                                 <input
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/jpeg,image/png,image/webp"
                                     className="hidden"
+                                    disabled={avatarUploading}
                                     onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (!file) return;
-
                                         setAvatarFile(file);
-
-                                        const previewUrl = URL.createObjectURL(file);
-                                        setAvatarPreview(previewUrl);
+                                        handleAvatarChange(file);
+                                        e.target.value = "";
                                     }}
                                 />
                             </label>
                         </div>
+
+                        {avatarError ? (
+                            <p className="mt-2 text-xs text-rose-600">{avatarError}</p>
+                        ) : null}
 
                         <div className="min-w-0">
                             <p className="mt-3 text-lg font-extrabold text-black text-center">
@@ -154,13 +333,17 @@ export default function ProfilePage() {
             {/* Sticky CTA */}
             <div className="fixed inset-x-0 bottom-0 z-50 bg-[#F7F4E8]/95 backdrop-blur border-t border-black/5">
                 <div className="mx-auto max-w-md px-5 py-4">
+                    {saveError ? (
+                        <p className="text-sm text-rose-600 mb-2 text-center">{saveError}</p>
+                    ) : null}
                     <button
                         type="button"
-                        className="w-full rounded-2xl py-3.5 text-base font-extrabold text-white active:scale-[0.99] transition"
+                        className="w-full rounded-2xl py-3.5 text-base font-extrabold text-white active:scale-[0.99] transition disabled:opacity-60 disabled:cursor-not-allowed"
                         style={{ background: ORANGE }}
-                        onClick={() => setShowConfirm(true)}
+                        onClick={() => { setSaveError(null); setShowConfirm(true); }}
+                        disabled={saveLoading}
                     >
-                        บันทึกข้อมูล
+                        {saveLoading ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
                     </button>
                 </div>
             </div>
@@ -186,16 +369,18 @@ export default function ProfilePage() {
                                     type="button"
                                     className="flex-1 rounded-2xl bg-black/[0.06] py-3 font-extrabold text-black/70"
                                     onClick={() => setShowConfirm(false)}
+                                    disabled={saveLoading}
                                 >
                                     ยกเลิก
                                 </button>
                                 <button
                                     type="button"
-                                    className="flex-1 rounded-2xl py-3 font-extrabold text-white"
+                                    className="flex-1 rounded-2xl py-3 font-extrabold text-white disabled:opacity-60"
                                     style={{ background: ORANGE }}
                                     onClick={onSave}
+                                    disabled={saveLoading}
                                 >
-                                    ยืนยัน
+                                    {saveLoading ? "กำลังบันทึก..." : "ยืนยัน"}
                                 </button>
                             </div>
                         </div>

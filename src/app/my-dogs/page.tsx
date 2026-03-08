@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { CircleItemProps } from "@/components/ui/circleProfile";
 import type { DogApiItem } from "@/lib/dogs/dog.type";
 import MyDogsGrid from "./MyDogsGrid";
@@ -17,32 +17,51 @@ export default function MyPetsPage() {
   const [dogs, setDogs] = useState<CircleItemProps[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadDogs = useCallback(() => {
     setLoading(true);
     setErrorMessage(null);
-    fetch("/api/dog")
+    fetch("/api/dog", { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         return res.json();
       })
       .then((data: unknown) => {
-        if (cancelled) return;
         const list = Array.isArray(data) ? data : [];
         setDogs(list.map((d: DogApiItem) => mapDogToCircleItem(d)));
       })
       .catch((e) => {
-        if (cancelled) return;
         console.error("getDogs failed:", e);
         setErrorMessage("โหลดรายการสัตว์เลี้ยงไม่สำเร็จ กรุณาลองใหม่ภายหลัง");
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    loadDogs();
+  }, [loadDogs]);
+
+  const handleDelete = useCallback(async (id: number) => {
+    if (!confirm("ต้องการลบสัตว์เลี้ยงตัวนี้ใช่หรือไม่?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/dog/${id}`, {
+        method: "DELETE",
+        credentials: "include",
       });
-    return () => {
-      cancelled = true;
-    };
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = (data.error as string) || (data.detail as string) || `ลบล้มเหลว (${res.status})`;
+        alert(msg);
+        return;
+      }
+      setDogs((prev) => prev.filter((d) => d.id !== id));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "ลบล้มเหลว");
+    } finally {
+      setDeletingId(null);
+    }
   }, []);
 
   return (
@@ -58,7 +77,15 @@ export default function MyPetsPage() {
           {errorMessage}
         </p>
       )}
-      {!loading && !errorMessage && <MyDogsGrid dogs={dogs} />}
+      {!loading && !errorMessage && (
+        <MyDogsGrid
+          dogs={dogs}
+          onDelete={deletingId !== null ? undefined : handleDelete}
+        />
+      )}
+      {deletingId !== null && (
+        <p className="text-center text-gray-500 text-sm mt-2">กำลังลบ...</p>
+      )}
     </div>
   );
 }

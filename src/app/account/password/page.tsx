@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 
 /* =======================
    Small UI helpers (Poikai)
@@ -79,6 +80,7 @@ function ConfirmModal({
   onConfirm,
   confirmText = "ยืนยัน",
   cancelText = "ยกเลิก",
+  confirmDisabled = false,
 }: {
   open: boolean;
   title: string;
@@ -87,6 +89,7 @@ function ConfirmModal({
   onConfirm: () => void;
   confirmText?: string;
   cancelText?: string;
+  confirmDisabled?: boolean;
 }) {
   if (!open) return null;
 
@@ -116,8 +119,9 @@ function ConfirmModal({
 
             <button
               type="button"
-              className="flex-1 rounded-2xl bg-[#F2A245] py-3 font-extrabold text-white active:scale-[0.99] transition"
+              className="flex-1 rounded-2xl bg-[#F2A245] py-3 font-extrabold text-white active:scale-[0.99] transition disabled:opacity-60 disabled:cursor-not-allowed"
               onClick={onConfirm}
+              disabled={confirmDisabled}
             >
               {confirmText}
             </button>
@@ -139,6 +143,7 @@ export default function ChangePasswordPage() {
 
   const [openConfirm, setOpenConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const errors = useMemo(() => {
     const e: { old?: string; next?: string; confirm?: string } = {};
@@ -147,8 +152,8 @@ export default function ChangePasswordPage() {
       e.old = "รหัสผ่านเดิมดูสั้นผิดปกติ";
     }
 
-    if (newPass.length > 0 && newPass.length < 8) {
-      e.next = "รหัสผ่านใหม่ต้องอย่างน้อย 8 ตัวอักษร";
+    if (newPass.length > 0 && newPass.length < 6) {
+      e.next = "รหัสผ่านใหม่ต้องอย่างน้อย 6 ตัวอักษร";
     }
 
     if (confirmPass.length > 0 && newPass !== confirmPass) {
@@ -165,20 +170,30 @@ export default function ChangePasswordPage() {
     !errors.old &&
     !errors.next &&
     !errors.confirm &&
-    newPass.length >= 8 &&
+    newPass.length >= 6 &&
     newPass === confirmPass;
 
   const doSubmit = async () => {
     setOpenConfirm(false);
+    setApiError(null);
     setSaving(true);
     try {
-      // TODO: replace with real API call
-      // await fetch("/api/account/change-password", { method: "POST", ... })
-
-      await new Promise((r) => setTimeout(r, 500)); // mock
-      alert("เปลี่ยนรหัสผ่านสำเร็จ (mock)");
-
-      // clear
+      const res = await fetch("/api/account/change-password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: oldPass,
+          newPassword: newPass,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = (data as { error?: string }).error || (res.status === 401 ? "กรุณาเข้าสู่ระบบใหม่" : "เปลี่ยนรหัสผ่านไม่สำเร็จ");
+        setApiError(msg);
+        return;
+      }
+      alert("เปลี่ยนรหัสผ่านสำเร็จ");
       setOldPass("");
       setNewPass("");
       setConfirmPass("");
@@ -190,6 +205,17 @@ export default function ChangePasswordPage() {
   return (
     <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       <div className="mx-auto w-full max-w-md space-y-6">
+        {/* Back */}
+        <div className="flex justify-start">
+          <Link
+            href="/account"
+            className="grid h-10 w-10 place-items-center rounded-full bg-white/70 ring-1 ring-black/10 active:scale-95 transition"
+            aria-label="กลับ"
+          >
+            <ChevronLeft className="h-5 w-5 text-black/70" />
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="text-center">
           <h1 className="text-2xl font-extrabold text-black">รหัสผ่าน</h1>
@@ -198,6 +224,10 @@ export default function ChangePasswordPage() {
 
         {/* Card */}
         <div className="rounded-3xl bg-white/75 ring-1 ring-black/5 shadow-sm p-5 space-y-4">
+          {apiError ? (
+            <p className="text-sm text-rose-600 bg-rose-50 rounded-xl px-3 py-2">{apiError}</p>
+          ) : null}
+
           <PasswordInput
             label="รหัสผ่านเดิม"
             value={oldPass}
@@ -210,7 +240,7 @@ export default function ChangePasswordPage() {
             label="รหัสผ่านใหม่"
             value={newPass}
             onChange={setNewPass}
-            placeholder="อย่างน้อย 8 ตัวอักษร"
+            placeholder="อย่างน้อย 6 ตัวอักษร"
             error={errors.next}
           />
           {!errors.next ? <Hint>แนะนำให้ใช้ตัวพิมพ์ใหญ่/เล็ก + ตัวเลข เพื่อความปลอดภัย</Hint> : null}
@@ -228,7 +258,7 @@ export default function ChangePasswordPage() {
         <button
           type="button"
           disabled={!canSubmit || saving}
-          onClick={() => setOpenConfirm(true)}
+          onClick={() => { setApiError(null); setOpenConfirm(true); }}
           className={[
             "w-full rounded-2xl py-4 text-lg font-extrabold text-white transition",
             canSubmit && !saving
@@ -251,7 +281,8 @@ export default function ChangePasswordPage() {
         desc="ต้องการเปลี่ยนรหัสผ่านเป็นรหัสใหม่ใช่หรือไม่?"
         onClose={() => setOpenConfirm(false)}
         onConfirm={doSubmit}
-        confirmText="ยืนยัน"
+        confirmText={saving ? "กำลังบันทึก..." : "ยืนยัน"}
+        confirmDisabled={saving}
         cancelText="ยกเลิก"
       />
     </main>

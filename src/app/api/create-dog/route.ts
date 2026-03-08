@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { CREATE_DOG_BACKEND_PATH, type CreateDogBody } from "@/lib/walkin/walkin/createDogApi";
-
-const getBaseUrl = () => {
-  const url = process.env.NEXT_BACKEND_API_URL;
-  if (!url) throw new Error("NEXT_BACKEND_API_URL is not set");
-  return url.replace(/\/$/, "");
-};
+import { withAuthRefresh, getBaseUrl } from "@/lib/auth/serverWithRefresh";
 
 /**
  * POST /api/create-dog — proxy to NEXT_BACKEND_API_URL + CREATE_DOG_BACKEND_PATH with auth from cookie.
  * Body: CreateDogBody (JSON). Returns created dog (same shape as GET /dog item) or error.
+ * On 401, tries refresh-token then retries; if refresh fails returns 401.
  */
 export async function POST(request: Request) {
   try {
@@ -18,45 +14,18 @@ export async function POST(request: Request) {
     const base = getBaseUrl();
     const url = `${base}${CREATE_DOG_BACKEND_PATH}`;
     const cookieStore = await cookies();
-    const token = cookieStore.get("accessToken")?.value;
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      let detail: string;
-      try {
-        const j = JSON.parse(text);
-        detail = j.message ?? j.error ?? text;
-      } catch {
-        detail = text || res.statusText;
-      }
-      return NextResponse.json(
-        { error: "Failed to create dog", detail },
-        { status: res.status }
-      );
-    }
-
-    const text = await res.text();
-    let data: unknown = {};
-    if (text.trim()) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { error: "Failed to parse response", detail: text };
-      }
-    }
-    return NextResponse.json(data);
+    return withAuthRefresh(cookieStore, async (token) =>
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      })
+    );
   } catch (e) {
     const err = e instanceof Error ? e : new Error(String(e));
     const cause = err.cause instanceof Error ? err.cause.message : err.cause != null ? String(err.cause) : null;

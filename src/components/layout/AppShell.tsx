@@ -5,7 +5,14 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/ui/navbar";
 import BottomBar from "@/components/ui/bottombar";
 
-const PUBLIC_PATHS = ["/", "/login", "/register"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/register",
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
+];
 
 function isPublicPath(pathname: string) {
   const normalized = pathname.replace(/\/$/, "") || "/";
