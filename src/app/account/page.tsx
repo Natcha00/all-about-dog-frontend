@@ -2,9 +2,21 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronRight, User, Shield, Phone, LogOut, PawPrint } from "lucide-react";
 import AppImage from "@/components/ui/AppImage";
+
+export type AccountProfile = {
+  id: number;
+  code: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string | null;
+  address: string | null;
+  profilePictureUrl: string | null;
+  isEmailVerified: boolean;
+};
 
 function MenuItem({
   href,
@@ -133,25 +145,43 @@ function MyDogsCard({
 export default function AccountPage() {
   const router = useRouter();
   const [showLogout, setShowLogout] = useState(false);
+  const [profile, setProfile] = useState<AccountProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // mock user
-  const user = {
-    name: "จีรกา เลา",
-    subtitle: "จัดการข้อมูลบัญชีและความปลอดภัย",
-    avatarText: "avatar",
-  };
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/account/profile", { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error(res.status === 401 ? "Unauthorized" : ` ${res.status}`);
+        return res.json();
+      })
+      .then((data: AccountProfile) => {
+        if (!cancelled) setProfile(data);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "โหลดข้อมูลไม่สำเร็จ");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  // ✅ mock dogs (แทนด้วย data จริงจาก API ทีหลัง)
-  const dogs = useMemo(
-    () => [
-      { id: 1, name: "ลัคกี้", breed: "Golden", imageUrl: "" },
-      { id: 2, name: "โมจิ", breed: "Poodle", imageUrl: "" },
-      { id: 3, name: "อังเปา", breed: "Shiba", imageUrl: "" },
-      { id: 4, name: "ดำ", breed: "Mixed", imageUrl: "" },
-      { id: 5, name: "ไข่ตุ๋น", breed: "Corgi", imageUrl: "" },
-    ],
-    []
-  );
+  const displayName = profile
+    ? [profile.firstName, profile.lastName].filter(Boolean).join(" ") || profile.email
+    : "";
+  const subtitle = "จัดการข้อมูลบัญชีและความปลอดภัย";
+  const avatarInitials = profile
+    ? [profile.firstName, profile.lastName]
+        .filter(Boolean)
+        .map((s) => s.charAt(0))
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || profile.email.charAt(0).toUpperCase()
+    : "—";
 
   const doLogout = async () => {
     setShowLogout(false);
@@ -167,14 +197,42 @@ export default function AccountPage() {
       <div className="mx-auto w-full max-w-md pt-8 space-y-5">
         <h1 className="text-center text-2xl font-extrabold text-black">บัญชีผู้ใช้</h1>
 
+        {loading ? (
+          <section className="rounded-3xl bg-white/70 ring-1 ring-black/5 shadow-sm p-8 text-center">
+            <p className="text-black/50">กำลังโหลด...</p>
+          </section>
+        ) : error ? (
+          <section className="rounded-3xl bg-white/70 ring-1 ring-red-100 shadow-sm p-5 text-center">
+            <p className="text-red-600">{error}</p>
+            {error === "Unauthorized" && (
+              <Link href="/login">
+                <button type="button" className="mt-3 text-sm text-[#F2A245] font-semibold underline">
+                  ไปหน้าเข้าสู่ระบบ
+                </button>
+              </Link>
+            )}
+          </section>
+        ) : (
+          <>
         {/* Profile card */}
         <section className="rounded-3xl bg-white/70 ring-1 ring-black/5 shadow-sm p-5 text-center">
           <div className="mx-auto h-24 w-24 rounded-full bg-white ring-1 ring-black/10 grid place-items-center overflow-hidden">
-            <span className="text-sm text-black/40">{user.avatarText}</span>
+            {profile?.profilePictureUrl ? (
+              <AppImage
+                src={profile.profilePictureUrl}
+                alt={displayName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-xl font-bold text-black/40">{avatarInitials}</span>
+            )}
           </div>
 
-          <p className="mt-4 text-xl font-extrabold text-black">{user.name}</p>
-          <p className="mt-1 text-sm text-black/45">{user.subtitle}</p>
+          <p className="mt-4 text-xl font-extrabold text-black">{displayName || "—"}</p>
+          <p className="mt-1 text-sm text-black/45">{subtitle}</p>
+          {profile?.email ? (
+            <p className="mt-1 text-xs text-black/40">{profile.email}</p>
+          ) : null}
         </section>
 
         {/* ✅ My Dogs summary */}
@@ -219,6 +277,8 @@ export default function AccountPage() {
             onClick={() => setShowLogout(true)}
           />
         </section>
+          </>
+        )}
       </div>
 
       {/* Logout confirm (Poikai modal) */}
