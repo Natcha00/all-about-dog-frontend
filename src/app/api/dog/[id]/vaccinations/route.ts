@@ -1,11 +1,6 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-
-const getBaseUrl = () => {
-  const url = process.env.NEXT_BACKEND_API_URL;
-  if (!url) throw new Error("NEXT_BACKEND_API_URL is not set");
-  return url.replace(/\/$/, "");
-};
+import { withAuthRefresh, getBaseUrl } from "@/lib/auth/serverWithRefresh";
 
 export type VaccinationApiItem = {
   id: string | number;
@@ -39,26 +34,14 @@ export async function GET(
     const { id } = await params;
     if (!id) return NextResponse.json({ error: "Missing dog id" }, { status: 400 });
 
-    const base = getBaseUrl();
     const cookieStore = await cookies();
-    const token = cookieStore.get("accessToken")?.value;
-
-    const res = await fetch(`${base}/dog/${id}/vaccinations`, {
-      cache: "no-store",
-      headers: authHeaders(token),
+    return withAuthRefresh(cookieStore, async (token) => {
+      const base = getBaseUrl();
+      return fetch(`${base}/dog/${id}/vaccinations`, {
+        cache: "no-store",
+        headers: authHeaders(token),
+      });
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json(
-        { error: "Failed to fetch vaccinations", detail: text },
-        { status: res.status }
-      );
-    }
-
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : [];
-    return NextResponse.json(list);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(
@@ -81,7 +64,6 @@ export async function POST(
 
     const base = getBaseUrl();
     const cookieStore = await cookies();
-    const token = cookieStore.get("accessToken")?.value;
 
     const form = new FormData();
 
@@ -134,23 +116,14 @@ export async function POST(
       }
     }
 
-    const res = await fetch(`${base}/dog/${id}/vaccinations`, {
-      method: "POST",
-      cache: "no-store",
-      headers: authHeaders(token, true),
-      body: form,
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json(
-        { error: "Failed to create vaccination", detail: text },
-        { status: res.status }
-      );
-    }
-
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data);
+    return withAuthRefresh(cookieStore, async (token) =>
+      fetch(`${base}/dog/${id}/vaccinations`, {
+        method: "POST",
+        cache: "no-store",
+        headers: authHeaders(token, true),
+        body: form,
+      })
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(

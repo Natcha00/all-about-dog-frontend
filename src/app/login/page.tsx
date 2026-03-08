@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [testLoginStatus, setTestLoginStatus] = useState<string | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [verifyEmailHint, setVerifyEmailHint] = useState(false);
 
   // If already verified (valid session), redirect to home and never show login
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setVerifyEmailHint(false);
     if (!email.trim() || !password) {
       setError("กรุณาระบุอีเมลและรหัสผ่าน");
       return;
@@ -61,7 +63,9 @@ export default function LoginPage() {
         router.replace("/");
         return;
       }
-      setError((data.error as string) || data.message || `เกิดข้อผิดพลาด (${res.status})`);
+      const errMsg = (data.error as string) || (data.message as string) || `เกิดข้อผิดพลาด (${res.status})`;
+      setError(errMsg);
+      setVerifyEmailHint(!!errMsg && /ยืนยันอีเมล|verify.*email|email.*verify/i.test(String(errMsg)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {
@@ -111,6 +115,13 @@ export default function LoginPage() {
                   {error}
                 </p>
               )}
+              {verifyEmailHint && email.trim() && (
+                <p className="text-sm text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
+                  <Link href={`/verify-email?email=${encodeURIComponent(email.trim())}`} className="underline font-medium">
+                    ไปยืนยันอีเมล
+                  </Link>
+                </p>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="email">อีเมล</Label>
                 <Input
@@ -142,7 +153,7 @@ export default function LoginPage() {
             </div>
             <div className="text-right">
               <Link
-                href="#"
+                href="/forgot-password"
                 className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
               >
                 ลืมรหัสผ่าน

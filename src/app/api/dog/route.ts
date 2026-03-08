@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
-import { getDogs } from "@/app/api/dog/backend";
+import { cookies } from "next/headers";
+import { withAuthRefresh, getBaseUrl } from "@/lib/auth/serverWithRefresh";
 
 /**
  * GET /api/dog — proxy to NEXT_BACKEND_API_URL/dog with auth from cookie.
- * Used by walkin StepPet (client) to list user's dogs for PICK MODE.
+ * On 401, tries refresh-token then retries; if refresh fails returns 401.
  */
 export async function GET() {
   try {
-    const dogs = await getDogs();
-    return NextResponse.json(dogs);
+    const cookieStore = await cookies();
+    return withAuthRefresh(cookieStore, async (token) => {
+      const base = getBaseUrl();
+      return fetch(`${base}/dog`, {
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     if (message.includes("401") || message.includes("Unauthorized")) {
