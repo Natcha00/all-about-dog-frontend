@@ -46,6 +46,25 @@ export type DogApiItem = {
   deletedAt: string | null;
 };
 
+/** Backend API: GET /:id/profile vaccine.vaccineList item */
+export type DogProfileVaccineItem = {
+  date?: string;
+  vaccineName?: string;
+  dose?: number;
+  clinicName?: string;
+  evidenceImageUrl?: string;
+};
+
+/** Mapped for UI from profile.vaccine.vaccineList (same shape as VaccineRecord in vaccineTab) */
+export type VaccineRecordFromProfile = {
+  id: string;
+  date: string;
+  type: string;
+  dose: number;
+  clinic?: string;
+  proofImage?: string;
+};
+
 /** Backend API: GET /:id/profile response (no result wrapper) */
 export type DogProfileApiResponse = {
   header: {
@@ -65,8 +84,8 @@ export type DogProfileApiResponse = {
       name: string;
       gender: string;
       age: string;
-      weightKg: number;
-      heightCm: string;
+      weightKg: number | string;
+      heightCm: string | number;
       breed: string;
       color: string;
       size: string;
@@ -90,7 +109,7 @@ export type DogProfileApiResponse = {
     extraNote: string | null;
   };
   vaccine: {
-    vaccineList: unknown[];
+    vaccineList: DogProfileVaccineItem[];
   };
   serviceHistory: {
     swimmingHistoryList: unknown[];

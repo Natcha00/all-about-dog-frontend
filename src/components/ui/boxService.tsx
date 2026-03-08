@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import AppImage from "@/components/ui/AppImage";
+import { DEFAULT_IMAGE } from "@/lib/constants";
 
 export interface ServiceItemProps {
   title: string;
@@ -63,7 +65,7 @@ function ServiceCard({ title, icon, path }: ServiceItemProps) {
   return (
     <Link href={path} className={cardClass}>
       <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#F7F4E8] ring-1 ring-black/5 flex items-center justify-center">
-        <img src={icon} alt={title} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+        <AppImage src={icon || DEFAULT_IMAGE} alt={title} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
       </div>
 
       <p className="text-xs sm:text-sm font-extrabold text-gray-900">{title}</p>

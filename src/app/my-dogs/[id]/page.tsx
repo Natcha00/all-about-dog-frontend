@@ -1,9 +1,10 @@
-import { getDogProfile } from "@/lib/dogs/dog.api";
+import { getDogProfile } from "@/app/api/dog/backend";
 import {
   mapProfileToCardProps,
   mapProfileToQrProps,
   mapProfileToPetInfoMock,
   mapProfileToHistoryItems,
+  mapProfileToVaccineRecords,
 } from "@/lib/dogs/dogProfile.mapper";
 import DogProfileClient from "./DogProfileClient";
 
@@ -25,13 +26,16 @@ export default async function DogProfilePage({ params }: PageProps) {
   const qr = mapProfileToQrProps(data);
   const petInfo = mapProfileToPetInfoMock(data);
   const historyItems = mapProfileToHistoryItems(data);
+  const initialVaccineList = mapProfileToVaccineRecords(data);
 
   return (
     <DogProfileClient
+      dogId={id}
       card={card}
       qr={qr}
       petInfo={petInfo}
       historyItems={historyItems}
+      initialVaccineList={initialVaccineList}
     />
   );
 }

@@ -5,7 +5,7 @@ import { DefaultCardProfileDog } from "@/components/ui/profileDogTab";
 import QrCode from "@/components/ui/qrCode";
 import BtnContainerHeath, { TabItem } from "@/components/ui/btnContainerHeath";
 import InfoDog, { PetInfoMock } from "@/components/ui/infoDog";
-import VaccineTab from "@/components/ui/vaccineTab";
+import VaccineTab, { type VaccineRecord } from "@/components/ui/vaccineTab";
 import HistoryTab, { ServiceHistoryItem } from "@/components/ui/historyTab";
 import type { DogNameWithGender } from "@/components/ui/profileDogTab";
 import type { QrCodeProps } from "@/components/ui/qrCode";
@@ -17,17 +17,21 @@ const tabs: TabItem[] = [
 ];
 
 export interface DogProfileClientProps {
+  dogId?: string;
   card: DogNameWithGender;
   qr: QrCodeProps;
   petInfo: PetInfoMock;
   historyItems?: ServiceHistoryItem[];
+  initialVaccineList?: VaccineRecord[];
 }
 
 export default function DogProfileClient({
+  dogId,
   card,
   qr,
   petInfo,
   historyItems = [],
+  initialVaccineList = [],
 }: DogProfileClientProps) {
   const [currentItem, setCurrentItem] = useState<string>("info");
 
@@ -54,7 +58,7 @@ export default function DogProfileClient({
       />
 
       <InfoDog currentItem={currentItem} petInfoMock={petInfo} />
-      <VaccineTab currentItem={currentItem} />
+      <VaccineTab currentItem={currentItem} dogId={dogId} initialVaccineList={initialVaccineList} />
       <HistoryTab currentItem={currentItem} items={historyItems} />
     </div>
   );

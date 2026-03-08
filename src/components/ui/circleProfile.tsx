@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import AppImage from "@/components/ui/AppImage";
 
 /* =======================
    Types
@@ -103,7 +104,7 @@ const CircleProfile = ({ id, image, name, openNameId, setOpenNameId }: CirclePro
         "
         aria-label={`ไปหน้าโปรไฟล์ ${name}`}
       >
-        <img src={image} alt={name} className="w-full h-full object-cover" />
+        <AppImage src={image} alt={name} className="w-full h-full object-cover" />
       </button>
 
       <button

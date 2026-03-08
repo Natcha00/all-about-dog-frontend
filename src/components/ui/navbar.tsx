@@ -3,15 +3,20 @@
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
+import { DEFAULT_AVATAR_IMAGE } from "@/lib/constants";
 
 export default function Navbar({
   title = "All About Dog",
   subtitle = "บริการดูแลสุนัขครบวงจร",
+  avatarSrc,
 }: {
   title?: string;
   subtitle?: string;
+  /** URL รูปโปรไฟล์ที่อัปโหลด ถ้าไม่มีจะใช้รูปพื้นฐาน */
+  avatarSrc?: string | null;
 }) {
   const router = useRouter();
+  const profileImage = avatarSrc?.trim() || DEFAULT_AVATAR_IMAGE;
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -62,11 +67,12 @@ export default function Navbar({
                 hover:scale-[1.03]
                 active:scale-[0.97]
                 transition
+                bg-white/70
               "
               aria-label="โปรไฟล์"
             >
               <Image
-                src="/images/user.png"   // เปลี่ยนเป็น path รูปของคุณ
+                src={profileImage}
                 alt="Profile"
                 fill
                 className="object-cover"

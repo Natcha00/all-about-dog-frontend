@@ -85,7 +85,7 @@ export default function DogProfile() {
             <QrCode iconSrc={qrCode.iconSrc} qrSrc={qrCode.qrSrc} />
             <BtnContainerHeath data={tabs} currentItem={currentItem} setCurrentItem={setCurrentItem} />
             <InfoDog currentItem={currentItem} petInfoMock={petInfoMock} />
-            <VaccineTab currentItem={currentItem} />
+            <VaccineTab currentItem={currentItem} dogId={undefined} />
             <HistoryTab currentItem={currentItem} items={historyMock} />
 
 

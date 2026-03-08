@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { ChevronRight, User, Shield, Phone, LogOut, PawPrint } from "lucide-react";
+import AppImage from "@/components/ui/AppImage";
 
 function MenuItem({
   href,
@@ -112,12 +113,7 @@ function MyDogsCard({
               className="inline-flex items-center gap-2 rounded-full bg-white ring-1 ring-black/10 px-3 py-1.5 text-[13px] font-semibold text-black/80"
             >
               <span className="h-6 w-6 rounded-full bg-black/[0.05] ring-1 ring-black/10 overflow-hidden grid place-items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {d.imageUrl ? (
-                  <img src={d.imageUrl} alt={d.name} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-[10px] text-black/35">🐶</span>
-                )}
+                <AppImage src={d.imageUrl} alt={d.name} className="h-full w-full object-cover" />
               </span>
               <span className="max-w-[140px] truncate">{d.name}</span>
             </span>

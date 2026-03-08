@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Check } from "lucide-react";
+import AppImage from "@/components/ui/AppImage";
 
 type PetSelectCardProps = {
     id: number;
@@ -48,7 +49,7 @@ export default function PetSelectCard({
             group-hover:shadow-[0_14px_32px_rgba(0,0,0,0.10)]
           `}
                 >
-                    <img
+                    <AppImage
                         src={image}
                         alt={name}
                         className="

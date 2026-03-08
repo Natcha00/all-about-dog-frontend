@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import HistoryList from "@/components/ui/history/HistoryList";
+import PageLoading from "@/components/ui/PageLoading";
 import type { ServiceHistoryItem } from "@/components/ui/history/types";
 
 type ReservationApiItem = {
@@ -104,9 +105,7 @@ export default function ServiceHistoryPage() {
 
         <div className="mt-6">
           {loading ? (
-            <div className="rounded-3xl bg-white/60 ring-1 ring-black/5 p-6 text-center text-black/60">
-              กำลังโหลดประวัติการใช้บริการ...
-            </div>
+            <PageLoading fullScreen={false} message="กำลังโหลดประวัติการใช้บริการ..." />
           ) : error ? (
             <div className="rounded-3xl bg-rose-50 ring-1 ring-rose-100 p-6 text-center text-rose-700 text-sm">
               {error}

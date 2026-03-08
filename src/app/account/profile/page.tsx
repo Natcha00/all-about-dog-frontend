@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { Camera, Mail, Phone, MapPin } from "lucide-react";
+import AppImage from "@/components/ui/AppImage";
+import { DEFAULT_AVATAR_IMAGE } from "@/lib/constants";
 
 const ORANGE = "#F2A245";
 
@@ -57,17 +59,11 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-4">
                         <div className="relative">
                             <div className="h-24 w-24 rounded-full bg-white ring-1 ring-black/10 overflow-hidden">
-                                {avatarPreview ? (
-                                    <img
-                                        src={avatarPreview}
-                                        alt="avatar preview"
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="grid h-full w-full place-items-center text-black/40 text-sm">
-                                        avatar
-                                    </div>
-                                )}
+                                <AppImage
+                                    src={avatarPreview || DEFAULT_AVATAR_IMAGE}
+                                    alt="avatar preview"
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
 
                             {/* Change button */}

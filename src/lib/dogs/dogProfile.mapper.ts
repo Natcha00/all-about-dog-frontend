@@ -1,4 +1,4 @@
-import type { DogProfileApiResponse } from "./dog.type";
+import type { DogProfileApiResponse, VaccineRecordFromProfile } from "./dog.type";
 import type { DogNameWithGender } from "@/components/ui/profileDogTab";
 import type { PetInfoMock } from "@/components/ui/infoDog";
 import type { QrCodeProps } from "@/components/ui/qrCode";
@@ -59,11 +59,23 @@ export function mapProfileToQrProps(api: DogProfileApiResponse): QrCodeProps {
   };
 }
 
+export function mapProfileToVaccineRecords(api: DogProfileApiResponse): VaccineRecordFromProfile[] {
+  const list = api.vaccine?.vaccineList ?? [];
+  return (Array.isArray(list) ? list : []).map((v, i) => ({
+    id: `profile-${i}-${v.vaccineName ?? ""}`,
+    date: v.date ?? "",
+    type: v.vaccineName ?? "",
+    dose: Number(v.dose) || 0,
+    clinic: v.clinicName?.trim() || undefined,
+    proofImage: v.evidenceImageUrl?.trim() || undefined,
+  }));
+}
+
 export function mapProfileToPetInfoMock(api: DogProfileApiResponse): PetInfoMock {
   const g = api.profile.general;
   const c = api.profile.careInfo;
-  const weightKg = parseInt(String(g.weightKg || "0"), 10) || 0;
-  const heightCm = parseInt(String(g.heightCm || "0"), 10) || 0;
+  const weightKg = parseInt(String(g.weightKg ?? "0"), 10) || 0;
+  const heightCm = parseInt(String(g.heightCm ?? "0"), 10) || 0;
   const mealTime = feedingTimeToMealTime(c.feedingTime);
   const age = parseAgeYears(g.age);
 

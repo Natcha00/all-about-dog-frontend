@@ -1,22 +1,16 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, ImagePlus, Syringe, X, Pencil, Trash2, ZoomIn } from "lucide-react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { CalendarDays, ChevronDown, ImagePlus, Syringe, X, Pencil, Trash2 } from "lucide-react";
 import { formatDateThai } from "@/lib/date/date.utils";
+import AppImage from "@/components/ui/AppImage";
 
-export type VaccineType =
-  | "พิษสุนัขบ้า"
-  | "รวม (DHPPi)"
-  | "ไข้หัดสุนัข"
-  | "พาร์โว"
-  | "เลปโต"
-  | "บอร์เดเทลลา"
-  | "อื่นๆ";
+export type VaccineTypeOption = { value: string; label: string };
 
 export interface VaccineRecord {
   id: string;
   date: string; // yyyy-mm-dd
-  type: VaccineType;
+  type: string; // vaccineName from API
   dose: number;
   clinic?: string;
   proofImage?: string; // object url / url
@@ -24,6 +18,9 @@ export interface VaccineRecord {
 
 interface VaccineTabProps {
   currentItem: string;
+  dogId?: string;
+  /** Initial list from GET /dog/:id/profile (vaccine.vaccineList); shown until GET /vaccinations returns */
+  initialVaccineList?: VaccineRecord[];
 }
 
 function Chip({
@@ -47,35 +44,42 @@ function Chip({
   );
 }
 
-export default function VaccineTab({ currentItem }: VaccineTabProps) {
+export default function VaccineTab({ currentItem, dogId, initialVaccineList = [] }: VaccineTabProps) {
   const [open, setOpen] = useState(false);
 
-  // mock เริ่มต้น (มีรูปหลักฐานให้ดู)
-  const [records, setRecords] = useState<VaccineRecord[]>([
-    {
-      id: "v1",
-      date: "2025-12-20",
-      type: "พิษสุนัขบ้า",
-      dose: 1,
-      clinic: "คลินิก ABC",
-      proofImage: "https://picsum.photos/seed/vaccine1/600/400",
-    },
-    {
-      id: "v2",
-      date: "2025-11-15",
-      type: "รวม (DHPPi)",
-      dose: 2,
-      clinic: "โรงพยาบาลสัตว์เลี้ยง XYZ",
-      proofImage: "",
-    },
-  ]);
+  const [vaccineTypeOptions, setVaccineTypeOptions] = useState<VaccineTypeOption[]>([]);
+  const [records, setRecords] = useState<VaccineRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (currentItem !== "vaccine") return;
+    fetch("/api/dog/options/vaccine-types")
+      .then((res) => res.ok ? res.json() : [])
+      .then((data: VaccineTypeOption[]) => setVaccineTypeOptions(Array.isArray(data) ? data : []))
+      .catch(() => setVaccineTypeOptions([]));
+  }, [currentItem]);
+
+  // Backend has no GET /dog/:id/vaccinations; list comes from profile (initialVaccineList) only
+  useEffect(() => {
+    if (currentItem !== "vaccine" || !dogId) {
+      setRecords([]);
+      return;
+    }
+    setRecords(initialVaccineList);
+  }, [currentItem, dogId, initialVaccineList]);
+
+  // default type when options first load
+  useEffect(() => {
+    if (vaccineTypeOptions.length > 0 && !type) setType(vaccineTypeOptions[0].value);
+  }, [vaccineTypeOptions]);
 
   // edit mode
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // form states
   const [date, setDate] = useState("");
-  const [type, setType] = useState<VaccineType>("พิษสุนัขบ้า");
+  const [type, setType] = useState<string>(""); // vaccineName
   const [dose, setDose] = useState<string>("");
   const [clinic, setClinic] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -97,7 +101,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
   const resetForm = () => {
     setEditingId(null);
     setDate("");
-    setType("พิษสุนัขบ้า");
+    setType(vaccineTypeOptions[0]?.value ?? "");
     setDose("");
     setClinic("");
     setProofFile(null);
@@ -144,11 +148,9 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    // ถ้า user เลือกรูปใหม่ -> ใช้ object url, ถ้าไม่เลือก -> ใช้รูปเดิม (proofUrl)
-    const nextProof = proofFile ? URL.createObjectURL(proofFile) : proofUrl || undefined;
-
     if (editingId) {
-      // update
+      // update (local only until backend has PUT)
+      const nextProof = proofFile ? URL.createObjectURL(proofFile) : proofUrl || undefined;
       setRecords((prev) =>
         prev.map((x) =>
           x.id === editingId
@@ -163,20 +165,53 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
             : x
         )
       );
-    } else {
-      // create
-      const newItem: VaccineRecord = {
-        id: crypto.randomUUID(),
-        date,
-        type,
-        dose: Number(dose),
-        clinic: clinic.trim() || undefined,
-        proofImage: nextProof,
-      };
-      setRecords((prev) => [newItem, ...prev]);
+      closeModal();
+      return;
     }
 
-    closeModal();
+    if (!dogId) {
+      closeModal();
+      return;
+    }
+
+    setSaving(true);
+    const payload: Record<string, string | number> = {
+      vaccinationDate: date,
+      vaccineName: type,
+      dose: Number(dose),
+      clinicName: clinic.trim() || "",
+    };
+    if (proofUrl && proofUrl.trim().length > 0) {
+      payload.evidenceImageUrl = proofUrl.trim();
+    }
+
+    fetch(`/api/dog/${dogId}/vaccinations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((e) => Promise.reject(e));
+        return res.json();
+      })
+      .then(() => {
+        setRecords((prev) => [
+          {
+            id: crypto.randomUUID(),
+            date,
+            type,
+            dose: Number(dose),
+            clinic: clinic.trim() || undefined,
+            proofImage: proofUrl?.trim() || undefined,
+          },
+          ...prev,
+        ]);
+        closeModal();
+      })
+      .catch(() => {
+        setErrors({ type: "ไม่สามารถบันทึกได้ กรุณาลองใหม่" });
+      })
+      .finally(() => setSaving(false));
   };
 
   return (
@@ -191,10 +226,12 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
         <button
           type="button"
           onClick={openAdd}
+          disabled={!dogId || saving}
           className="
             rounded-2xl bg-[#f0a23a] text-white
             px-4 py-3 min-h-[44px] text-sm font-semibold
             shadow-sm hover:opacity-95 active:scale-[0.99] transition touch-manipulation shrink-0
+            disabled:opacity-50 disabled:pointer-events-none
           "
         >
           + เพิ่มวัคซีน
@@ -203,7 +240,11 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
 
       {/* List */}
       <div className="space-y-3">
-        {records.length === 0 ? (
+        {loading ? (
+          <div className="rounded-3xl bg-white ring-1 ring-gray-100 shadow-sm p-5 sm:p-6 text-center">
+            <p className="text-gray-600 text-sm sm:text-base">กำลังโหลด...</p>
+          </div>
+        ) : records.length === 0 ? (
           <div className="rounded-3xl bg-white ring-1 ring-gray-100 shadow-sm p-5 sm:p-6 text-center">
             <p className="text-gray-600 text-sm sm:text-base">ยังไม่มีข้อมูลวัคซีน</p>
             <p className="text-xs text-gray-500 mt-1">กด “เพิ่มวัคซีน” เพื่อเริ่มบันทึก</p>
@@ -348,7 +389,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
                 <div className="relative">
                   <select
                     value={type}
-                    onChange={(e) => setType(e.target.value as VaccineType)}
+                    onChange={(e) => setType(e.target.value)}
                     className="
                       w-full appearance-none rounded-2xl min-h-[48px]
                       border border-gray-200
@@ -358,13 +399,12 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
                       touch-manipulation
                     "
                   >
-                    <option value="พิษสุนัขบ้า">พิษสุนัขบ้า</option>
-                    <option value="รวม (DHPPi)">รวม (DHPPi)</option>
-                    <option value="ไข้หัดสุนัข">ไข้หัดสุนัข</option>
-                    <option value="พาร์โว">พาร์โว</option>
-                    <option value="เลปโต">เลปโต</option>
-                    <option value="บอร์เดเทลลา">บอร์เดเทลลา</option>
-                    <option value="อื่นๆ">อื่นๆ</option>
+                    <option value="">-- เลือกประเภทวัคซีน --</option>
+                    {vaccineTypeOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="w-5 h-5 text-gray-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -457,7 +497,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
 
                 {proofPreview ? (
                   <div className="mt-3 rounded-2xl bg-gray-50 border border-gray-100 p-3 flex justify-center">
-                    <img
+                    <AppImage
                       src={proofPreview}
                       alt="preview"
                       className="max-h-56 w-auto object-contain rounded-xl"
@@ -486,15 +526,17 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
               <button
                 type="button"
                 onClick={onSave}
+                disabled={saving}
                 className="
                   w-full rounded-2xl min-h-[48px]
                   bg-[#F2A245] text-white
                   py-3 text-sm font-semibold
                   hover:opacity-95 active:scale-[0.99]
                   transition touch-manipulation
+                  disabled:opacity-50 disabled:pointer-events-none
                 "
               >
-                {editingId ? "บันทึกการแก้ไข" : "บันทึก"}
+                {saving ? "กำลังบันทึก..." : editingId ? "บันทึกการแก้ไข" : "บันทึก"}
               </button>
 
               {/* delete in edit mode */}
@@ -545,7 +587,7 @@ export default function VaccineTab({ currentItem }: VaccineTabProps) {
             className="relative w-full max-w-2xl max-h-[90dvh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
+            <AppImage
               src={proofViewSrc}
               alt="หลักฐานการฉีดวัคซีน"
               className="max-w-full max-h-[80dvh] sm:max-h-[85vh] w-auto object-contain rounded-2xl shadow-2xl"

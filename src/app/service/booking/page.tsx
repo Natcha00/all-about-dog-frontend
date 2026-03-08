@@ -2,6 +2,7 @@
 
 import BookingList from "@/components/ui/booking/BookingList";
 import BookingTabs from "@/components/ui/booking/BookingTabs";
+import PageLoading from "@/components/ui/PageLoading";
 import type { Booking, TabKey } from "@/lib/booking/booking.types";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -262,11 +263,7 @@ export default function BookingsPage() {
 
       <div className="mt-4">
         {loading ? (
-          <div className="px-4">
-            <div className="rounded-3xl bg-white/60 ring-1 ring-black/5 p-6 text-center text-black/50">
-              กำลังโหลดรายการจอง...
-            </div>
-          </div>
+          <PageLoading fullScreen={false} message="กำลังโหลดรายการจอง..." />
         ) : error ? (
           <div className="px-4">
             <div className="rounded-3xl bg-rose-50 ring-1 ring-rose-100 p-6 text-center text-rose-700 text-sm">

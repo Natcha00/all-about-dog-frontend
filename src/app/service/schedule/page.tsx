@@ -9,6 +9,7 @@ import { bookingDayKeys, dayKey } from "@/lib/schedule/schedule.utils";
 import ScheduleHeader from "@/components/ui/schedule/ScheduleHeader";
 import MonthCalendar from "@/components/ui/schedule/MonthCalendar";
 import BookingList from "@/components/ui/schedule/BookingList";
+import PageLoading from "@/components/ui/PageLoading";
 
 type ReservationApiItem = {
   id: string;
@@ -219,9 +220,7 @@ export default function SchedulePage() {
           </div>
 
           {loading ? (
-            <div className="mt-3 rounded-3xl bg-white/60 ring-1 ring-black/5 p-4 text-center text-black/60">
-              กำลังโหลดรายการจอง...
-            </div>
+            <PageLoading fullScreen={false} message="กำลังโหลดรายการจอง..." />
           ) : error ? (
             <div className="mt-3 rounded-3xl bg-rose-50 ring-1 ring-rose-100 p-4 text-center text-rose-700 text-sm">
               {error}

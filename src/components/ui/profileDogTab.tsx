@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Camera } from "lucide-react";
+import { DEFAULT_IMAGE } from "@/lib/constants";
 
 type Gender = "male" | "female";
 
@@ -12,8 +13,6 @@ export interface DogNameWithGender {
   age?: number;
   allergic?: string;
 }
-
-const DEFAULT_DOG_IMAGE = "/images/facedog.png";
 
 function Chip({
   children,
@@ -43,7 +42,7 @@ export function DefaultCardProfileDog({
   age,
   allergic,
 }: DogNameWithGender) {
-  const imageSrc = img && img.trim() !== "" ? img : DEFAULT_DOG_IMAGE;
+  const imageSrc = img && img.trim() !== "" ? img : DEFAULT_IMAGE;
 
   const genderLabel = gender === "male" ? "เพศผู้" : "เพศเมีย";
   const genderSymbol = gender === "male" ? "♂" : "♀";
@@ -85,7 +84,7 @@ export function DefaultCardProfileDog({
                   alt={name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = DEFAULT_DOG_IMAGE;
+                    e.currentTarget.src = DEFAULT_IMAGE;
                   }}
                 />
               </div>

@@ -1,9 +1,8 @@
 "use client";
 
 import { Camera } from "lucide-react";
-import { useMemo } from "react";
-
-const DEFAULT_IMG = "/images/facedog.png";
+import AppImage from "@/components/ui/AppImage";
+import { DEFAULT_IMAGE } from "@/lib/constants";
 
 export default function PetAvatarPicker(props: {
   preview?: string;
@@ -11,14 +10,11 @@ export default function PetAvatarPicker(props: {
 }) {
   const { preview, onPick } = props;
 
-  const src = useMemo(() => (preview?.trim() ? preview : DEFAULT_IMG), [preview]);
-
   return (
     <div className="flex justify-center">
       <div className="relative">
         <div className="h-24 w-24 rounded-full bg-white ring-1 ring-black/10 overflow-hidden grid place-items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="pet" className="h-full w-full object-cover" />
+          <AppImage src={preview || DEFAULT_IMAGE} alt="pet" className="h-full w-full object-cover" />
         </div>
 
         <label

@@ -6,6 +6,9 @@ import { X, ImagePlus, History } from "lucide-react";
 
 import SuccessHeader from "@/components/ui/success/SuccessHeader";
 import SuccessSummaryCard from "@/components/ui/success/SuccessSummaryCard";
+import PageLoading from "@/components/ui/PageLoading";
+import AppImage from "@/components/ui/AppImage";
+import { DEFAULT_IMAGE } from "@/lib/constants";
 
 import type { Booking } from "@/lib/booking/booking.types";
 import { QRCodeSVG } from "qrcode.react";
@@ -513,8 +516,7 @@ function ImagePreviewModal({
           </div>
 
           <div className="w-full h-[78vh] bg-black">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt="preview" className="w-full h-full object-contain" />
+            <AppImage src={src || DEFAULT_IMAGE} alt="preview" className="w-full h-full object-contain" />
           </div>
 
           <div className="px-3 py-2 bg-black/40 text-[11px] text-white/70">แตะ/คลิกพื้นหลังเพื่อปิด</div>
@@ -590,8 +592,7 @@ function SlipUploadPanel({
 
         {previewUrl ? (
           <div className="rounded-2xl overflow-hidden ring-1 ring-black/10 bg-white">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <AppImage
               src={previewUrl}
               alt="slip preview"
               className="w-full h-64 object-cover cursor-zoom-in"
@@ -906,13 +907,7 @@ export default function BookingDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
-        <div className="mx-auto w-full max-w-md space-y-4">
-          <div className="rounded-3xl bg-white/60 ring-1 ring-black/5 p-6 text-center text-black/60">
-            กำลังโหลดรายละเอียดการจอง...
-          </div>
-        </div>
-      </main>
+      <PageLoading fullScreen message="กำลังโหลดรายละเอียดการจอง..." />
     );
   }
 

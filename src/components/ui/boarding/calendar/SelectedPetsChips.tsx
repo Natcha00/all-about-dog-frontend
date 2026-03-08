@@ -1,6 +1,7 @@
 import React from "react";
 import PoikaiCard from "@/components/ui/PoikaiCard";
 import { PawPrint } from "lucide-react";
+import AppImage from "@/components/ui/AppImage";
 
 export type SelectedPet = {
   id: number;
@@ -22,7 +23,7 @@ export default function SelectedPetsChips({ pets }: { pets: SelectedPet[] }) {
               key={p.id}
               className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-2 ring-1 ring-gray-100"
             >
-              <img
+              <AppImage
                 src={p.image}
                 alt={p.name}
                 className="h-7 w-7 rounded-full object-cover ring-2 ring-white"

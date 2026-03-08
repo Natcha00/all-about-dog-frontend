@@ -1,6 +1,6 @@
 import type { CircleItemProps } from "@/components/ui/circleProfile";
 import type { DogApiItem } from "@/lib/dogs/dog.type";
-import { getDogs } from "@/lib/dogs/dog.api";
+import { getDogs } from "@/app/api/dog/backend";
 import MyDogsGrid from "./MyDogsGrid";
 
 function mapDogToCircleItem(dog: DogApiItem): CircleItemProps {
