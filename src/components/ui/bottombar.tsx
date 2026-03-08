@@ -17,8 +17,8 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "หน้าหลัก", href: "/", Icon: Home },
-  { label: "จองบริการ", href: "/service", Icon: CalendarCheck },
-  { label: "รายการจอง", href: "/service/booking", Icon: ClipboardList },
+  { label: "จองบริการ", href: "/walkin", Icon: CalendarCheck },
+  { label: "รายการจอง", href: "/service", Icon: ClipboardList },
   { label: "สุนัขของฉัน", href: "/my-dogs", Icon: PawPrint },
 ];
 

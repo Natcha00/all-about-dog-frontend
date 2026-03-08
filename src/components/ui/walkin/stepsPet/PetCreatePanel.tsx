@@ -125,8 +125,7 @@ export default function PetCreatePanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const msg = data.detail ?? data.error ?? "สร้างสุนัขไม่สำเร็จ";
         const extra = [data.hint, data.url].filter(Boolean).join("\n");
@@ -134,26 +133,10 @@ export default function PetCreatePanel({
         return;
       }
 
-      // Backend may return full dog (DogApiItem) or minimal { id, ... }
-      let pet: PetPicked;
-      if (data?.id != null && data?.breed != null && typeof data.breed === "object") {
-        pet = mapDogApiItemToPetPicked(data as DogApiItem);
-      } else if (data?.id != null && data?.name != null) {
-        pet = {
-          id: data.id,
-          name: data.name,
-          size: (data.breed?.size === "large" ? "large" : "small") as "small" | "large",
-          breed: data.breed?.nameTh ?? data.breed?.nameEng ?? null,
-          weightKg: data.weight ?? null,
-        };
-      } else {
-        pet = buildNewPet();
-        if (typeof data?.id === "number") pet = { ...pet, id: data.id };
-      }
-
-      onCreated(pet);
+      const newPet = mapDogApiItemToPetPicked(data as DogApiItem);
       setCreateStep(1);
       onLoadPets?.();
+      onCreated(newPet);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "สร้างสุนัขไม่สำเร็จ");
     } finally {

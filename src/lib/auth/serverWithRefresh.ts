@@ -15,14 +15,21 @@ function getBaseUrl(): string {
 }
 
 async function responseToNextResponse(res: Response): Promise<NextResponse> {
+  const status = res.status;
   const contentType = res.headers.get("content-type") ?? "application/json";
+  const text = await res.text();
+
+  // 204 No Content / 205 Reset Content must not have a body
+  if (status === 204 || status === 205) {
+    return new NextResponse(null, { status });
+  }
+
   try {
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const data = text ? JSON.parse(text) : {};
+    return NextResponse.json(data, { status });
   } catch {
-    const text = await res.text();
     return new NextResponse(text, {
-      status: res.status,
+      status,
       headers: { "Content-Type": contentType },
     });
   }
@@ -82,7 +89,6 @@ export async function withAuthRefresh(
   }
 
   res = await makeRequest(newAccessToken);
-
   const nextRes = await responseToNextResponse(res);
   nextRes.cookies.set("accessToken", newAccessToken, COOKIE_OPTIONS);
   nextRes.cookies.set("refreshToken", newRefreshToken, COOKIE_OPTIONS);

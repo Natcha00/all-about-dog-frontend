@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [testLoginStatus, setTestLoginStatus] = useState<string | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [verifyEmailHint, setVerifyEmailHint] = useState(false);
 
@@ -70,21 +69,6 @@ export default function LoginPage() {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleTestLogin() {
-    setTestLoginStatus("กำลังยิง API...");
-    try {
-      const res = await fetch("/api/auth/test-login", { method: "POST", credentials: "include" });
-      const data = await res.json();
-      if (res.ok) {
-        router.replace("/");
-        return;
-      }
-      setTestLoginStatus(`ผิดพลาด: ${data.error || res.status} - ${JSON.stringify(data.detail || data)}`);
-    } catch (e) {
-      setTestLoginStatus(`Error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -164,21 +148,6 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </Button>
-            <p className="text-xs text-gray-500 mt-2">หรือ</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleTestLogin}
-              disabled={loading}
-            >
-              Login ทดสอบ (maya.chen@gmail.com / x)
-            </Button>
-            {testLoginStatus && (
-              <pre className="w-full p-3 bg-gray-100 rounded text-sm whitespace-pre-wrap mt-2">
-                {testLoginStatus}
-              </pre>
-            )}
             <div className="flex items-center">
               <p>ยังไม่มีผู้ใช้งาน?</p>
               <Link href="/register">

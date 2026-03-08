@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import StepService from "./StepService";
 import StepBoarding from "./StepBoarding";
@@ -85,7 +86,16 @@ const initialPetForm: PetCreateForm = {
 };
 
 export default function WalkInWizardCustomer() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("pet");
+
+  // Pre-select service from URL (e.g. from home: /walkin?service=boarding | ?service=swimming)
+  useEffect(() => {
+    const service = searchParams.get("service");
+    if (service === "boarding" || service === "swimming") {
+      setServiceType(service);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -197,7 +207,11 @@ export default function WalkInWizardCustomer() {
         </div>
       </div>
 
-      <ServiceRulesModal open={showRules} onClose={() => setShowRules(false)} />
+      <ServiceRulesModal
+        open={showRules}
+        onClose={() => setShowRules(false)}
+        defaultTab={serviceType ?? "swimming"}
+      />
 
       {/* Step 1: Pet */}
       {step === "pet" && (
@@ -215,7 +229,20 @@ export default function WalkInWizardCustomer() {
           }}
           onNext={() => {
             if (!canGoService) return;
-            setStep("service");
+            // If service was pre-selected from URL (e.g. from home), go straight to that step
+            if (serviceType) {
+              setStep(serviceType);
+              if (serviceType === "boarding") {
+                setSwimmingForm(getInitialSwimmingForm());
+                setBooking(null);
+              }
+              if (serviceType === "swimming") {
+                setBoardingForm(initialBoardingForm);
+                setBooking(null);
+              }
+            } else {
+              setStep("service");
+            }
           }}
           onResetCreateForm={resetCreateForm}
         />
