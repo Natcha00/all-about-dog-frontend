@@ -3,6 +3,7 @@ import type { DogNameWithGender } from "@/components/ui/profileDogTab";
 import type { PetInfoMock } from "@/components/ui/infoDog";
 import type { QrCodeProps } from "@/components/ui/qrCode";
 import type { ServiceHistoryItem } from "@/components/ui/historyTab";
+import { toDateInputValue } from "@/lib/date/date.utils";
 
 /** Parse "อายุ 1 ปี 6 เดือน" or "1 ปี" -> years number */
 function parseAgeYears(ageStr: string): number {
@@ -61,14 +62,18 @@ export function mapProfileToQrProps(api: DogProfileApiResponse): QrCodeProps {
 
 export function mapProfileToVaccineRecords(api: DogProfileApiResponse): VaccineRecordFromProfile[] {
   const list = api.vaccine?.vaccineList ?? [];
-  return (Array.isArray(list) ? list : []).map((v, i) => ({
-    id: `profile-${i}-${v.vaccineName ?? ""}`,
-    date: v.date ?? "",
-    type: v.vaccineName ?? "",
-    dose: Number(v.dose) || 0,
-    clinic: v.clinicName?.trim() || undefined,
-    proofImage: v.evidenceImageUrl?.trim() || undefined,
-  }));
+  return (Array.isArray(list) ? list : []).map((v, i) => {
+    const rawDate = v.vaccinationDate ?? v.date ?? "";
+    const date = toDateInputValue(rawDate) || rawDate.trim().slice(0, 10) || "";
+    return {
+      id: v.id != null ? String(v.id) : `profile-${i}-${v.vaccineName ?? ""}`,
+      date,
+      type: v.vaccineName ?? "",
+      dose: Number(v.dose) || 0,
+      clinic: v.clinicName?.trim() || undefined,
+      proofImage: v.evidenceImageUrl?.trim() || undefined,
+    };
+  });
 }
 
 export function mapProfileToPetInfoMock(api: DogProfileApiResponse): PetInfoMock {

@@ -49,10 +49,12 @@ export type DogApiItem = {
 /** Backend API: GET /:id/profile vaccine.vaccineList item */
 export type DogProfileVaccineItem = {
   date?: string;
+  vaccinationDate?: string;
   vaccineName?: string;
   dose?: number;
   clinicName?: string;
   evidenceImageUrl?: string;
+  id?: string | number;
 };
 
 /** Mapped for UI from profile.vaccine.vaccineList (same shape as VaccineRecord in vaccineTab) */

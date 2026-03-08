@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { CalendarDays, ChevronDown, ImagePlus, Syringe, X, Pencil, Trash2 } from "lucide-react";
-import { formatDateThai } from "@/lib/date/date.utils";
+import { formatDateThai, toDateInputValue } from "@/lib/date/date.utils";
 import AppImage from "@/components/ui/AppImage";
 
 export type VaccineTypeOption = { value: string; label: string };
@@ -121,9 +121,9 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
 
   const openEdit = (r: VaccineRecord) => {
     setEditingId(r.id);
-    setDate(r.date);
-    setType(r.type);
-    setDose(String(r.dose));
+    setDate(toDateInputValue(r.date) || r.date || "");
+    setType(r.type || (vaccineTypeOptions[0]?.value ?? ""));
+    setDose(String(r.dose ?? ""));
     setClinic(r.clinic ?? "");
     setProofFile(null);
     setProofUrl(r.proofImage ?? "");
@@ -134,9 +134,24 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
   const onDelete = (id: string) => {
     const ok = window.confirm("ต้องการลบข้อมูลวัคซีนรายการนี้ใช่ไหม?");
     if (!ok) return;
-    setRecords((prev) => prev.filter((x) => x.id !== id));
-    // ถ้ากำลังแก้ไขรายการนี้อยู่ ให้ปิดโมดัล
-    if (editingId === id) closeModal();
+    if (!dogId) {
+      setRecords((prev) => prev.filter((x) => x.id !== id));
+      if (editingId === id) closeModal();
+      return;
+    }
+    setSaving(true);
+    fetch(`/api/dog/${dogId}/vaccinations/${id}`, { method: "DELETE" })
+      .then((res) => {
+        if (!res.ok) return res.json().then((e) => Promise.reject(e));
+      })
+      .then(() => {
+        setRecords((prev) => prev.filter((x) => x.id !== id));
+        if (editingId === id) closeModal();
+      })
+      .catch(() => {
+        window.alert("ไม่สามารถลบได้ กรุณาลองใหม่");
+      })
+      .finally(() => setSaving(false));
   };
 
   const onSave = () => {
@@ -149,23 +164,50 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
     if (Object.keys(nextErrors).length > 0) return;
 
     if (editingId) {
-      // update (local only until backend has PUT)
-      const nextProof = proofFile ? URL.createObjectURL(proofFile) : proofUrl || undefined;
-      setRecords((prev) =>
-        prev.map((x) =>
-          x.id === editingId
-            ? {
-                ...x,
-                date,
-                type,
-                dose: Number(dose),
-                clinic: clinic.trim() || undefined,
-                proofImage: nextProof,
-              }
-            : x
-        )
-      );
-      closeModal();
+      if (!dogId) {
+        closeModal();
+        return;
+      }
+      setSaving(true);
+      const form = new FormData();
+      form.append("vaccinationDate", date);
+      form.append("vaccineName", type);
+      form.append("dose", String(Number(dose)));
+      form.append("clinicName", clinic.trim() || "");
+      if (proofFile) {
+        form.append("file", proofFile);
+      }
+      fetch(`/api/dog/${dogId}/vaccinations/${editingId}`, {
+        method: "PUT",
+        body: form,
+      })
+        .then((res) => {
+          if (!res.ok) return res.json().then((e) => Promise.reject(e));
+          return res.json();
+        })
+        .then((data) => {
+          const nextProof =
+            proofFile ? URL.createObjectURL(proofFile) : (data?.evidenceImageUrl ?? proofUrl) || undefined;
+          setRecords((prev) =>
+            prev.map((x) =>
+              x.id === editingId
+                ? {
+                    ...x,
+                    date,
+                    type,
+                    dose: Number(dose),
+                    clinic: clinic.trim() || undefined,
+                    proofImage: nextProof,
+                  }
+                : x
+            )
+          );
+          closeModal();
+        })
+        .catch(() => {
+          setErrors({ type: "ไม่สามารถบันทึกได้ กรุณาลองใหม่" });
+        })
+        .finally(() => setSaving(false));
       return;
     }
 
