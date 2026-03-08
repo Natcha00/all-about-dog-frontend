@@ -155,7 +155,11 @@ export default function AccountPage() {
 
   const doLogout = async () => {
     setShowLogout(false);
-    router.push("/login");
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } finally {
+      router.push("/login");
+    }
   };
 
   return (
