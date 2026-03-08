@@ -175,37 +175,34 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
     }
 
     setSaving(true);
-    const payload: Record<string, string | number> = {
-      vaccinationDate: date,
-      vaccineName: type,
-      dose: Number(dose),
-      clinicName: clinic.trim() || "",
-    };
-    if (proofUrl && proofUrl.trim().length > 0) {
-      payload.evidenceImageUrl = proofUrl.trim();
+
+    const form = new FormData();
+    form.append("vaccinationDate", date);
+    form.append("vaccineName", type);
+    form.append("dose", String(Number(dose)));
+    form.append("clinicName", clinic.trim() || "");
+    if (proofFile) {
+      form.append("file", proofFile);
     }
 
     fetch(`/api/dog/${dogId}/vaccinations`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: form,
     })
       .then((res) => {
         if (!res.ok) return res.json().then((e) => Promise.reject(e));
         return res.json();
       })
-      .then(() => {
-        setRecords((prev) => [
-          {
-            id: crypto.randomUUID(),
-            date,
-            type,
-            dose: Number(dose),
-            clinic: clinic.trim() || undefined,
-            proofImage: proofUrl?.trim() || undefined,
-          },
-          ...prev,
-        ]);
+      .then((data) => {
+        const newRecord: VaccineRecord = {
+          id: (data?.id != null ? String(data.id) : crypto.randomUUID()),
+          date,
+          type,
+          dose: Number(dose),
+          clinic: clinic.trim() || undefined,
+          proofImage: (data?.evidenceImageUrl ?? proofUrl?.trim()) || undefined,
+        };
+        setRecords((prev) => [newRecord, ...prev]);
         closeModal();
       })
       .catch(() => {
