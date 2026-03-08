@@ -1,8 +1,16 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/ui/navbar";
 import BottomBar from "@/components/ui/bottombar";
+
+const PUBLIC_PATHS = ["/", "/login", "/register"];
+
+function isPublicPath(pathname: string) {
+  const normalized = pathname.replace(/\/$/, "") || "/";
+  return PUBLIC_PATHS.some((p) => normalized === p || normalized.startsWith(p + "/"));
+}
 
 export default function AppShell({
   children,
@@ -13,8 +21,44 @@ export default function AppShell({
   avatarSrc?: string | null;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    if (isPublicPath(pathname)) {
+      setAuthChecked(true);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.status === 401) {
+          const loginUrl = "/login";
+          const current = pathname && pathname !== "/" ? `?redirect=${encodeURIComponent(pathname)}` : "";
+          router.replace(loginUrl + current);
+          return;
+        }
+        setAuthChecked(true);
+      })
+      .catch(() => {
+        if (!cancelled) setAuthChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, router]);
+
   const normalized = pathname.replace(/\/$/, "");
   const showBottomBar = ["/service", "/my-dogs", "/notifications", "/account", ""].includes(normalized);
+
+  if (!authChecked && !isPublicPath(pathname)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F4E8]">
+        <p className="text-gray-500">กำลังตรวจสอบ...</p>
+      </div>
+    );
+  }
 
   return (
     <>

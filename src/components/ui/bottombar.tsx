@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutGrid,
-  Bell,
-  PawPrint,
+  Home,
+  CalendarCheck,
   ClipboardList,
+  PawPrint,
 } from "lucide-react";
 
 type NavItem = {
@@ -16,12 +16,10 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "รายการจอง", href: "/service", Icon: LayoutGrid },
-  { label: "จองบริการ", href: "/walkin", Icon: ClipboardList },
-  // { label: "รายการจอง", href: "/service/booking", Icon: ClipboardList },
-  { label: "แจ้งเตือน", href: "/notifications", Icon: Bell },
-  { label: "สัตว์เลี้ยง", href: "/my-dogs", Icon: PawPrint },
-  // { label: "บัญชีผู้ใช้", href: "/account", Icon: UserCircle2 },
+  { label: "หน้าหลัก", href: "/", Icon: Home },
+  { label: "จองบริการ", href: "/service", Icon: CalendarCheck },
+  { label: "รายการจอง", href: "/service/booking", Icon: ClipboardList },
+  { label: "สุนัขของฉัน", href: "/my-dogs", Icon: PawPrint },
 ];
 
 function isActivePath(pathname: string, href: string) {

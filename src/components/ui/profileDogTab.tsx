@@ -14,6 +14,10 @@ export interface DogNameWithGender {
   allergic?: string;
 }
 
+export interface DefaultCardProfileDogProps extends DogNameWithGender {
+  onEditPictureClick?: () => void;
+}
+
 function Chip({
   children,
   tone = "neutral",
@@ -41,7 +45,8 @@ export function DefaultCardProfileDog({
   img,
   age,
   allergic,
-}: DogNameWithGender) {
+  onEditPictureClick,
+}: DefaultCardProfileDogProps) {
   const imageSrc = img && img.trim() !== "" ? img : DEFAULT_IMAGE;
 
   const genderLabel = gender === "male" ? "เพศผู้" : "เพศเมีย";
@@ -92,6 +97,7 @@ export function DefaultCardProfileDog({
               {/* Camera button */}
               <button
                 type="button"
+                onClick={() => onEditPictureClick?.()}
                 className="
                   absolute -bottom-1 -right-1
                   w-10 h-10 rounded-full

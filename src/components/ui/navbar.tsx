@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Bell } from "lucide-react";
 import Image from "next/image";
 import { DEFAULT_AVATAR_IMAGE } from "@/lib/constants";
 
@@ -57,6 +57,23 @@ export default function Navbar({
                 {subtitle}
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => router.push("/notifications")}
+              className="
+                inline-flex h-10 w-10 items-center justify-center
+                rounded-full
+                bg-white/70
+                ring-1 ring-black/10
+                hover:bg-white/90
+                active:scale-[0.98]
+                transition
+              "
+              aria-label="แจ้งเตือน"
+            >
+              <Bell className="h-5 w-5 text-black" />
+            </button>
 
             <button
               type="button"
