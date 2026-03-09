@@ -58,6 +58,12 @@ export default function AppShell({
 
   const normalized = pathname.replace(/\/$/, "");
   const showBottomBar = ["/service", "/my-dogs", "/notifications", "/account", ""].includes(normalized);
+  const hideChromeForAuth =
+    normalized === "/login" ||
+    normalized === "/register" ||
+    normalized === "/verify-email" ||
+    normalized === "/forgot-password" ||
+    normalized === "/reset-password";
 
   if (!authChecked && !isPublicPath(pathname)) {
     return (
@@ -65,6 +71,10 @@ export default function AppShell({
         <p className="text-gray-500">กำลังตรวจสอบ...</p>
       </div>
     );
+  }
+
+  if (hideChromeForAuth) {
+    return <>{children}</>;
   }
 
   return (
