@@ -992,7 +992,7 @@ export default function BookingDetailPage() {
             <p className="font-extrabold text-gray-900 mb-2">QR การจอง</p>
 
             <div className="rounded-2xl border border-black/10 bg-white p-4 flex flex-col items-center gap-2">
-              <QRCodeSVG value={`BOOKING:${b.id}`} size={180} marginSize={2} />
+              <QRCodeSVG value={`${b.id}`} size={180} marginSize={2} />
               <p className="text-xs text-black/55 text-center">
                 แสดงหลังตรวจสลิปแล้ว (Slip Verified) • รหัส:{" "}
                 <span className="font-semibold break-all">{b.id}</span>
