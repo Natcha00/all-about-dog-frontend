@@ -105,7 +105,7 @@ export default function DogProfileClient({
         </p>
       )}
 
-      <QrCode iconSrc={qr.iconSrc} qrSrc={qr.qrSrc} label={qr.label} />
+      {/* <QrCode iconSrc={qr.iconSrc} qrSrc={qr.qrSrc} label={qr.label} /> */}
 
       <BtnContainerHeath
         data={tabs}
