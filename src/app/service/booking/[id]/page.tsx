@@ -146,13 +146,16 @@ function mapDetailToBooking(detail: ReservationDetailResult): Booking {
   const serviceType = mapServiceType(detail.serviceType);
 
   const pets =
-    detail.groups?.flatMap((g) =>
-      g.petIds?.map((p) => ({
-        petId: p.petId,
-        petName: p.name,
-        petSize: (p.sizeLabel === "large" ? "large" : "small") as "small" | "large",
-      })) ?? []
-    ) ?? [];
+    detail.groups?.flatMap((g) => {
+      const animals = (g as any).dogIds ?? (g as any).petIds ?? [];
+      return (
+        animals?.map((p: any) => ({
+          petId: p.dogId ?? p.petId ?? p.id,
+          petName: p.name,
+          petSize: (p.sizeLabel === "large" ? "large" : "small") as "small" | "large",
+        })) ?? []
+      );
+    }) ?? [];
 
   let startAt = "";
   let endAt: string | undefined;
@@ -1006,11 +1009,6 @@ export default function BookingDetailPage() {
           title=""
           subtitle=""
           rows={rows}
-          // selectedContent={
-          //   <span className="text-sm font-semibold text-black/70">
-          //     {pickedPets.length ? pickedPets.map((p) => p.name).join(", ") : "-"}
-          //   </span>
-          // }
           totalValue={
             <span className="text-black/60">-</span>
           }
