@@ -41,8 +41,8 @@ type BoardingAvailableResponse = {
   fails: Array<{ date?: string; message?: string; need?: Record<string, number>; cap?: Record<string, number> }>;
 };
 
-function planToPackage(plan: Plan): string {
-  return plan === 3 ? "vip" : "standard";
+function planToPackage(plan: Plan): "standard" | "shared" | "vip" {
+  return plan === 3 ? "vip" : plan === 2 ? "shared" : "standard";
 }
 
 function todayISO() {

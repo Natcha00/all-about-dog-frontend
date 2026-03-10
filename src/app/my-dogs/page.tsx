@@ -52,12 +52,13 @@ export default function MyPetsPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        const msg = (data.error as string) || (data.detail as string) || `ลบล้มเหลว (${res.status})`;
+        const msg = (data.message as string) || (data.message as string) || `ลบล้มเหลว (${res.status})`;
         alert(msg);
         return;
       }
       setDogs((prev) => prev.filter((d) => d.id !== id));
     } catch (e) {
+      console.error("deleteDog failed:", e);
       alert(e instanceof Error ? e.message : "ลบล้มเหลว");
     } finally {
       setDeletingId(null);

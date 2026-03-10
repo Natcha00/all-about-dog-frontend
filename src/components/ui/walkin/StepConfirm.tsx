@@ -3,11 +3,12 @@ import { swimPricePerDog } from "@/lib/walkin/swimming/swimming.price.logic";
 import React, { useMemo, useState } from "react";
 
 type ConfirmBody = {
-  offerType: "boarding" | "swimming";
-  period: { start: string; end: string };
-  remark: string;
-  package: string;
-  lines: Array<{ offeringId: number; dogId: number; price: number; quantity: number; groupNumber: number }>;
+  dogIds: number[];
+  offeringType: "boarding" | "swimming";
+  start: string;
+  end: string;
+  package: "standard" | "shared" | "vip";
+  remark?: string;
 };
 
 // แปลงวันที่ (YYYY-MM-DD) + เวลา (HH:mm) ในเวลาไทย (UTC+7) → ISO UTC (เช่น ...Z)
@@ -27,45 +28,37 @@ function toUtcIsoEndOfHourFromBangkok(dateISO: string, hour: string): string {
   return d.toISOString();
 }
 
-function buildConfirmBody(booking: BookingDraft): ConfirmBody | null {
+function buildConfirmBody(booking: BookingDraft, pets: PetPicked[]): ConfirmBody | null {
+  const dogIds = (pets ?? []).map((p) => Number(p.id)).filter((id) => id > 0);
+  if (!dogIds.length) return null;
+
   const remark = (booking.customerNote ?? "").trim();
-  const pkg = booking.package ?? "standard";
-  // lines มาจาก package-pricing API (ฝากเลี้ยง/ว่ายน้ำ) ฝากไว้ใน draft แล้วส่งตรงไป POST /reservation/confirm
-  const lines = booking.lines ?? [];
-  if (!lines.length) return null;
+  const pkg = (booking.package ?? "standard") as "standard" | "shared" | "vip";
 
   if (booking.serviceType === "boarding") {
     const startTime = booking.startTime || "09:00";
     const endTime = booking.endTime || "18:00";
     return {
-      offerType: "boarding",
-      period: {
-        // ส่งเป็น UTC ISO string ตามมาตรฐาน (เช่น 2026-03-30T02:00:00.000Z)
-        start: toUtcIsoFromBangkok(booking.start, startTime),
-        end: toUtcIsoFromBangkok(booking.end, endTime),
-      },
-      remark,
+      dogIds,
+      offeringType: "boarding",
+      start: toUtcIsoFromBangkok(booking.start, startTime),
+      end: toUtcIsoFromBangkok(booking.end, endTime),
       package: pkg,
-      lines,
+      ...(remark ? { remark } : {}),
     };
   }
 
   if (booking.serviceType === "swimming") {
-    // ใช้เวลารอบที่เลือกในเวลาไทย แล้วแปลงเป็น UTC ISO ก่อนส่งให้ backend
-    const slotTime = (booking.time ?? "10:00").trim(); // เช่น "12:00"
+    const slotTime = (booking.time ?? "10:00").trim();
     const [hRaw = "10"] = slotTime.split(":");
     const hour = hRaw.padStart(2, "0");
     return {
-      offerType: "swimming",
-      period: {
-        // ตัวอย่าง: ผู้ใช้เลือก 12:00 (ไทย) → start = 2026-03-30T05:00:00.000Z
-        start: toUtcIsoFromBangkok(booking.date, slotTime),
-        // และ end = 2026-03-30T05:59:59.999Z (1 ชั่วโมงเต็มใน UTC)
-        end: toUtcIsoEndOfHourFromBangkok(booking.date, hour),
-      },
-      remark,
+      dogIds,
+      offeringType: "swimming",
+      start: toUtcIsoFromBangkok(booking.date, slotTime),
+      end: toUtcIsoEndOfHourFromBangkok(booking.date, hour),
       package: pkg,
-      lines,
+      ...(remark ? { remark } : {}),
     };
   }
 
@@ -584,9 +577,9 @@ export default function StepConfirm(props: {
                   disabled={confirmSubmitting}
                   className="flex-1 rounded-2xl bg-[#F0A23A] py-3 font-extrabold text-white active:scale-[0.99] transition disabled:opacity-50"
                   onClick={async () => {
-                    const body = buildConfirmBody(booking);
+                    const body = buildConfirmBody(booking, pets);
                     if (!body) {
-                      setConfirmError("ไม่มีรายการยืนยัน (กรุณากลับไปเลือกบริการใหม่)");
+                      setConfirmError("ไม่มีรายการยืนยัน (กรุณาเลือกสุนัขอย่างน้อย 1 ตัว)");
                       return;
                     }
                     setConfirmError(null);
@@ -603,7 +596,7 @@ export default function StepConfirm(props: {
                         return;
                       }
                       setShowConfirm(false);
-                      onConfirm(data?.referenceCode ?? data?.referenceCode ?? "");
+                      onConfirm(data?.code ?? "");
                     } catch (e) {
                       setConfirmError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
                     } finally {
