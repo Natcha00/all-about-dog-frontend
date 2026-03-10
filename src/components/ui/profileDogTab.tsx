@@ -87,7 +87,7 @@ export function DefaultCardProfileDog({
                 <img
                   src={imageSrc}
                   alt={name}
-                  className="w-full h-full object-cover"
+                  className=""
                   onError={(e) => {
                     e.currentTarget.src = DEFAULT_IMAGE;
                   }}

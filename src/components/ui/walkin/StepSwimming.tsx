@@ -75,6 +75,15 @@ export default function StepSwimming(props: {
 
   const canFetchSwimming = !!dateISO && pets.length > 0;
 
+  const handleDateChange = (value: string) => {
+    if (!value) {
+      setDateISO("");
+      return;
+    }
+    const today = todayISO();
+    setDateISO(value < today ? today : value);
+  };
+
   useEffect(() => {
     if (!canFetchSwimming) {
       setSwimmingResult(null);
@@ -153,20 +162,19 @@ export default function StepSwimming(props: {
           type="date"
           value={dateISO}
           min={todayISO()}
-          onChange={(e) => setDateISO(e.target.value)}
+          onChange={(e) => handleDateChange(e.target.value)}
           className="appearance-none h-11 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]"
         />
       </div>
 
       <div className="rounded-2xl ring-1 ring-black/10 bg-white p-4 space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
+      <div>
             <p className="text-sm font-extrabold text-gray-900">เลือกรอบ</p>
             <p className="text-xs text-black/45 mt-0.5">
               {slotHint}
             </p>
           </div>
-
+        <div className="flex justify-end  gap-3">
           <div className="shrink-0 rounded-2xl bg-black/[0.03] ring-1 ring-black/5 px-3 py-2 text-xs font-extrabold text-black/60">
             {petsSummaryLabel}
           </div>

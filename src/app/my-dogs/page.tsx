@@ -8,7 +8,7 @@ import MyDogsGrid from "./MyDogsGrid";
 function mapDogToCircleItem(dog: DogApiItem): CircleItemProps {
   return {
     id: dog.id,
-    image: dog.dogPictureUrl || "/images/landingDog.png",
+    image: dog.dogPictureUrl || "/images/placeholder.svg",
     name: dog.name,
   };
 }

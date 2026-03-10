@@ -7,8 +7,14 @@ import TabsHeader from "./TabsHeader";
 import StepBasic from "./StepBasic";
 import StepHealth from "./StepHealth";
 
-import type { PetCreateForm } from "@/lib/pets/pet.types";
-import { buildPetPayload, calcAgeLabel, calcPetSizeByWeight, countMeals, safeNumberString } from "@/lib/pets/pet.utils";
+import type { PetCreateForm } from "@/lib/dogs/dog.type";
+import {
+  calcAgeLabel,
+  calcPetSizeByWeight,
+  countMeals,
+  safeNumberString,
+} from "@/lib/dogs/dog.utills";
+import { buildCreateDogBody } from "@/lib/walkin/walkin/createDogApi";
 
 const ORANGE = "#F2A245";
 
@@ -26,7 +32,7 @@ const initialForm: PetCreateForm = {
   ageLabel: "-",
   neuterStatus: "ยังไม่เคยทำหมัน",
   microchipStatus: "ไม่มี",
-  bloodType: "DEA 1",
+  bloodType: "",
   disease: "",
   allergies: "",
   meals: {
@@ -45,6 +51,8 @@ export default function CreatePetPageView() {
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState<PetCreateForm>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   useEffect(() => {
     const w = safeNumberString(form.weightKg);
@@ -90,9 +98,37 @@ export default function CreatePetPageView() {
   }, [form.name, form.gender, form.breed, form.birthDate]);
 
   const onSave = async () => {
-    const payload = buildPetPayload(form);
-    console.log("CREATE PET PAYLOAD", payload);
-    router.push("/my-dogs");
+    setSaveError(null);
+    const body = buildCreateDogBody(form);
+    if (!body) {
+      setSaveError("กรุณากรอกข้อมูลให้ครบถ้วน โดยเฉพาะพันธุ์, น้ำหนัก, สุขภาพ และมื้ออาหาร");
+      return;
+    }
+
+    setSaveLoading(true);
+    try {
+      const res = await fetch("/api/create-dog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          (data as { error?: string; detail?: string }).detail ||
+          (data as { error?: string }).error ||
+          "สร้างสุนัขไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+        setSaveError(msg);
+        return;
+      }
+      router.push("/my-dogs");
+    } catch (e) {
+      setSaveError(
+        e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการสร้างสุนัข กรุณาลองใหม่อีกครั้ง",
+      );
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -127,6 +163,11 @@ export default function CreatePetPageView() {
       {/* Bottom CTA */}
       <div className="fixed inset-x-0 bottom-0 z-100 bg-[#F7F4E8]/95 backdrop-blur">
         <div className="mx-auto w-full max-w-md px-5 py-5">
+          {saveError ? (
+            <p className="mb-2 text-center text-sm text-rose-600 whitespace-pre-line">
+              {saveError}
+            </p>
+          ) : null}
           {step === 1 ? (
             <button
               type="button"
@@ -149,15 +190,15 @@ export default function CreatePetPageView() {
 
               <button
                 type="button"
-                disabled={!canSave}
+                disabled={!canSave || saveLoading}
                 onClick={() => setShowConfirm(true)}
                 className={[
                   "w-full rounded-2xl py-3.5 text-base font-extrabold text-white shadow-sm active:scale-[0.99] transition",
-                  canSave ? "" : "opacity-50 cursor-not-allowed",
+                  canSave && !saveLoading ? "" : "opacity-50 cursor-not-allowed",
                 ].join(" ")}
                 style={{ background: ORANGE }}
               >
-                บันทึก
+                {saveLoading ? "กำลังบันทึก..." : "บันทึก"}
               </button>
 
             </div>

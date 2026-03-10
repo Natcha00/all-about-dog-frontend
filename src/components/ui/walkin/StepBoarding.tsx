@@ -53,6 +53,12 @@ function todayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function clampToToday(value: string): string {
+  if (!value) return "";
+  const today = todayISO();
+  return value < today ? today : value;
+}
+
 function calcNights(start: string, end: string) {
   const s = new Date(`${start}T00:00:00`);
   const e = new Date(`${end}T00:00:00`);
@@ -227,8 +233,9 @@ export default function StepBoarding(props: {
           value={start}
           min={todayISO()}
           onChange={(v) => {
-            setStart(v);
-            if (end && new Date(end) <= new Date(v)) {
+            const safeStart = clampToToday(v);
+            setStart(safeStart);
+            if (end && new Date(end) <= new Date(safeStart)) {
               setEnd("");
             }
           }}
@@ -239,7 +246,14 @@ export default function StepBoarding(props: {
           type="date"
           value={end}
           min={start || todayISO()}
-          onChange={setEnd}
+          onChange={(v) => {
+            if (!v) {
+              setEnd("");
+              return;
+            }
+            const minDate = start || todayISO();
+            setEnd(v < minDate ? minDate : v);
+          }}
         />
       </div>
 

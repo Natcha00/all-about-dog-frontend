@@ -7,6 +7,20 @@ import type { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
 
 export type BreedOption = { id: number; nameTh: string; nameEng: string; size: string };
 
+function todayISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+function clampToToday(value: string): string {
+if (!value) return "" ;
+const today = todayISO();
+  return value > today ? today : value;
+
+}
+
 function Label({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-gray-900 mb-1.5">{children}</p>;
 }
@@ -203,7 +217,10 @@ export default function StepBasic(props: {
             <Input
               type="date"
               value={form.birthDate}
-              onChange={(e) => setForm((p) => ({ ...p, birthDate: e.target.value }))}
+              onChange={(p) => {
+                const birthDate = clampToToday(p.target.value);
+                setForm((prev) => ({ ...prev, birthDate: birthDate }));
+              }}
               error={errors.birthDate}
               className="appearance-none text-[14px]"
             />
