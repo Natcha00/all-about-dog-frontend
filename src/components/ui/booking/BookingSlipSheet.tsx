@@ -110,7 +110,7 @@ function SlipUploadPanel({
         </div>
 
         <div className="text-sm text-gray-700 space-y-1">
-          <Row label="แนบโดย" value="ลูกค้า: (mock)" />
+          <Row label="แนบโดย" value="ลูกค้า" />
           <Row
             label="เวลาแนบ"
             value={previewUrl ? formatDateTimeThai(new Date().toISOString()) : "-"}

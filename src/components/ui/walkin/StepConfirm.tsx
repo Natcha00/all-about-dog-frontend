@@ -364,7 +364,6 @@ export default function StepConfirm(props: {
   const serviceRows = useMemo(() => {
     if (isBoardingDraft(booking)) {
       return [
-        { label: "รายการจอง", value: ref },
         { label: "ประเภทบริการ", value: "ฝากเลี้ยง" },
         { label: "วันที่เข้า", value: booking.start || "-" },
         { label: "วันที่ออก", value: booking.end || "-" },
@@ -374,7 +373,6 @@ export default function StepConfirm(props: {
     }
 
     return [
-      { label: "รายการจอง", value: ref },
       { label: "ประเภทบริการ", value: "ว่ายน้ำ" },
       { label: "วันที่ใช้บริการ", value: booking.date || "-" },
       { label: "รอบเวลา", value: booking.time || "-" },
@@ -569,7 +567,6 @@ export default function StepConfirm(props: {
                   <p className="text-sm text-black/60">ราคารวม</p>
                   <p className="text-sm font-extrabold text-black/90">{total.toLocaleString()} บาท</p>
                 </div>
-                <p className="mt-2 text-xs text-black/45">ref: {ref}</p>
               </div>
 
               <div className="mt-4 flex gap-3">
@@ -606,7 +603,7 @@ export default function StepConfirm(props: {
                         return;
                       }
                       setShowConfirm(false);
-                      onConfirm(data?.ref ?? data?.referenceCode ?? ref);
+                      onConfirm(data?.referenceCode ?? data?.referenceCode ?? "");
                     } catch (e) {
                       setConfirmError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
                     } finally {

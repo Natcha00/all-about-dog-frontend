@@ -13,10 +13,15 @@ const BANNER_DURATION_MS = 4000;
 
 export default function HomeBanner() {
   const [index, setIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const total = BANNER_IMAGES.length || 1;
 
   const goNext = useCallback(() => {
     setIndex((i) => (i + 1) % total);
+  }, [total]);
+
+  const goPrev = useCallback(() => {
+    setIndex((i) => (i - 1 + total) % total);
   }, [total]);
 
   useEffect(() => {
@@ -27,9 +32,31 @@ export default function HomeBanner() {
 
   if (BANNER_IMAGES.length === 0) return null;
 
+  const handleTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (e.touches.length !== 1) return;
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (touchStartX == null) return;
+    const endX = e.changedTouches[0]?.clientX ?? touchStartX;
+    const deltaX = endX - touchStartX;
+    const threshold = 40;
+    if (deltaX > threshold) {
+      goPrev();
+    } else if (deltaX < -threshold) {
+      goNext();
+    }
+    setTouchStartX(null);
+  };
+
   return (
     <section className="w-full rounded-3xl overflow-hidden bg-white/80 shadow-lg shadow-black/5 ring-1 ring-black/5">
-      <div className="relative aspect-[16/9] min-h-[160px] w-full">
+      <div
+        className="relative aspect-[16/9] min-h-[160px] w-full touch-pan-y"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {BANNER_IMAGES.map((src, i) => (
           <div
             key={src + i}

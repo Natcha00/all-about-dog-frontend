@@ -29,22 +29,29 @@ function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
 
-function formatThaiDateTime(d: Date) {
-  const day = pad2(d.getDate());
-  const month = pad2(d.getMonth() + 1);
-  const year = d.getFullYear();
-  const hr = d.getHours();
-  const min = pad2(d.getMinutes());
-  const ampm = hr >= 12 ? "PM" : "AM";
-  const hr12 = hr % 12 === 0 ? 12 : hr % 12;
-  return `เมื่อ ${day}/${month}/${year} ${hr12}:${min} ${ampm}`;
+function formatBangkokDateTime(input?: string) {
+  if (!input) return "";
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return input;
+  try {
+    return d.toLocaleString("th-TH", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return d.toLocaleString();
+  }
 }
 
 export function parseTimelineAt(at: string | null): string | undefined {
   if (!at) return undefined;
   try {
-    const d = new Date(at);
-    if (!Number.isNaN(d.getTime())) return formatThaiDateTime(d);
+    const formatted = formatBangkokDateTime(at);
+    if (formatted) return formatted;
   } catch {
     // ignore
   }
@@ -128,13 +135,13 @@ export function buildMockHistory(status: BookingStatus): HistoryItem[] {
   const allow = new Set(statusToKeys[status]);
 
   const baseSteps: HistoryItem[] = [
-    { key: "created", label: "สร้างรายการจอง", at: formatThaiDateTime(base), tone: "info" },
-    { key: "waiting_slip", label: "รอชำระเงิน", at: formatThaiDateTime(t1), tone: "info" },
-    { key: "slip_uploaded", label: "แนบสลิปแล้ว", at: formatThaiDateTime(t2), tone: "info" },
+    { key: "created", label: "สร้างรายการจอง", at: formatBangkokDateTime(base.toISOString()), tone: "info" },
+    { key: "waiting_slip", label: "รอชำระเงิน", at: formatBangkokDateTime(t1.toISOString()), tone: "info" },
+    { key: "slip_uploaded", label: "แนบสลิปแล้ว", at: formatBangkokDateTime(t2.toISOString()), tone: "info" },
     {
       key: "slip_verified",
       label: "ยืนยันการชำระเงินโดยพนักงาน",
-      at: formatThaiDateTime(t3),
+      at: formatBangkokDateTime(t3.toISOString()),
       tone: "success",
       note: "ผู้ตรวจ: staff01",
     },
@@ -149,7 +156,7 @@ export function buildMockHistory(status: BookingStatus): HistoryItem[] {
       key: k,
       label: autoLabel[k],
       tone: autoTone[k],
-      at: formatThaiDateTime(new Date(base.getTime() + (i + 3) * 60 * 60 * 1000)),
+      at: formatBangkokDateTime(new Date(base.getTime() + (i + 3) * 60 * 60 * 1000).toISOString()),
     }));
 
   return [...known, ...missing];

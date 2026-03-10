@@ -297,54 +297,102 @@ export default function DogOwnerHomePage() {
           </span>
         </Link>
       </header>
+      <div className="space-y-4 mb-5">
+
+      <HomeBanner />
+
+      <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-extrabold text-black">
+              การจองที่กำลังจะมาถึง
+            </h3>
+            <Link
+              href="/service/booking"
+              className="text-[11px] text-black/55 underline"
+            >
+              ดูทั้งหมด
+            </Link>
+          </div>
+          <div className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm px-4 py-3">
+            {reservationsLoading ? (
+              <p className="text-xs text-black/50">กำลังโหลดการจอง...</p>
+            ) : reservationsError ? (
+              <p className="text-xs text-rose-600">{reservationsError}</p>
+            ) : upcomingReservations.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-xs text-black/60">
+                  ยังไม่มีการจองที่กำลังจะมาถึง
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/walkin")}
+                  className="mt-2 inline-flex items-center justify-center rounded-2xl bg-[#F2A245] px-4 py-2 text-[11px] font-extrabold text-white active:scale-95 transition"
+                >
+                  จองใหม่
+                </button>
+              </div>
+            ) : (
+              <div className="relative -mx-1">
+                <ul className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 px-1">
+                  {upcomingReservations.map((item, index) => {
+                    const isBoarding = item.serviceType === "boarding";
+                    const dateLabel = isBoarding
+                      ? `${item.checkInDate ?? ""} - ${item.checkOutDate ?? ""}`
+                      : item.date ?? "";
+                    const timeLabel =
+                      !isBoarding && item.timeSlot
+                        ? `${item.timeSlot.start} - ${item.timeSlot.end}`
+                        : null;
+                    const serviceLabel = isBoarding
+                      ? "บริการฝากเลี้ยง"
+                      : "บริการว่ายน้ำ";
+
+                    return (
+                      <li
+                        key={item.id}
+                        className="snap-center flex-none w-full"
+                        aria-label={`การจองที่ ${index + 1} จาก ${upcomingReservations.length}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(`/service/booking/${item.id}`)
+                          }
+                          className="w-full rounded-2xl bg-white px-3 py-2.5 text-left shadow-sm ring-1 ring-black/5 active:scale-[0.99] transition"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-extrabold text-black">
+                                {serviceLabel}
+                              </p>
+                              <p className="mt-0.5 text-[11px] text-black/60 truncate">
+                                {item.dogsLabel}
+                              </p>
+                              <p className="mt-0.5 text-[10px] text-black/50">
+                                {dateLabel}
+                                {timeLabel ? ` • ${timeLabel}` : null}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-black/70">
+                                {item.statusLabel}
+                              </span>
+                              <span className="text-[11px] font-extrabold text-black">
+                                ฿{item.totalPrice.toLocaleString("th-TH")}
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+          </div>
 
       {/* ─── หมวด: ข้อมูลของฉัน ─── */}
       <section aria-labelledby="section-my-info" className="mb-8">
-        <h2
-          id="section-my-info"
-          className="text-[10px] font-bold uppercase tracking-wider text-black/45 mb-3 flex items-center gap-2"
-        >
-          <span className="h-px flex-1 max-w-[40px] bg-black/20" />
-          ข้อมูลของฉัน
-          <span className="h-px flex-1 bg-black/20" />
-        </h2>
-
-        {/* Welcome + Alert */}
-        <div className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm px-4 py-4 mb-4">
-          <p className="text-xs text-black/60">
-            สวัสดี,
-            <span className="ml-1 font-extrabold text-black">
-              {profileLoading ? "กำลังโหลด..." : displayName}
-            </span>
-          </p>
-          <p className="mt-1 text-xs text-black/55">
-            จัดการข้อมูลสัตว์เลี้ยงและการจองของคุณได้จากหน้านี้
-          </p>
-
-          {profileError && (
-            <p className="mt-2 text-[11px] text-rose-600">
-              {profileError}
-            </p>
-          )}
-
-          {profile && !profile.isEmailVerified && (
-            <div className="mt-3 rounded-2xl bg-amber-50 ring-1 ring-amber-200 px-3 py-2">
-              <p className="text-[11px] font-semibold text-amber-800">
-                กรุณายืนยันอีเมลของคุณเพื่อความปลอดภัย
-              </p>
-              <p className="text-[11px] text-amber-700 mt-0.5">
-                ตรวจสอบกล่องอีเมลที่ใช้สมัคร หรือขอส่งลิงก์ยืนยันใหม่จากหน้าโปรไฟล์
-              </p>
-              <Link
-                href="/account/profile"
-                className="mt-2 inline-flex text-[11px] font-semibold text-amber-900 underline"
-              >
-                ไปที่หน้าโปรไฟล์
-              </Link>
-            </div>
-          )}
-        </div>
-
         {/* My Dogs */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
@@ -458,95 +506,14 @@ export default function DogOwnerHomePage() {
         </h2>
 
         <div className="space-y-4 mb-5">
-          <HomeBanner />
           <HomeServices />
         </div>
 
         {/* Upcoming reservations */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-extrabold text-black">
-              การจองที่กำลังจะมาถึง
-            </h3>
-            <Link
-              href="/service/booking"
-              className="text-[11px] text-black/55 underline"
-            >
-              ดูทั้งหมด
-            </Link>
-          </div>
+          
 
-          <div className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm px-4 py-3">
-            {reservationsLoading ? (
-              <p className="text-xs text-black/50">กำลังโหลดการจอง...</p>
-            ) : reservationsError ? (
-              <p className="text-xs text-rose-600">{reservationsError}</p>
-            ) : upcomingReservations.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-xs text-black/60">
-                  ยังไม่มีการจองที่กำลังจะมาถึง
-                </p>
-                <button
-                  type="button"
-                  onClick={() => router.push("/walkin")}
-                  className="mt-2 inline-flex items-center justify-center rounded-2xl bg-[#F2A245] px-4 py-2 text-[11px] font-extrabold text-white active:scale-95 transition"
-                >
-                  จองใหม่
-                </button>
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {upcomingReservations.map((item) => {
-                  const isBoarding = item.serviceType === "boarding";
-                  const dateLabel = isBoarding
-                    ? `${item.checkInDate ?? ""} - ${item.checkOutDate ?? ""}`
-                    : item.date ?? "";
-                  const timeLabel =
-                    !isBoarding && item.timeSlot
-                      ? `${item.timeSlot.start} - ${item.timeSlot.end}`
-                      : null;
-                  const serviceLabel = isBoarding
-                    ? "บริการฝากเลี้ยง"
-                    : "บริการว่ายน้ำ";
-
-                  return (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(`/service/booking/${item.id}`)
-                        }
-                        className="w-full rounded-2xl bg-white px-3 py-2.5 text-left shadow-sm ring-1 ring-black/5 active:scale-[0.99] transition"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-extrabold text-black">
-                              {serviceLabel}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-black/60 truncate">
-                              {item.dogsLabel}
-                            </p>
-                            <p className="mt-0.5 text-[10px] text-black/50">
-                              {dateLabel}
-                              {timeLabel ? ` • ${timeLabel}` : null}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-black/70">
-                              {item.statusLabel}
-                            </span>
-                            <span className="text-[11px] font-extrabold text-black">
-                              ฿{item.totalPrice.toLocaleString("th-TH")}
-                            </span>
-                          </div>
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+          
         </div>
       </section>
 

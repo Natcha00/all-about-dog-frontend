@@ -31,15 +31,24 @@ export function formatDateThai(value?: string | null): string {
 }
 
 export function formatDateTimeThai(value?: string | null): string {
-  const d = parseIsoToDate(value);
-  if (!d) return value || "-";
+  return formatBangkokDateTime(value ?? undefined);
+}
 
-  return d.toLocaleString("th-TH", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+export function formatBangkokDateTime(input?: string) {
+  if (!input) return "";
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return input;
+  try {
+    return d.toLocaleString("th-TH", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return d.toLocaleString();
+  }
 }
 
