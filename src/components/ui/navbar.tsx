@@ -58,7 +58,7 @@ export default function Navbar({
               </p>
             </div>
 
-            <button
+            {/* <button
               type="button"
               onClick={() => router.push("/notifications")}
               className="
@@ -73,7 +73,7 @@ export default function Navbar({
               aria-label="แจ้งเตือน"
             >
               <Bell className="h-5 w-5 text-black" />
-            </button>
+            </button> */}
 
             <button
               type="button"

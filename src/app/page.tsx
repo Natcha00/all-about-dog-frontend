@@ -10,6 +10,8 @@ import type { DogApiItem } from "@/lib/dogs/dog.type";
 import type { AnnouncementApiResponse } from "@/lib/walkin/walkin/announcementApi";
 import HomeBanner from "@/components/home/HomeBanner";
 import HomeServices from "@/components/home/HomeServices";
+import { statusLabel } from "@/lib/booking/booking.logic";
+import { BookingStatus } from "@/lib/booking/booking.types";
 
 type DogOwnerProfile = {
   id: number;
@@ -374,7 +376,7 @@ export default function DogOwnerHomePage() {
                             </div>
                             <div className="flex flex-col items-end gap-1">
                               <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-black/70">
-                                {item.statusLabel}
+                                {statusLabel(item.status as BookingStatus)}
                               </span>
                               <span className="text-[11px] font-extrabold text-black">
                                 ฿{item.totalPrice.toLocaleString("th-TH")}
