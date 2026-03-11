@@ -8,6 +8,7 @@ import StepHealth from "../StepHealth";
 import type { PetCreateForm } from "@/lib/dogs/dog.type";
 import type { PetPicked } from "@/lib/walkin/walkin/types.mock";
 import { buildCreateDogBody } from "@/lib/walkin/walkin/createDogApi";
+import { isDoubleCoatOnlyBreed } from "@/lib/dogs/dog.utills";
 import { mapDogApiItemToPetPicked } from "@/lib/walkin/walkin/dogToPetPicked";
 import type { DogApiItem } from "@/lib/dogs/dog.type";
 import type { BreedOption } from "../StepBasic";
@@ -65,11 +66,23 @@ export default function PetCreatePanel({
   }, []);
 
   const validatePetBasic = () => {
+    // พันธุ์ที่ต้องเป็นขนสองชั้นเสมอ — sync form ก่อน validate
+    const breedOption = breeds.find((b) => String(b.id) === petForm.breed);
+    if (breedOption?.nameTh && isDoubleCoatOnlyBreed(breedOption.nameTh)) {
+      if (petForm.coatType !== "ขนสองชั้น") {
+        setPetForm((p) => ({ ...p, coatType: "ขนสองชั้น" }));
+      }
+    }
+
     const e: Record<string, string> = {};
     if (!petForm.name.trim()) e.name = "กรุณากรอกชื่อสัตว์เลี้ยง";
     if (!petForm.gender) e.gender = "กรุณาเลือกเพศ";
     if (!petForm.breed.trim()) e.breed = "กรุณาเลือก/ระบุพันธุ์";
-    if (!petForm.coatType || !["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(petForm.coatType)) {
+    const effectiveCoatType =
+      breedOption?.nameTh && isDoubleCoatOnlyBreed(breedOption.nameTh)
+        ? "ขนสองชั้น"
+        : petForm.coatType;
+    if (!effectiveCoatType || !["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(effectiveCoatType)) {
       e.coatType = "กรุณาเลือกประเภทขน";
     }
 
@@ -115,7 +128,13 @@ export default function PetCreatePanel({
   const handleSubmitCreate = async () => {
     setSubmitError(null);
     if (!validatePetHealth()) return;
-    const body = buildCreateDogBody(petForm);
+    const breedOption = breeds.find((b) => String(b.id) === petForm.breed);
+    const effectiveCoatType =
+      breedOption?.nameTh && isDoubleCoatOnlyBreed(breedOption.nameTh)
+        ? "ขนสองชั้น"
+        : petForm.coatType;
+    const formToSend = { ...petForm, coatType: effectiveCoatType };
+    const body = buildCreateDogBody(formToSend);
     if (!body) {
       setPetErrors((e) => ({ ...e, breed: "กรุณาเลือกพันธุ์จากรายการ" }));
       return;

@@ -4,7 +4,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import PetAvatarPicker from "./PetAvatarPicker";
 import type { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
-import { breedSizeToPetSize } from "@/lib/dogs/dog.utills";
+import { breedSizeToPetSize, isDoubleCoatOnlyBreed } from "@/lib/dogs/dog.utills";
 
 export type BreedOption = { id: number; nameTh: string; nameEng: string; size: string };
 
@@ -79,7 +79,6 @@ function SegButton(props: { active: boolean; children: React.ReactNode; onClick:
   );
 }
 
-/** ✅ คำนวณอายุจาก ISO ของ input[type=date] */
 function calcAgeFromISO(birthISO: string): { label: string; isFuture: boolean } {
   if (!birthISO) return { label: "", isFuture: false };
 
@@ -188,7 +187,13 @@ export default function StepBasic(props: {
               const value = e.target.value;
               const selected = breeds.find((b) => String(b.id) === value);
               const nextSize = breedSizeToPetSize(selected?.size ?? "");
-              setForm((p) => ({ ...p, breed: value, size: nextSize }));
+              const forceDoubleCoat = selected?.nameTh && isDoubleCoatOnlyBreed(selected.nameTh);
+              setForm((p) => ({
+                ...p,
+                breed: value,
+                size: nextSize,
+                ...(forceDoubleCoat ? { coatType: "ขนสองชั้น" as PetCreateForm["coatType"] } : {}),
+              }));
             }}
           >
             <option value="">โปรดเลือก</option>
@@ -212,17 +217,35 @@ export default function StepBasic(props: {
 
         <div>
           <Label>ประเภทขน*</Label>
-          <Select
-            value={form.coatType}
-            onChange={(e) => setForm((p) => ({ ...p, coatType: e.target.value as PetCreateForm["coatType"] }))}
-          >
-            <option value="">โปรดเลือก</option>
-            {coatTypes.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </Select>
+          {(() => {
+            const selectedBreed = breeds.find((b) => String(b.id) === form.breed);
+            const mustDoubleCoat = Boolean(
+              selectedBreed?.nameTh && isDoubleCoatOnlyBreed(selectedBreed.nameTh)
+            );
+            const effectiveCoatType = mustDoubleCoat ? "ขนสองชั้น" : form.coatType;
+            return (
+              <>
+                <Select
+                  value={effectiveCoatType}
+                  onChange={(e) => {
+                    if (mustDoubleCoat) return;
+                    setForm((p) => ({ ...p, coatType: e.target.value as PetCreateForm["coatType"] }));
+                  }}
+                  disabled={mustDoubleCoat}
+                >
+                  <option value="">โปรดเลือก</option>
+                  {coatTypes.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </Select>
+                {mustDoubleCoat ? (
+                  <p className="mt-1 text-xs text-gray-500">พันธุ์นี้เป็นขนสองชั้นเท่านั้น</p>
+                ) : null}
+              </>
+            );
+          })()}
           {errors.coatType ? <p className="mt-1 text-xs text-rose-600">{errors.coatType}</p> : null}
         </div>
 

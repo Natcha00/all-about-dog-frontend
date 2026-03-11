@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import TabsHeader from "./TabsHeader";
 import StepBasic from "./StepBasic";
 import StepHealth from "./StepHealth";
+import type { BreedOption } from "./StepBasic";
 
 import type { PetCreateForm } from "@/lib/dogs/dog.type";
 import {
   calcAgeLabel,
   countMeals,
+  isDoubleCoatOnlyBreed,
 } from "@/lib/dogs/dog.utills";
 import { buildCreateDogBody } from "@/lib/walkin/walkin/createDogApi";
 
@@ -52,6 +54,14 @@ export default function CreatePetPageView() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [breeds, setBreeds] = useState<BreedOption[]>([]);
+
+  useEffect(() => {
+    fetch("/api/dog/breeds")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
+      .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? data : []))
+      .catch(() => setBreeds([]));
+  }, []);
 
   useEffect(() => {
     const nextAge = form.birthDate ? calcAgeLabel(form.birthDate) : "-";
@@ -68,11 +78,22 @@ export default function CreatePetPageView() {
   const progress = step === 1 ? 50 : 100;
 
   const validateStep1 = () => {
+    const breedOption = breeds.find((b) => String(b.id) === form.breed);
+    if (breedOption?.nameTh && isDoubleCoatOnlyBreed(breedOption.nameTh)) {
+      if (form.coatType !== "ขนสองชั้น") {
+        setForm((p) => ({ ...p, coatType: "ขนสองชั้น" }));
+      }
+    }
+
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "กรุณากรอกชื่อสัตว์เลี้ยง";
     if (!form.gender) e.gender = "กรุณาเลือกเพศ";
     if (!form.breed.trim()) e.breed = "กรุณาเลือก/ระบุพันธุ์";
-    if (!form.coatType || !["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(form.coatType)) {
+    const effectiveCoatType =
+      breedOption?.nameTh && isDoubleCoatOnlyBreed(breedOption.nameTh)
+        ? "ขนสองชั้น"
+        : form.coatType;
+    if (!effectiveCoatType || !["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(effectiveCoatType)) {
       e.coatType = "กรุณาเลือกประเภทขน";
     }
     if (!form.weightKg.trim()) e.weightKg = "กรุณากรอกน้ำหนัก";
@@ -94,19 +115,30 @@ export default function CreatePetPageView() {
   };
 
   const canSave = useMemo(() => {
+    const breedOption = breeds.find((b) => String(b.id) === form.breed);
+    const effectiveCoatType =
+      breedOption?.nameTh && isDoubleCoatOnlyBreed(breedOption.nameTh)
+        ? "ขนสองชั้น"
+        : form.coatType;
     return (
       !!form.name.trim() &&
       !!form.gender &&
       !!form.breed.trim() &&
-      !!form.coatType &&
-      ["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(form.coatType) &&
+      !!effectiveCoatType &&
+      ["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(effectiveCoatType) &&
       !!form.birthDate
     );
-  }, [form.name, form.gender, form.breed, form.coatType, form.birthDate]);
+  }, [form.name, form.gender, form.breed, form.coatType, form.birthDate, breeds]);
 
   const onSave = async () => {
     setSaveError(null);
-    const body = buildCreateDogBody(form);
+    const breedOption = breeds.find((b) => String(b.id) === form.breed);
+    const effectiveCoatType =
+      breedOption?.nameTh && isDoubleCoatOnlyBreed(breedOption.nameTh)
+        ? "ขนสองชั้น"
+        : form.coatType;
+    const formToSend = { ...form, coatType: effectiveCoatType };
+    const body = buildCreateDogBody(formToSend);
     if (!body) {
       setSaveError("กรุณากรอกข้อมูลให้ครบถ้วน โดยเฉพาะพันธุ์, น้ำหนัก, สุขภาพ และมื้ออาหาร");
       return;
@@ -160,7 +192,7 @@ export default function CreatePetPageView() {
           />
 
           {step === 1 ? (
-            <StepBasic form={form} setForm={setForm} errors={errors} />
+            <StepBasic form={form} setForm={setForm} errors={errors} breeds={breeds} />
           ) : (
             <StepHealth form={form} setForm={setForm} />
           )}

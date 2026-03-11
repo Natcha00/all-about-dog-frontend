@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import type { DogProfileApiResponse } from "@/lib/dogs/dog.type";
 import type { UpdateDogBody } from "@/lib/dogs/dog.type";
 import type { CoatTypeValue } from "@/lib/dogs/dog.type";
+import { isDoubleCoatOnlyBreed } from "@/lib/dogs/dog.utills";
 import { toDateInputValue } from "@/lib/date/date.utils";
 import type { BreedOption } from "@/app/api/dog/breeds/route";
 import type { MealKey } from "@/lib/dogs/dog.type";
@@ -278,7 +279,12 @@ export default function EditDogSheet({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const body = buildPartialUpdateBody(initialForm, form);
+    const selectedBreed = breeds.find((b) => String(b.id) === form.breedId);
+    const formForBody: EditDogFormState =
+      selectedBreed?.nameTh && isDoubleCoatOnlyBreed(selectedBreed.nameTh)
+        ? { ...form, coatType: "ขนสองชั้น" }
+        : form;
+    const body = buildPartialUpdateBody(initialForm, formForBody);
     if (Object.keys(body).length === 0) {
       onClose();
       return;
@@ -371,7 +377,16 @@ export default function EditDogSheet({
                 <Label>สายพันธุ์</Label>
                 <Select
                   value={form.breedId}
-                  onChange={(e) => setForm((p) => ({ ...p, breedId: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const selected = breeds.find((b) => String(b.id) === value);
+                    const forceDoubleCoat = selected?.nameTh && isDoubleCoatOnlyBreed(selected.nameTh);
+                    setForm((p) => ({
+                      ...p,
+                      breedId: value,
+                      ...(forceDoubleCoat ? { coatType: "ขนสองชั้น" as CoatTypeValue } : {}),
+                    }));
+                  }}
                 >
                   <option value="">โปรดเลือก</option>
                   {breeds.map((b) => (
@@ -393,19 +408,38 @@ export default function EditDogSheet({
 
               <div>
                 <Label>ประเภทขน</Label>
-                <Select
-                  value={form.coatType}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, coatType: e.target.value as CoatTypeValue | "" }))
-                  }
-                >
-                  <option value="">โปรดเลือก</option>
-                  {coatTypes.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Select>
+                {(() => {
+                  const selectedBreed = breeds.find((b) => String(b.id) === form.breedId);
+                  const mustDoubleCoat = Boolean(
+                    selectedBreed?.nameTh && isDoubleCoatOnlyBreed(selectedBreed.nameTh)
+                  );
+                  const effectiveCoatType = mustDoubleCoat ? "ขนสองชั้น" : form.coatType;
+                  return (
+                    <>
+                      <Select
+                        value={effectiveCoatType}
+                        onChange={(e) => {
+                          if (mustDoubleCoat) return;
+                          setForm((p) => ({
+                            ...p,
+                            coatType: e.target.value as CoatTypeValue | "",
+                          }));
+                        }}
+                        disabled={mustDoubleCoat}
+                      >
+                        <option value="">โปรดเลือก</option>
+                        {coatTypes.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </Select>
+                      {mustDoubleCoat ? (
+                        <p className="mt-1 text-xs text-gray-500">พันธุ์นี้เป็นขนสองชั้นเท่านั้น</p>
+                      ) : null}
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
