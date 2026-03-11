@@ -2,27 +2,30 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuthRefresh, getBaseUrl } from "@/lib/auth/serverWithRefresh";
 
-export type ReservationConfirmBody = {
-  offerType: "boarding" | "swimming";
-  period: { start: string; end: string };
-  remark: string;
-  package: string;
-  lines: Array<{
-    offeringId: number;
-    dogId: number;
-    price: number;
-    quantity: number;
-    groupNumber: number;
-  }>;
+/** Request body for POST /reservation/create — backend builds lines from dogIds + period + package */
+export type CreateReservationBody = {
+  dogIds: number[];
+  offeringType: "boarding" | "swimming";
+  start: string; // ISO 8601
+  end: string;   // ISO 8601
+  package: "standard" | "shared" | "vip";
+  remark?: string;
+  dogOwnerId?: number; // staff/admin: book on behalf of customer
 };
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as ReservationConfirmBody;
+    const body = (await request.json()) as CreateReservationBody;
 
-    if (!body?.offerType || !body?.period || !Array.isArray(body?.lines)) {
+    if (!Array.isArray(body?.dogIds) || body.dogIds.length < 1) {
       return NextResponse.json(
-        { error: "Missing required fields: offerType, period, lines" },
+        { error: "Missing or invalid required field: dogIds (at least one)" },
+        { status: 400 }
+      );
+    }
+    if (!body?.offeringType || !body?.start || !body?.end || !body?.package) {
+      return NextResponse.json(
+        { error: "Missing required fields: offeringType, start, end, package" },
         { status: 400 }
       );
     }
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(
-      { error: "Reservation confirm failed", detail: message },
+      { error: "Reservation create failed", detail: message },
       { status: 500 }
     );
   }
