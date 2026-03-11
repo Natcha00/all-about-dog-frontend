@@ -69,6 +69,9 @@ export default function PetCreatePanel({
     if (!petForm.name.trim()) e.name = "กรุณากรอกชื่อสัตว์เลี้ยง";
     if (!petForm.gender) e.gender = "กรุณาเลือกเพศ";
     if (!petForm.breed.trim()) e.breed = "กรุณาเลือก/ระบุพันธุ์";
+    if (!petForm.coatType || !["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(petForm.coatType)) {
+      e.coatType = "กรุณาเลือกประเภทขน";
+    }
 
     if (!petForm.weightKg.trim()) {
       e.weightKg = "กรุณากรอกน้ำหนัก";

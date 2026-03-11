@@ -102,9 +102,11 @@ export default function DogProfilePage() {
       card={card}
       qr={qr}
       petInfo={petInfo}
+      profile={data}
       historyItems={historyItems}
       initialVaccineList={initialVaccineList}
       onProfilePictureChange={fetchProfile}
+      onProfileRefresh={fetchProfile}
     />
   );
 }

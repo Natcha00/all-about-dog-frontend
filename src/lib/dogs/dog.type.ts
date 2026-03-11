@@ -5,6 +5,11 @@ export type PetSize = "เล็ก" | "ใหญ่";
 export type NeuterStatus = "ยังไม่เคยทำหมัน" | "ทำหมันแล้ว" | "";
 export type MicrochipStatus = "ไม่มี" | "มี" | "";
 
+/** ประเภทขน — ค่าที่ส่ง/รับกับ API (create-dog, profile) */
+export type CoatTypeValue = "ขนสั้น" | "ขนยาว" | "ขนสองชั้น";
+/** ค่าที่ใช้ในฟอร์ม (ว่างได้ก่อนเลือก) */
+export type CoatType = CoatTypeValue | "";
+
 export type MealKey = "breakfast" | "lateMorning" | "lunch" | "afternoon" | "dinner";
 
 /** Backend API: /dog response item */
@@ -86,10 +91,11 @@ export type DogProfileApiResponse = {
       name: string;
       gender: string;
       age: string;
-      weightKg: number | string;
-      heightCm: string | number;
+      weightKg: number;
+      heightCm: number;
       breed: string;
       color: string;
+      coatType: string; // "ขนสั้น" | "ขนยาว" | "ขนสองชั้น"
       size: string;
       birthday: string;
     };
@@ -127,9 +133,10 @@ export type PetCreateForm = {
   gender: Gender | "";
   breed: string;
   color?: string;
+  coatType: CoatType;
   weightKg: string;   // เก็บเป็น string เพื่อ input ง่าย
   heightCm?: string;
-  size: PetSize;      // คำนวณอัตโนมัติจาก weight
+  size: PetSize;      // มาจากพันธุ์ (backend คำนวณให้แล้ว)
   birthDate: string;  // yyyy-mm-dd
   ageLabel: string;   // คำนวณจาก birthDate
 
@@ -142,4 +149,35 @@ export type PetCreateForm = {
   meals: Record<MealKey, boolean>;
   mealCount: number;
   notes?: string;
+};
+
+/** PUT /dog/:id — healthInfo ถ้าส่งต้องครบตามที่ API กำหนด */
+export type UpdateDogHealthInfo = {
+  sterilization: boolean;
+  microchip: boolean;
+  bloodGroup?: string;
+  underlyingDisease?: string;
+  allergy?: string;
+  detail?: string;
+  hasBreakfast: boolean;
+  hasAfterBreakfast: boolean;
+  hasLunch: boolean;
+  hasAfterLunch: boolean;
+  hasDinner: boolean;
+};
+
+/** PUT /dog/:id — partial update, ส่งเฉพาะฟิลด์ที่ต้องการเปลี่ยน */
+export type UpdateDogBody = {
+  name?: string;
+  gender?: string;
+  breedId?: number;
+  color?: string;
+  coatType?: CoatTypeValue;
+  weight?: number;
+  height?: number;
+  birthdate?: string; // ISO date yyyy-mm-dd
+  dogPictureUrl?: string | null;
+  healthInfo?: UpdateDogHealthInfo;
+  /** เฉพาะ Staff — ลูกค้าไม่ส่ง */
+  dogOwnerId?: number;
 };

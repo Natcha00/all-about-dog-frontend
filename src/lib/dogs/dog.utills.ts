@@ -1,9 +1,16 @@
 import { PetCreateForm, PetSize } from "./dog.type";
 
+/** Backend อาจส่ง "small"|"large" หรือ "เล็ก"|"ใหญ่" — แปลงเป็น PetSize */
+export function breedSizeToPetSize(size: string): PetSize {
+  const s = (size || "").trim().toLowerCase();
+  if (s === "ใหญ่" || s === "large") return "ใหญ่";
+  return "เล็ก";
+}
+
 export function calcPetSizeByWeight(weightKg: number): PetSize {
   // ปรับ threshold ได้ตามที่ร้านกำหนด
   if (!Number.isFinite(weightKg) || weightKg <= 0) return "เล็ก";
-  if (weightKg < 10) return "เล็ก";
+  if (weightKg <= 10) return "เล็ก";
   return "ใหญ่";
 }
 

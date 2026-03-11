@@ -9,6 +9,9 @@ import VaccineTab, { type VaccineRecord } from "@/components/ui/vaccineTab";
 import HistoryTab, { ServiceHistoryItem } from "@/components/ui/historyTab";
 import type { DogNameWithGender } from "@/components/ui/profileDogTab";
 import type { QrCodeProps } from "@/components/ui/qrCode";
+import type { DogProfileApiResponse } from "@/lib/dogs/dog.type";
+import EditDogSheet from "./EditDogSheet";
+import { Pencil } from "lucide-react";
 
 const tabs: TabItem[] = [
   { id: "info", label: "ข้อมูลสัตว์" },
@@ -21,9 +24,13 @@ export interface DogProfileClientProps {
   card: DogNameWithGender;
   qr: QrCodeProps;
   petInfo: PetInfoMock;
+  /** ข้อมูลโปรไฟล์เต็ม สำหรับฟอร์มแก้ไข */
+  profile?: DogProfileApiResponse | null;
   historyItems?: ServiceHistoryItem[];
   initialVaccineList?: VaccineRecord[];
   onProfilePictureChange?: () => void;
+  /** เรียกหลังแก้ไขข้อมูลสำเร็จ (refetch profile) */
+  onProfileRefresh?: () => void;
 }
 
 export default function DogProfileClient({
@@ -31,14 +38,22 @@ export default function DogProfileClient({
   card,
   qr,
   petInfo,
+  profile = null,
   historyItems = [],
   initialVaccineList = [],
   onProfilePictureChange,
+  onProfileRefresh,
 }: DogProfileClientProps) {
   const [currentItem, setCurrentItem] = useState<string>("info");
   const [pictureUploading, setPictureUploading] = useState(false);
   const [pictureError, setPictureError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRefresh = () => {
+    onProfilePictureChange?.();
+    onProfileRefresh?.();
+  };
 
   const handleEditPictureClick = () => {
     if (!dogId) return;
@@ -113,9 +128,36 @@ export default function DogProfileClient({
         setCurrentItem={setCurrentItem}
       />
 
+      {currentItem === "info" && dogId && profile && (
+        <div className="px-4">
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="flex items-center justify-center gap-2 w-full
+            rounded-2xl bg-[#f0a23a] text-white
+            px-4 py-3 min-h-[44px] text-sm font-semibold
+            shadow-sm hover:opacity-95 active:scale-[0.99] transition touch-manipulation shrink-0
+            disabled:opacity-50 disabled:pointer-events-none
+          "
+          >
+            <Pencil className="h-4 w-4" />
+            แก้ไขข้อมูล
+          </button>
+        </div>
+      )}
+
       <InfoDog currentItem={currentItem} petInfoMock={petInfo} />
       <VaccineTab currentItem={currentItem} dogId={dogId} initialVaccineList={initialVaccineList} />
       <HistoryTab currentItem={currentItem} items={historyItems} />
+
+      {editOpen && profile && dogId && (
+        <EditDogSheet
+          dogId={dogId}
+          profile={profile}
+          onClose={() => setEditOpen(false)}
+          onSaved={handleRefresh}
+        />
+      )}
     </div>
   );
 }

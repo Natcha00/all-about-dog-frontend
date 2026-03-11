@@ -4,8 +4,11 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import PetAvatarPicker from "./PetAvatarPicker";
 import type { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
+import { breedSizeToPetSize } from "@/lib/dogs/dog.utills";
 
 export type BreedOption = { id: number; nameTh: string; nameEng: string; size: string };
+
+export type CoatTypeOption = { value: string; label: string };
 
 function todayISO() {
   const d = new Date();
@@ -112,6 +115,7 @@ export default function StepBasic(props: {
   const { form, setForm, errors, breeds: breedsProp } = props;
 
   const [breedsFetched, setBreedsFetched] = useState<BreedOption[]>([]);
+  const [coatTypes, setCoatTypes] = useState<CoatTypeOption[]>([]);
   const breeds = breedsProp ?? breedsFetched;
 
   useEffect(() => {
@@ -121,6 +125,21 @@ export default function StepBasic(props: {
       .then((data: BreedOption[]) => setBreedsFetched(Array.isArray(data) ? data : []))
       .catch(() => setBreedsFetched([]));
   }, [breedsProp]);
+
+  useEffect(() => {
+    fetch("/api/dog/options/coat-types")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
+      .then((data: CoatTypeOption[]) => setCoatTypes(Array.isArray(data) && data.length > 0 ? data : [
+        { value: "ขนสั้น", label: "ขนสั้น" },
+        { value: "ขนยาว", label: "ขนยาว" },
+        { value: "ขนสองชั้น", label: "ขนสองชั้น" },
+      ]))
+      .catch(() => setCoatTypes([
+        { value: "ขนสั้น", label: "ขนสั้น" },
+        { value: "ขนยาว", label: "ขนยาว" },
+        { value: "ขนสองชั้น", label: "ขนสองชั้น" },
+      ]));
+  }, []);
 
   // ✅ ไม่เก็บ ageLabel ใน state แล้ว คำนวณสดจาก birthDate
   const derivedAge = calcAgeFromISO(form.birthDate);
@@ -163,7 +182,15 @@ export default function StepBasic(props: {
 
         <div>
           <Label>พันธุ์*</Label>
-          <Select value={form.breed} onChange={(e) => setForm((p) => ({ ...p, breed: e.target.value }))}>
+          <Select
+            value={form.breed}
+            onChange={(e) => {
+              const value = e.target.value;
+              const selected = breeds.find((b) => String(b.id) === value);
+              const nextSize = breedSizeToPetSize(selected?.size ?? "");
+              setForm((p) => ({ ...p, breed: value, size: nextSize }));
+            }}
+          >
             <option value="">โปรดเลือก</option>
             {breeds.map((b) => (
               <option key={b.id} value={String(b.id)}>
@@ -181,6 +208,22 @@ export default function StepBasic(props: {
             value={form.color}
             onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))}
           />
+        </div>
+
+        <div>
+          <Label>ประเภทขน*</Label>
+          <Select
+            value={form.coatType}
+            onChange={(e) => setForm((p) => ({ ...p, coatType: e.target.value as PetCreateForm["coatType"] }))}
+          >
+            <option value="">โปรดเลือก</option>
+            {coatTypes.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </Select>
+          {errors.coatType ? <p className="mt-1 text-xs text-rose-600">{errors.coatType}</p> : null}
         </div>
 
         <div className="grid grid-cols-2 gap-3">

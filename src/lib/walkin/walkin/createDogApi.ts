@@ -1,4 +1,5 @@
 import { PetCreateForm } from "@/lib/dogs/dog.type";
+import type { CoatTypeValue } from "@/lib/dogs/dog.type";
 
 /**
  * Backend path for create-dog. Next.js route POST /api/create-dog proxies to
@@ -29,11 +30,18 @@ export type CreateDogBody = {
   gender: "male" | "female";
   breedId: number;
   color: string;
+  coatType: CoatTypeValue;
   weight: number;
   height: number;
   birthdate: string; // yyyy-mm-dd
   healthInfo: CreateDogHealthInfo;
 };
+
+const VALID_COAT_TYPES: CoatTypeValue[] = ["ขนสั้น", "ขนยาว", "ขนสองชั้น"];
+
+function isCoatTypeValue(s: string): s is CoatTypeValue {
+  return VALID_COAT_TYPES.includes(s as CoatTypeValue);
+}
 
 /**
  * Map breed display name (Thai) to backend breedId.
@@ -58,12 +66,15 @@ export function buildCreateDogBody(form: PetCreateForm): CreateDogBody | null {
   if (!(form.bloodType || "").trim()) return null;
   if (!Object.values(form.meals).some(Boolean)) return null;
 
-  const weight = Number(form.weightKg.trim());
-  const height = Number((form.heightCm ?? "").trim());
+  const coatType = (form.coatType || "").trim();
+  if (!isCoatTypeValue(coatType)) return null;
+
+  const weight = Number(form.weightKg);
+  const height = Number((form.heightCm ?? ""));
   if (!Number.isFinite(weight) || weight <= 0) return null;
 
   const gender = form.gender === "female" ? "female" : "male";
-  const rawBlood = (form.bloodType)
+  const rawBlood = (form.bloodType || "").trim();
   // "" or "ไม่ทราบ" → send "" (backend stores ไม่ทราบ). Enum e.g. "DEA 1.1" → send as-is.
   const bloodGroup = rawBlood === "UNKNOWN" || !rawBlood ? "UNKNOWN" : rawBlood;
 
@@ -72,8 +83,9 @@ export function buildCreateDogBody(form: PetCreateForm): CreateDogBody | null {
     gender,
     breedId,
     color: (form.color ?? "").trim(),
+    coatType,
     weight,
-    height: Number.isFinite(height) && height >= 0 ? height : 0,
+    height,
     birthdate: form.birthDate || "",
     healthInfo: {
       sterilization: form.neuterStatus === "ทำหมันแล้ว",
