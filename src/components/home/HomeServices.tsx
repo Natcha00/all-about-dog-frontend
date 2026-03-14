@@ -15,7 +15,7 @@ const SERVICES = [
   {
     title: "ว่ายน้ำ",
     subtitle: "สระว่ายน้ำสุนัข",
-    icon: "/images/dogSwimmingLanding.jpg",
+    icon: "/images/swimming.jpg",
     path: "/walkin?service=swimming",
     iconBg: "bg-sky-100",
   },

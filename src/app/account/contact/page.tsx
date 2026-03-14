@@ -65,21 +65,13 @@ export default function ContactPage() {
       <div className="mx-auto w-full max-w-md px-4 pt-6">
         {/* Top bar */}
         <div className="flex items-center gap-2">
-          <Link
-            href="/account"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white/70 ring-1 ring-black/10 active:scale-95 transition"
-            aria-label="กลับ"
-          >
-            <ChevronLeft className="h-5 w-5 text-black/70" />
-          </Link>
+          
 
           <div className="flex-1 text-center">
-            <h1 className="text-[34px] font-extrabold tracking-tight text-black">
+            <h1 className="text-2xl font-extrabold text-black">
               ติดต่อโรงแรม
             </h1>
           </div>
-
-          <div className="h-10 w-10" />
         </div>
 
         {/* Map card */}
