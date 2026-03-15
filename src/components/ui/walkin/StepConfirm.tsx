@@ -1,5 +1,4 @@
 import type { BookingDraft, CustomerDraft, PetPicked } from "@/lib/walkin/walkin/types.mock";
-import { swimPricePerDog } from "@/lib/walkin/swimming/swimming.price.logic";
 import React, { useMemo, useState } from "react";
 
 type ConfirmBody = {
@@ -340,14 +339,23 @@ export default function StepConfirm(props: {
     return calcBoardingPetLines(pets, booking.plan, nights || 1);
   }, [booking, pets, nights]);
 
-  // ✅ breakdown swimming
+  // ✅ breakdown swimming — ใช้ pricing.items จาก API (เก็บใน draft จาก StepSwimming)
   const swimBreakdown = useMemo(() => {
     if (!isSwimmingDraft(booking)) return [];
+    const items = booking.pricingItems ?? [];
+    if (items.length > 0) {
+      return items.map((item) => ({
+        id: item.dogId,
+        name: item.name,
+        breed: item.breed,
+        price: item.price,
+      }));
+    }
     return pets.map((p) => ({
       id: p.id,
       name: p.name,
-      breed: p.breed,
-      price: swimPricePerDog({ breed: p.breed?? undefined, weightKg: p.weightKg?? undefined }),
+      breed: p.breed ?? "-",
+      price: 0,
     }));
   }, [booking, pets]);
 

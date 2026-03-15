@@ -355,8 +355,8 @@ export default function StepSwimming(props: {
               ownerPlay,
               total,
               package: isVip ? "vip" : "standard",
-              // lines จาก API package-pricing ฝากไว้ใน draft เพื่อส่งไป POST /reservation/confirm
               lines: swimmingResult?.lines ?? [],
+              pricingItems: swimmingResult?.pricing?.items ?? [],
               customerNote: note.trim() || undefined,
             })
           }
