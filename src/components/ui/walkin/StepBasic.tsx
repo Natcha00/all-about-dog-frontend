@@ -2,7 +2,6 @@
 
 import type React from "react";
 import { useEffect, useState } from "react";
-import PetAvatarPicker from "./PetAvatarPicker";
 import type { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
 import { breedSizeToPetSize, isDoubleCoatOnlyBreed } from "@/lib/dogs/dog.utills";
 
@@ -145,13 +144,6 @@ export default function StepBasic(props: {
 
   return (
     <div className="space-y-5">
-      <PetAvatarPicker
-        preview={form.imagePreview}
-        onPick={(file, previewUrl) =>
-          setForm((p) => ({ ...p, imageFile: file, imagePreview: previewUrl }))
-        }
-      />
-
       <div className="grid grid-cols-1 gap-4">
         <div>
           <Label>ชื่อสัตว์เลี้ยง*</Label>

@@ -101,7 +101,7 @@ export default function PetPickPanel({
                     <div className="min-w-0">
                       <p className="text-sm font-extrabold text-gray-900 truncate">{p.name}</p>
                       <p className="text-xs text-black/45">
-                        size: {p.size} • {p.breed ?? "-"} • {p.weightKg ?? "-"} kg • id: {p.id}
+                        size: {p.size} • {p.breed ?? "-"} • {p.weightKg ?? "-"} kg
                       </p>
                     </div>
 
@@ -132,9 +132,9 @@ export default function PetPickPanel({
         <button
           type="button"
           onClick={onBack}
-          className="w-full rounded-2xl bg-black/[0.06] py-3 font-extrabold text-black/70 active:scale-[0.99] transition"
+          className="w-full rounded-2xl bg-black/[0] py-3 font-extrabold text-black/70 active:scale-[0.99] transition"
         >
-          กลับ
+         
         </button>
 
         <button

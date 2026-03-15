@@ -136,7 +136,7 @@ export default function StepSwimming(props: {
 
   const total = swimmingResult?.pricing?.total ?? 0;
   const priceBreakdown = swimmingResult?.pricing?.items ?? [];
-  const petsSummaryLabel = swimmingResult?.petsSummary?.label ?? `สุนัขของฉัน เล็ก ${pets.filter((p) => p.size === "small").length} • ใหญ่ ${pets.filter((p) => p.size === "large").length}`;
+  // const petsSummaryLabel = swimmingResult?.petsSummary?.label ?? `สุนัขของฉัน เล็ก ${pets.filter((p) => p.size === "small").length} • ใหญ่ ${pets.filter((p) => p.size === "large").length}`;
   const slotHint = swimmingResult?.rules?.slotHint ?? "เลือกรอบที่รองรับขนาดใกล้เคียงกับน้อง ๆ เพื่อป้องกันอุบัติเหตุ";
   const ownerPlayHint = swimmingResult?.rules?.ownerPlayHint ?? "ฟรี (เลือกได้)";
 
@@ -175,9 +175,9 @@ export default function StepSwimming(props: {
             </p>
           </div>
         <div className="flex justify-end  gap-3">
-          <div className="shrink-0 rounded-2xl bg-black/[0.03] ring-1 ring-black/5 px-3 py-2 text-xs font-extrabold text-black/60">
+          {/* <div className="shrink-0 rounded-2xl bg-black/[0.03] ring-1 ring-black/5 px-3 py-2 text-xs font-extrabold text-black/60">
             {petsSummaryLabel}
-          </div>
+          </div> */}
         </div>
 
         {swimmingLoading ? (

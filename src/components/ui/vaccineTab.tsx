@@ -90,6 +90,14 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
     return proofUrl || "";
   }, [proofFile, proofUrl]);
 
+  const maxDateToday = (() => {
+    const t = new Date();
+    const y = t.getFullYear();
+    const m = String(t.getMonth() + 1).padStart(2, "0");
+    const d = String(t.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  })();
+
   const [errors, setErrors] = useState<{ date?: string; dose?: string; type?: string }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,7 +129,8 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
 
   const openEdit = (r: VaccineRecord) => {
     setEditingId(r.id);
-    setDate(toDateInputValue(r.date) || r.date || "");
+    const dateVal = toDateInputValue(r.date) || r.date || "";
+    setDate(dateVal > maxDateToday ? maxDateToday : dateVal);
     setType(r.type || (vaccineTypeOptions[0]?.value ?? ""));
     setDose(String(r.dose ?? ""));
     setClinic(r.clinic ?? "");
@@ -157,6 +166,7 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
   const onSave = () => {
     const nextErrors: typeof errors = {};
     if (!date) nextErrors.date = "กรุณาเลือกวันที่ฉีดวัคซีน";
+    else if (date > maxDateToday) nextErrors.date = "ไม่สามารถเลือกวันที่ฉีดเกินวันปัจจุบันได้";
     if (!type) nextErrors.type = "กรุณาเลือกประเภทวัคซีน";
     if (!dose || Number(dose) <= 0) nextErrors.dose = "กรุณากรอกจำนวนโดสเป็นตัวเลข";
 
@@ -405,7 +415,11 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
                   <input
                     type="date"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    max={maxDateToday}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDate(v > maxDateToday ? maxDateToday : v);
+                    }}
                     className="
                       w-full rounded-2xl min-h-[48px]
                       border border-gray-200
