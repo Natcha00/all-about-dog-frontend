@@ -26,6 +26,8 @@ type SwimmingPackagePricingResponse = {
     total: number;
   };
   lines: ReservationConfirmLine[];
+  /** สุนัขอย่างน้อย 1 ตัวมีการจองอื่นในวันนี้อยู่แล้ว → ต้องแจ้งเตือนและกดต่อไปไม่ได้ */
+  hasDogInReservationInPeriod?: boolean;
 };
 
 function todayISO() {
@@ -140,12 +142,15 @@ export default function StepSwimming(props: {
   const slotHint = swimmingResult?.rules?.slotHint ?? "เลือกรอบที่รองรับขนาดใกล้เคียงกับน้อง ๆ เพื่อป้องกันอุบัติเหตุ";
   const ownerPlayHint = swimmingResult?.rules?.ownerPlayHint ?? "ฟรี (เลือกได้)";
 
+  const hasOverlapReservation = swimmingResult?.hasDogInReservationInPeriod === true;
+
   const canNext = useMemo(() => {
     if (!dateISO || !selectedTime || !swimmingResult) return false;
+    if (hasOverlapReservation) return false;
     const slot = slots.find((s) => s.time === selectedTime);
     if (!slot) return false;
     return isSlotSelectable(slot, isVip, pets.length);
-  }, [dateISO, selectedTime, isVip, slots, pets.length, swimmingResult]);
+  }, [dateISO, selectedTime, isVip, slots, pets.length, swimmingResult, hasOverlapReservation]);
 
   const [noteOpen, setNoteOpen] = useState<boolean>(false);
 
@@ -287,6 +292,16 @@ export default function StepSwimming(props: {
         </div>
       ) : null}
 
+      {/* แจ้งเตือน: สุนัขมีการจองซ้อนในวันที่เลือก */}
+      {hasOverlapReservation && (
+        <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200/80 p-4">
+          <p className="text-sm font-extrabold text-amber-900">สุนัขบางตัวมีการจองอื่นมาแล้วก่อนหน้า</p>
+          <p className="text-xs text-amber-800/90 mt-1">
+            ในวันที่เลือก มีสุนัขอย่างน้อย 1 ตัวที่กำลังอยู่ในการจองอื่นอยู่แล้ว กรุณาเลือกวันอื่นหรือยกเลิกการจองเดิมก่อน จึงจะกดดำเนินการต่อได้
+          </p>
+        </div>
+      )}
+
       {/* ✅ Note (toggle box) */}
       <div className="rounded-2xl bg-white ring-1 ring-black/10 overflow-hidden">
         <button
@@ -370,7 +385,11 @@ export default function StepSwimming(props: {
       </div>
 
       {!canNext ? (
-        <p className="text-xs text-rose-600 text-center">กรุณาเลือกวัน + รอบ ให้ครบ (VIP ต้องว่างสนิท และต้องมีโควต้าตามขนาด)</p>
+        <p className="text-xs text-rose-600 text-center">
+          {hasOverlapReservation
+            ? "ไม่สามารถดำเนินการต่อได้ เนื่องจากสุนัขบางตัวมีการจองอื่นในวันนี้อยู่แล้ว"
+            : "กรุณาเลือกวัน + รอบ ให้ครบ (VIP ต้องว่างสนิท และต้องมีโควต้าตามขนาด)"}
+        </p>
       ) : null}
     </section>
   );

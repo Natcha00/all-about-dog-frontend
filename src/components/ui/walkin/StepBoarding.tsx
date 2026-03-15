@@ -39,6 +39,8 @@ type BoardingAvailableResponse = {
   package: string;
   need: { LARGE: number; SMALL: number; VIP: number };
   fails: Array<{ date?: string; message?: string; need?: Record<string, number>; cap?: Record<string, number> }>;
+  /** สุนัขอย่างน้อย 1 ตัวมีการจองอื่นในช่วงนี้อยู่แล้ว → ต้องแจ้งเตือนและกดต่อไปไม่ได้ */
+  hasDogInReservationInPeriod?: boolean;
 };
 
 function planToPackage(plan: Plan): "standard" | "shared" | "vip" {
@@ -208,6 +210,8 @@ export default function StepBoarding(props: {
 
 
 
+  const hasOverlapReservation = availabilityResult?.hasDogInReservationInPeriod === true;
+
   const canNext =
     pets.length > 0 &&
     !!start &&
@@ -215,7 +219,8 @@ export default function StepBoarding(props: {
     new Date(end) > new Date(start) &&
     isAvailableAllNights &&
     !!pricingResult &&
-    !pricingLoading;
+    !pricingLoading &&
+    !hasOverlapReservation;
 
 
   return (
@@ -410,6 +415,16 @@ export default function StepBoarding(props: {
         </div>
       )}
 
+      {/* แจ้งเตือน: สุนัขมีการจองซ้อนในช่วงที่เลือก */}
+      {hasOverlapReservation && (
+        <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200/80 p-4">
+          <p className="text-sm font-extrabold text-amber-900">สุนัขบางตัวมีการจองอื่นมาแล้วก่อนหน้า</p>
+          <p className="text-xs text-amber-800/90 mt-1">
+            ในช่วงวันที่เลือก มีสุนัขอย่างน้อย 1 ตัวที่กำลังอยู่ในการจองอื่นอยู่แล้ว กรุณาเลือกช่วงวันอื่นหรือยกเลิกการจองเดิมก่อน จึงจะกดดำเนินการต่อได้
+          </p>
+        </div>
+      )}
+
       {/* สรุป */}
       {canShowSummary && (
         <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-4">
@@ -590,7 +605,9 @@ export default function StepBoarding(props: {
 
       {!canNext && (
         <p className="text-xs text-rose-600 text-center">
-          วันออกต้องมากกว่าวันเข้า และห้ามเลือกย้อนหลัง
+          {hasOverlapReservation
+            ? "ไม่สามารถดำเนินการต่อได้ เนื่องจากสุนัขบางตัวมีการจองอื่นในช่วงนี้อยู่แล้ว"
+            : "วันออกต้องมากกว่าวันเข้า และห้ามเลือกย้อนหลัง"}
         </p>
       )}
     </section>
