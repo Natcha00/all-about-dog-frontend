@@ -301,7 +301,7 @@ export default function StepCustomer(props: {
               selectedExisting ? "bg-[#F0A23A] hover:bg-[#e99625]" : "bg-gray-300 cursor-not-allowed",
             ].join(" ")}
           >
-            เลือกลูกค้า → ต่อไป
+            ต่อไป
           </button>
 
           {!selectedExisting ? (

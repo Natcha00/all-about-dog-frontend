@@ -101,7 +101,7 @@ export default function LoginPage() {
               />
             </div>
             <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
-              All About Dog Staff
+              All About Dog
             </h1>
             <p className="mt-1 text-xs text-black/50">
               เข้าสู่ระบบสำหรับผู้ใช้งาน

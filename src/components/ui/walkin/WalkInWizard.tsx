@@ -13,9 +13,7 @@ import StepSuccess from "./StepSuccess";
 import type { PetCreateForm } from "@/lib/dogs/dog.type";
 import {
   calcAgeLabel,
-  calcPetSizeByWeight,
   countMeals,
-  safeNumberString,
 } from "@/lib/dogs/dog.utills";
 
 import type {
@@ -64,6 +62,7 @@ const initialPetForm: PetCreateForm = {
   gender: "",
   breed: "",
   color: "",
+  coatType: "",
   weightKg: "",
   heightCm: "",
   size: "เล็ก",
@@ -146,27 +145,20 @@ export default function WalkInWizardCustomer() {
     return map[step];
   }, [step]);
 
-  // ✅ auto compute pet derived fields (size/age/mealCount)
+  // ✅ auto compute pet derived fields (age/mealCount) — size มาจากพันธุ์ใน StepBasic
   useMemo(() => {
-    const w = safeNumberString(petForm.weightKg);
-    const nextSize = Number.isFinite(w) ? calcPetSizeByWeight(w) : "เล็ก";
     const nextAge = petForm.birthDate ? calcAgeLabel(petForm.birthDate) : "-";
     const nextMealCount = countMeals(petForm.meals);
 
-    if (
-      petForm.size !== nextSize ||
-      petForm.ageLabel !== nextAge ||
-      petForm.mealCount !== nextMealCount
-    ) {
+    if (petForm.ageLabel !== nextAge || petForm.mealCount !== nextMealCount) {
       setPetForm((prev) => ({
         ...prev,
-        size: nextSize,
         ageLabel: nextAge,
         mealCount: nextMealCount,
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [petForm.weightKg, petForm.birthDate, JSON.stringify(petForm.meals)]);
+  }, [petForm.birthDate, JSON.stringify(petForm.meals)]);
 
   const resetAll = () => {
     setStep("pet");

@@ -216,13 +216,7 @@ export default function ProfilePage() {
 
                 {/* Back */}
                 <div className="flex justify-start">
-                    <Link
-                        href="/account"
-                        className="grid h-10 w-10 place-items-center rounded-full bg-white/70 ring-1 ring-black/10 active:scale-95 transition"
-                        aria-label="กลับ"
-                    >
-                        <ChevronLeft className="h-5 w-5 text-black/70" />
-                    </Link>
+                   
                 </div>
 
                 {/* Profile summary */}

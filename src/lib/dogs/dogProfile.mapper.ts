@@ -1,9 +1,10 @@
-import type { DogProfileApiResponse, VaccineRecordFromProfile } from "./dog.type";
 import type { DogNameWithGender } from "@/components/ui/profileDogTab";
 import type { PetInfoMock } from "@/components/ui/infoDog";
 import type { QrCodeProps } from "@/components/ui/qrCode";
 import type { ServiceHistoryItem } from "@/components/ui/historyTab";
 import { toDateInputValue } from "@/lib/date/date.utils";
+import { BreedOption } from "@/app/api/dog/breeds/route";
+import type { DogProfileApiResponse, VaccineRecordFromProfile } from "./dog.type";
 
 /** Parse "อายุ 1 ปี 6 เดือน" or "1 ปี" -> years number */
 function parseAgeYears(ageStr: string): number {
@@ -87,8 +88,9 @@ export function mapProfileToPetInfoMock(api: DogProfileApiResponse): PetInfoMock
   return {
     name: g.name || "-",
     gender: g.gender?.includes("ผู้") ? "male" : "female",
-    breed: g.breed || "-",
+    breed: { id: 0, nameTh: String(g.breed || "-"), nameEng: "", size: "" },
     color: g.color || "-",
+    coatType: g.coatType?.trim() || "-",
     weightKg,
     heightCm,
     size: g.size === "ใหญ่" ? "ใหญ่" : "เล็ก",

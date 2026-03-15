@@ -207,13 +207,7 @@ export default function ChangePasswordPage() {
       <div className="mx-auto w-full max-w-md space-y-6">
         {/* Back */}
         <div className="flex justify-start">
-          <Link
-            href="/account"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white/70 ring-1 ring-black/10 active:scale-95 transition"
-            aria-label="กลับ"
-          >
-            <ChevronLeft className="h-5 w-5 text-black/70" />
-          </Link>
+        
         </div>
 
         {/* Header */}
@@ -268,10 +262,6 @@ export default function ChangePasswordPage() {
         >
           {saving ? "กำลังบันทึก..." : "บันทึก"}
         </button>
-
-        <p className="text-center text-xs text-black/45">
-          * หากลืมรหัสผ่าน กรุณาออกจากระบบแล้วใช้ “ลืมรหัสผ่าน” (เมื่อทำจริงเชื่อม backend)
-        </p>
       </div>
 
       {/* Confirm Popup */}

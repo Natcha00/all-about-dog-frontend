@@ -4,8 +4,11 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import PetAvatarPicker from "./PetAvatarPicker";
 import type { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
+import { breedSizeToPetSize, isDoubleCoatOnlyBreed } from "@/lib/dogs/dog.utills";
 
 export type BreedOption = { id: number; nameTh: string; nameEng: string; size: string };
+
+export type CoatTypeOption = { value: string; label: string };
 
 function todayISO() {
   const d = new Date();
@@ -76,7 +79,6 @@ function SegButton(props: { active: boolean; children: React.ReactNode; onClick:
   );
 }
 
-/** ✅ คำนวณอายุจาก ISO ของ input[type=date] */
 function calcAgeFromISO(birthISO: string): { label: string; isFuture: boolean } {
   if (!birthISO) return { label: "", isFuture: false };
 
@@ -112,6 +114,7 @@ export default function StepBasic(props: {
   const { form, setForm, errors, breeds: breedsProp } = props;
 
   const [breedsFetched, setBreedsFetched] = useState<BreedOption[]>([]);
+  const [coatTypes, setCoatTypes] = useState<CoatTypeOption[]>([]);
   const breeds = breedsProp ?? breedsFetched;
 
   useEffect(() => {
@@ -121,6 +124,21 @@ export default function StepBasic(props: {
       .then((data: BreedOption[]) => setBreedsFetched(Array.isArray(data) ? data : []))
       .catch(() => setBreedsFetched([]));
   }, [breedsProp]);
+
+  useEffect(() => {
+    fetch("/api/dog/options/coat-types")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
+      .then((data: CoatTypeOption[]) => setCoatTypes(Array.isArray(data) && data.length > 0 ? data : [
+        { value: "ขนสั้น", label: "ขนสั้น" },
+        { value: "ขนยาว", label: "ขนยาว" },
+        { value: "ขนสองชั้น", label: "ขนสองชั้น" },
+      ]))
+      .catch(() => setCoatTypes([
+        { value: "ขนสั้น", label: "ขนสั้น" },
+        { value: "ขนยาว", label: "ขนยาว" },
+        { value: "ขนสองชั้น", label: "ขนสองชั้น" },
+      ]));
+  }, []);
 
   // ✅ ไม่เก็บ ageLabel ใน state แล้ว คำนวณสดจาก birthDate
   const derivedAge = calcAgeFromISO(form.birthDate);
@@ -163,7 +181,21 @@ export default function StepBasic(props: {
 
         <div>
           <Label>พันธุ์*</Label>
-          <Select value={form.breed} onChange={(e) => setForm((p) => ({ ...p, breed: e.target.value }))}>
+          <Select
+            value={form.breed}
+            onChange={(e) => {
+              const value = e.target.value;
+              const selected = breeds.find((b) => String(b.id) === value);
+              const nextSize = breedSizeToPetSize(selected?.size ?? "");
+              const forceDoubleCoat = selected?.nameTh && isDoubleCoatOnlyBreed(selected.nameTh);
+              setForm((p) => ({
+                ...p,
+                breed: value,
+                size: nextSize,
+                ...(forceDoubleCoat ? { coatType: "ขนสองชั้น" as PetCreateForm["coatType"] } : {}),
+              }));
+            }}
+          >
             <option value="">โปรดเลือก</option>
             {breeds.map((b) => (
               <option key={b.id} value={String(b.id)}>
@@ -181,6 +213,40 @@ export default function StepBasic(props: {
             value={form.color}
             onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))}
           />
+        </div>
+
+        <div>
+          <Label>ประเภทขน*</Label>
+          {(() => {
+            const selectedBreed = breeds.find((b) => String(b.id) === form.breed);
+            const mustDoubleCoat = Boolean(
+              selectedBreed?.nameTh && isDoubleCoatOnlyBreed(selectedBreed.nameTh)
+            );
+            const effectiveCoatType = mustDoubleCoat ? "ขนสองชั้น" : form.coatType;
+            return (
+              <>
+                <Select
+                  value={effectiveCoatType}
+                  onChange={(e) => {
+                    if (mustDoubleCoat) return;
+                    setForm((p) => ({ ...p, coatType: e.target.value as PetCreateForm["coatType"] }));
+                  }}
+                  disabled={mustDoubleCoat}
+                >
+                  <option value="">โปรดเลือก</option>
+                  {coatTypes.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </Select>
+                {mustDoubleCoat ? (
+                  <p className="mt-1 text-xs text-gray-500">พันธุ์นี้เป็นขนสองชั้นเท่านั้น</p>
+                ) : null}
+              </>
+            );
+          })()}
+          {errors.coatType ? <p className="mt-1 text-xs text-rose-600">{errors.coatType}</p> : null}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
