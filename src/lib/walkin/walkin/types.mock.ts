@@ -40,6 +40,14 @@ export type BoardingDraft = {
   customerNote?: string;
 };
 
+/** Per-dog price from swimming package-pricing API (pricing.items) */
+export type SwimmingPricingItem = {
+  dogId: number;
+  name: string;
+  breed: string;
+  price: number;
+};
+
 export type SwimmingDraft = {
   serviceType: "swimming";
   date: string;
@@ -49,6 +57,8 @@ export type SwimmingDraft = {
   total: number;
   package?: string;
   lines?: ReservationConfirmLine[];
+  /** From API pricing.items — used for confirm breakdown */
+  pricingItems?: SwimmingPricingItem[];
   customerNote?: string;
 };
 

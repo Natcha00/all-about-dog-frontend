@@ -26,7 +26,7 @@ function ResetPasswordForm() {
     if (emailFromQuery) setEmail(emailFromQuery);
   }, [emailFromQuery]);
 
-  function handleVerifyOtp(e: React.FormEvent) {
+  async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const emailTrim = email.trim();
@@ -39,7 +39,29 @@ function ResetPasswordForm() {
       setError("OTP ต้องเป็นตัวเลข 6 หลัก");
       return;
     }
-    setStep("set-password");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/verify-otp-reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailTrim, otp: otpTrim }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success === true) {
+        setStep("set-password");
+        return;
+      }
+      const msg = (data.error as string) || (data.message as string) || "ยืนยัน OTP ไม่สำเร็จ";
+      setError(msg);
+      // Hint to request new OTP when expired or invalid
+      if (res.status === 400 && /หมดอายุ|ไม่มี OTP|ไม่ถูกต้อง/i.test(msg)) {
+        setError(`${msg} คุณสามารถขอ OTP ใหม่ได้ที่หน้าลืมรหัสผ่าน`);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSetPassword(e: React.FormEvent) {
@@ -88,7 +110,17 @@ function ResetPasswordForm() {
 
           <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+              <div className="space-y-1">
+                <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+                {(error.includes("หมดอายุ") || error.includes("ไม่มี OTP") || error.includes("ขอ OTP ใหม่")) && (
+                  <Link
+                    href={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`}
+                    className="text-sm text-amber-700 hover:underline"
+                  >
+                    ไปหน้าขอ OTP ใหม่ →
+                  </Link>
+                )}
+              </div>
             )}
             <div className="grid gap-2">
               <Label htmlFor="email">อีเมล</Label>
@@ -100,6 +132,7 @@ function ResetPasswordForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
             <div className="grid gap-2">
@@ -114,11 +147,12 @@ function ResetPasswordForm() {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 required
+                disabled={loading}
               />
             </div>
             <CardFooter className="flex-col gap-3 px-0 pt-2 pb-0">
-              <Button type="submit" className="w-full">
-                ถัดไป — ตั้งรหัสผ่านใหม่
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "กำลังตรวจสอบ OTP..." : "ถัดไป — ตั้งรหัสผ่านใหม่"}
               </Button>
               <Link href="/login">
                 <Button type="button" variant="link" className="w-full">
@@ -183,9 +217,6 @@ function ResetPasswordForm() {
             />
           </div>
           <CardFooter className="flex-col gap-3 px-0 pt-2 pb-0">
-            <Button type="button" variant="outline" className="w-full" onClick={() => setStep("verify-otp")}>
-              ย้อนกลับ
-            </Button>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "กำลังตั้งรหัสผ่าน..." : "ตั้งรหัสผ่านใหม่"}
             </Button>
