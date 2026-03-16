@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { DefaultCardProfileDog } from "@/components/ui/profileDogTab";
 import QrCode from "@/components/ui/qrCode";
 import BtnContainerHeath, { TabItem } from "@/components/ui/btnContainerHeath";
@@ -50,6 +50,10 @@ export default function DogProfileClient({
   const [editOpen, setEditOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyItemsState, setHistoryItemsState] = useState<ServiceHistoryItem[]>(historyItems ?? []);
+
   const handleRefresh = () => {
     onProfilePictureChange?.();
     onProfileRefresh?.();
@@ -87,6 +91,80 @@ export default function DogProfileClient({
       setPictureUploading(false);
     }
   };
+
+  // Fetch reservation histories from dedicated API when user opens history tab
+  useEffect(() => {
+    if (currentItem !== "history") return;
+    if (!dogId) return;
+    // ถ้าเคยโหลดแล้วและไม่มี error ไม่ต้องโหลดซ้ำ
+    if (historyItemsState.length > 0 && !historyError) return;
+
+    let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError(null);
+
+    fetch(`/api/dog/${encodeURIComponent(dogId)}/reservation-histories`)
+      .then((res) => {
+        if (!res.ok) {
+          return res
+            .json()
+            .then((d) => Promise.reject(new Error(d.error ?? d.detail ?? `${res.status} ${res.statusText}`)));
+        }
+        return res.json() as Promise<
+          Array<{
+            offeringType: "boarding" | "swimming";
+            code: string;
+            startDate?: string;
+            endDate?: string;
+            date?: string;
+            time?: string;
+          }>
+        >;
+      })
+      .then((list) => {
+        if (cancelled) return;
+        const mapped: ServiceHistoryItem[] = (list ?? []).map((it, idx) => {
+          const isBoarding = it.offeringType === "boarding";
+          const id = it.code || idx;
+          if (isBoarding) {
+            const start = it.startDate ?? "";
+            const end = it.endDate ?? "";
+            // แสดงวันที่แบบสั้น ๆ (YYYY-MM-DD) ในช่องเวลาเข้า/ออก
+            return {
+              id,
+              serviceType: "ฝากเลี้ยง",
+              refCode: it.code,
+              checkIn: start || "-",
+              checkOut: end || "-",
+              nights: start && end ? Math.max(1, Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24))) : 0,
+              roomType: undefined,
+            };
+          }
+          const date = it.date ?? "";
+          const time = it.time ?? "";
+          const label = [date, time].filter(Boolean).join(" ");
+          return {
+            id,
+            serviceType: "ว่ายน้ำ",
+            refCode: it.code,
+            checkIn: label || "-",
+            checkOut: label || "-",
+          };
+        });
+        setHistoryItemsState(mapped);
+      })
+      .catch((e: Error) => {
+        if (cancelled) return;
+        setHistoryError(e.message || "โหลดประวัติการใช้งานไม่สำเร็จ");
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentItem, dogId, historyError, historyItemsState.length]);
 
   return (
     <div className="flex flex-col gap-4 min-h-screen overflow-y-auto">
@@ -148,7 +226,19 @@ export default function DogProfileClient({
 
       <InfoDog currentItem={currentItem} petInfoMock={petInfo} />
       <VaccineTab currentItem={currentItem} dogId={dogId} initialVaccineList={initialVaccineList} />
-      <HistoryTab currentItem={currentItem} items={historyItems} />
+      {currentItem === "history" && (
+        <>
+          {historyLoading && (
+            <p className="text-center text-sm text-gray-500 mt-2">กำลังโหลดประวัติการใช้งาน...</p>
+          )}
+          {historyError && (
+            <p className="text-center text-sm text-amber-700 bg-amber-100 rounded-lg px-3 py-2 mt-2">
+              {historyError}
+            </p>
+          )}
+        </>
+      )}
+      <HistoryTab currentItem={currentItem} items={historyItemsState.length > 0 ? historyItemsState : historyItems} />
 
       {editOpen && profile && dogId && (
         <EditDogSheet

@@ -107,8 +107,17 @@ function HistoryCard({ item }: { item: ServiceHistoryItem }) {
 
       {/* SoftCard body */}
       <div className="px-4 py-4">
-        <Row label="เข้าใช้บริการ" value={`${item.checkIn} น.`} />
-        <Row label="ออกจากบริการ" value={`${item.checkOut} น.`} />
+        {isSwim ? (
+          <>
+            <Row label="วันที่" value={item.checkIn.split(" ")[0] || item.checkIn || "-"} />
+            <Row label="เวลา" value={item.checkIn.split(" ")[1] || "-"} />
+          </>
+        ) : (
+          <>
+            <Row label="วันที่เข้า" value={item.checkIn || "-"} />
+            <Row label="วันที่ออก" value={item.checkOut || "-"} />
+          </>
+        )}
 
         {!isSwim ? (
           <div className="pt-3">
