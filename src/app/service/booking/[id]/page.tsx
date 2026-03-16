@@ -30,7 +30,7 @@ const STATUS_LABEL: Record<BookingStatus, string> = {
   pending: "รออนุมัติ",
   waiting_slip: "รอชำระเงิน",
   slip_uploaded: "รอตรวจสลิป",
-  slip_verified: "ชำระเงินแล้ว",
+  slip_verified: "ชำระเงินสำเร็จ",
   "check-in": "กำลังใช้บริการ",
   finished: "เสร็จสิ้น",
   cancelled: "ยกเลิกแล้ว",

@@ -262,6 +262,16 @@ export default function StepBoarding(props: {
         />
       </div>
 
+        {/* แจ้งเตือน: สุนัขมีการจองซ้อนในช่วงที่เลือก */}
+        {hasOverlapReservation && (
+        <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200/80 p-4">
+          <p className="text-sm font-extrabold text-amber-900">สุนัขบางตัวมีการจองอื่นมาแล้วก่อนหน้า</p>
+          <p className="text-xs text-amber-800/90 mt-1">
+            ในช่วงวันที่เลือก มีสุนัขอย่างน้อย 1 ตัวที่กำลังอยู่ในการจองอื่นอยู่แล้ว กรุณาเลือกช่วงวันอื่นหรือยกเลิกการจองเดิมก่อน จึงจะกดดำเนินการต่อได้
+          </p>
+        </div>
+      )}
+
       {/* แพ็กเกจ */}
       <div className="space-y-2">
         <div className="flex items-end justify-between gap-3">
@@ -415,15 +425,7 @@ export default function StepBoarding(props: {
         </div>
       )}
 
-      {/* แจ้งเตือน: สุนัขมีการจองซ้อนในช่วงที่เลือก */}
-      {hasOverlapReservation && (
-        <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200/80 p-4">
-          <p className="text-sm font-extrabold text-amber-900">สุนัขบางตัวมีการจองอื่นมาแล้วก่อนหน้า</p>
-          <p className="text-xs text-amber-800/90 mt-1">
-            ในช่วงวันที่เลือก มีสุนัขอย่างน้อย 1 ตัวที่กำลังอยู่ในการจองอื่นอยู่แล้ว กรุณาเลือกช่วงวันอื่นหรือยกเลิกการจองเดิมก่อน จึงจะกดดำเนินการต่อได้
-          </p>
-        </div>
-      )}
+    
 
       {/* สรุป */}
       {canShowSummary && (

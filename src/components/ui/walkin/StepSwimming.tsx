@@ -171,6 +171,15 @@ export default function StepSwimming(props: {
           className="appearance-none h-11 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]"
         />
       </div>
+         {/* แจ้งเตือน: สุนัขมีการจองซ้อนในวันที่เลือก */}
+         {hasOverlapReservation && (
+        <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200/80 p-4">
+          <p className="text-sm font-extrabold text-amber-900">สุนัขบางตัวมีการจองอื่นมาแล้วก่อนหน้า</p>
+          <p className="text-xs text-amber-800/90 mt-1">
+            ในวันที่เลือก มีสุนัขอย่างน้อย 1 ตัวที่กำลังอยู่ในการจองอื่นอยู่แล้ว กรุณาเลือกวันอื่นหรือยกเลิกการจองเดิมก่อน จึงจะกดดำเนินการต่อได้
+          </p>
+        </div>
+      )}
 
       <div className="rounded-2xl ring-1 ring-black/10 bg-white p-4 space-y-3">
       <div>
@@ -236,6 +245,7 @@ export default function StepSwimming(props: {
           <div>
             <p className="text-sm font-extrabold text-gray-900">เหมารอบ (VIP)</p>
             <p className="text-xs text-black/45">* VIP เลือกได้เฉพาะรอบที่ “ว่างสนิท”</p>
+            <p className="text-xs text-black/45">* เฉพาะวันธรรมดา ไม่รวมวันหยุดและนักขัตฤกษ์</p>
           </div>
         </div>
 
@@ -292,15 +302,7 @@ export default function StepSwimming(props: {
         </div>
       ) : null}
 
-      {/* แจ้งเตือน: สุนัขมีการจองซ้อนในวันที่เลือก */}
-      {hasOverlapReservation && (
-        <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200/80 p-4">
-          <p className="text-sm font-extrabold text-amber-900">สุนัขบางตัวมีการจองอื่นมาแล้วก่อนหน้า</p>
-          <p className="text-xs text-amber-800/90 mt-1">
-            ในวันที่เลือก มีสุนัขอย่างน้อย 1 ตัวที่กำลังอยู่ในการจองอื่นอยู่แล้ว กรุณาเลือกวันอื่นหรือยกเลิกการจองเดิมก่อน จึงจะกดดำเนินการต่อได้
-          </p>
-        </div>
-      )}
+   
 
       {/* ✅ Note (toggle box) */}
       <div className="rounded-2xl bg-white ring-1 ring-black/10 overflow-hidden">

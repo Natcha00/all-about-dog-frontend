@@ -29,7 +29,7 @@ export function tabMeta(tab: TabKey) {
     case "slip_uploaded":
       return { label: "รอตรวจสลิป", hint: "สลิปถูกอัปโหลดแล้ว", tone: "warning" as const };
     case "slip_verified":
-      return { label: "ชำระเงินแล้ว", hint: "รอเข้าใช้บริการ", tone: "success" as const };
+      return { label: "ชำระเงินสำเร็จ", hint: "รอเข้าใช้บริการ", tone: "success" as const };
     case "check_in":
       return { label: "กำลังใช้บริการ", hint: "ชำระแล้ว/เช็คอิน", tone: "info" as const };
     case "finished":
@@ -50,7 +50,7 @@ export function statusLabel(status: BookingStatus) {
     case "slip_uploaded":
       return "รอตรวจสลิป";
     case "slip_verified":
-      return "ชำระเงินแล้ว";
+      return "ชำระเงินสำเร็จ";
     case "check-in":
       return "กำลังใช้บริการ";
     case "finished":
@@ -95,15 +95,15 @@ export function formatDateRange(b: Booking) {
     const base: BillStatusEvent[] = [
       { key: "pending", label: "สร้างบิล", tone: "neutral" },
       { key: "waiting_payment", label: "รอชำระเงิน", tone: "warning" },
-      { key: "slip_uploaded", label: "อัปโหลดสลิปแล้ว", tone: "info" },
+      { key: "slip_uploaded", label: "แนบสลิป", tone: "info" },
       {
         key: "slip_verified",
-        label: "ยืนยันการชำระเงินโดยพนักงาน",
+        label: "ชำระเงินสำเร็จ",
         tone: "success",
         at: b.verifiedAt,
         performedByName: b.verifiedBy,
       },
-      { key: "checked_in", label: "Check-in", tone: "info", at: b.checkInAt },
+      { key: "checked_in", label: "เริ่มใช้บริการ", tone: "info", at: b.checkInAt },
       { key: "finished", label: "จบการใช้บริการ", tone: "success", at: b.checkOutAt },
     ];
   
