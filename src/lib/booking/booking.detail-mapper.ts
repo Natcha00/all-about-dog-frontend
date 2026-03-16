@@ -56,6 +56,7 @@ export function mapDetailToBooking(detail: ReservationDetailResult): Booking {
   } else {
     const anyDetail = detail as any;
     const dateFromApi = anyDetail.date as string | undefined;
+    const dateFromPeriod = (anyDetail.period?.date as string | undefined) ?? undefined;
 
     let dateFromCode: string | undefined;
     const m = /^RSV-(\d{4})(\d{2})(\d{2})-/.exec(detail.bookingCode);
@@ -64,7 +65,8 @@ export function mapDetailToBooking(detail: ReservationDetailResult): Booking {
       dateFromCode = `${y}-${mm}-${dd}`;
     }
 
-    const date = dateFromApi ?? dateFromCode ?? detail.period?.start ?? "";
+    // สำหรับ swimming ให้ใช้ period.date เป็นหลัก (ถ้ามี) รองลงมาคือ date, รหัส RSV, และ period.start
+    const date = dateFromPeriod ?? dateFromApi ?? dateFromCode ?? detail.period?.start ?? "";
     const slotStart = (anyDetail.timeSlot?.start as string | undefined) ?? detail.period?.start ?? "";
     const slotEnd = (anyDetail.timeSlot?.end as string | undefined) ?? detail.period?.end ?? "";
 
