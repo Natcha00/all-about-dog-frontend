@@ -26,8 +26,8 @@ export const bookingMock: Booking[] = [
 
   {
     id: "RSV-20260002",
-    status: "WaitingSlip",
-    serviceType: "swim",
+    status: "waiting_slip",
+    serviceType: "swimming",
     pets: [
       {
         petId: 2,
@@ -62,13 +62,15 @@ export const bookingMock: Booking[] = [
     startAt: "18/01/2569",
     endAt: "19/01/2569",
     price: 800,
-    slipUrl: "/mock/slip.jpg",
+    slip: {
+      imageUrl: "/mock/slip.jpg",
+    },
   },
 
   {
     id: "RSV-20260004",
     status: "slip_verified",
-    serviceType: "swim",
+    serviceType: "swimming",
     pets: [
       {
         petId: 4,
@@ -123,7 +125,7 @@ export const bookingMock: Booking[] = [
   {
     id: "RSV-20260006",
     status: "finished",
-    serviceType: "swim",
+    serviceType: "swimming",
     pets: [
       {
         petId: 6,

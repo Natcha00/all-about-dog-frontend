@@ -11,6 +11,8 @@ type SwimmingSlot = {
   statusLabel: string;
   isFull: boolean;
   isEmpty: boolean;
+  /** If true, this hour slot already has a reservation on the selected day (close only these hours). */
+  isEverReserved: boolean;
   sizeBooked: { large: number; small: number };
 };
 
@@ -26,8 +28,6 @@ type SwimmingPackagePricingResponse = {
     total: number;
   };
   lines: ReservationConfirmLine[];
-  /** สุนัขอย่างน้อย 1 ตัวมีการจองอื่นในวันนี้อยู่แล้ว → ต้องแจ้งเตือนและกดต่อไปไม่ได้ */
-  hasDogInReservationInPeriod?: boolean;
 };
 
 function todayISO() {
@@ -39,6 +39,8 @@ function todayISO() {
 }
 
 function isSlotSelectable(slot: SwimmingSlot, isVip: boolean, petCount: number) {
+  // Requirement: close only the hour slots that were already reserved on that day.
+  if (slot.isEverReserved === true) return false;
   if (isVip) return slot.isEmpty;
   return !slot.isFull && slot.remaining >= petCount;
 }
@@ -128,12 +130,12 @@ export default function StepSwimming(props: {
     setSelectedTime("");
   }, [dateISO]);
 
-  // ถ้าเปิด VIP แล้ว "รอบนี้เลือกไม่ได้" -> reset
+  // If the selected time becomes not selectable (VIP toggle, reserved hours, capacity, etc.) -> reset
   useEffect(() => {
-    if (!isVip || !selectedTime) return;
+    if (!selectedTime) return;
     const slot = slots.find((s) => s.time === selectedTime);
     if (!slot) return;
-    if (!isSlotSelectable(slot, true, pets.length)) setSelectedTime("");
+    if (!isSlotSelectable(slot, isVip, pets.length)) setSelectedTime("");
   }, [isVip, selectedTime, slots, pets.length]);
 
   const total = swimmingResult?.pricing?.total ?? 0;
@@ -142,15 +144,15 @@ export default function StepSwimming(props: {
   const slotHint = swimmingResult?.rules?.slotHint ?? "เลือกรอบที่รองรับขนาดใกล้เคียงกับน้อง ๆ เพื่อป้องกันอุบัติเหตุ";
   const ownerPlayHint = swimmingResult?.rules?.ownerPlayHint ?? "ฟรี (เลือกได้)";
 
-  const hasOverlapReservation = swimmingResult?.hasDogInReservationInPeriod === true;
+  const selectedSlot = selectedTime ? slots.find((s) => s.time === selectedTime) : undefined;
+  const selectedSlotIsEverReserved = selectedSlot?.isEverReserved === true;
 
   const canNext = useMemo(() => {
     if (!dateISO || !selectedTime || !swimmingResult) return false;
-    if (hasOverlapReservation) return false;
     const slot = slots.find((s) => s.time === selectedTime);
     if (!slot) return false;
     return isSlotSelectable(slot, isVip, pets.length);
-  }, [dateISO, selectedTime, isVip, slots, pets.length, swimmingResult, hasOverlapReservation]);
+  }, [dateISO, selectedTime, isVip, slots, pets.length, swimmingResult]);
 
   const [noteOpen, setNoteOpen] = useState<boolean>(false);
 
@@ -171,16 +173,6 @@ export default function StepSwimming(props: {
           className="appearance-none h-11 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-[#BFE7E9] focus:border-[#399199]"
         />
       </div>
-         {/* แจ้งเตือน: สุนัขมีการจองซ้อนในวันที่เลือก */}
-         {hasOverlapReservation && (
-        <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200/80 p-4">
-          <p className="text-sm font-extrabold text-amber-900">สุนัขบางตัวมีการจองอื่นมาแล้วก่อนหน้า</p>
-          <p className="text-xs text-amber-800/90 mt-1">
-            ในวันที่เลือก มีสุนัขอย่างน้อย 1 ตัวที่กำลังอยู่ในการจองอื่นอยู่แล้ว กรุณาเลือกวันอื่นหรือยกเลิกการจองเดิมก่อน จึงจะกดดำเนินการต่อได้
-          </p>
-        </div>
-      )}
-
       <div className="rounded-2xl ring-1 ring-black/10 bg-white p-4 space-y-3">
       <div>
             <p className="text-sm font-extrabold text-gray-900">เลือกรอบ</p>
@@ -225,7 +217,14 @@ export default function StepSwimming(props: {
                 </button>
                 <div className="mt-2 w-full text-center text-[11px] font-semibold leading-4">
                   <div className={s.isFull ? "text-black/45" : "text-black/70"}>{s.statusLabel}</div>
-                  <div className="text-black/45">จองแล้ว {s.booked}/{s.capacity}</div>
+                  {s.isEverReserved ? (
+                    <div className="text-black/45">เคยจองแล้ว</div>
+                  ) : null}
+                  {s.isEverReserved ? (
+                    <div className="text-black/45">จองแล้ว (ปิดรอบ)</div>
+                  ) : (
+                    <div className="text-black/45">จองแล้ว {s.booked}/{s.capacity}</div>
+                  )}
                   <div className="text-black/45">พันธุ์ใหญ่: {s.sizeBooked.large}</div>
                   <div className="text-black/45">พันธุ์เล็ก: {s.sizeBooked.small}</div>
                 </div>
@@ -388,8 +387,8 @@ export default function StepSwimming(props: {
 
       {!canNext ? (
         <p className="text-xs text-rose-600 text-center">
-          {hasOverlapReservation
-            ? "ไม่สามารถดำเนินการต่อได้ เนื่องจากสุนัขบางตัวมีการจองอื่นในวันนี้อยู่แล้ว"
+          {selectedTime && selectedSlotIsEverReserved
+            ? "ไม่สามารถดำเนินการต่อได้ เนื่องจากรอบที่เลือกถูกจองไปแล้ว กรุณาเลือกรอบอื่น"
             : "กรุณาเลือกวัน + รอบ ให้ครบ (VIP ต้องว่างสนิท และต้องมีโควต้าตามขนาด)"}
         </p>
       ) : null}

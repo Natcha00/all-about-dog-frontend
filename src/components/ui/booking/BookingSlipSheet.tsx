@@ -88,7 +88,7 @@ function SlipUploadPanel({
   return (
     <div className="space-y-3">
       <div className="text-[13px] text-black/55">
-        รองรับไฟล์รูปภาพ • แนะนำให้เป็นรูปชัดเจน (mock ตอนนี้ยังไม่อัปโหลดจริง)
+        รองรับ PNG / JPG • ไม่เกิน 5MB 
       </div>
 
       <div className="rounded-2xl border border-black/10 bg-white p-4 space-y-3">

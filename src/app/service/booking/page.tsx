@@ -52,6 +52,8 @@ const TAB_KEYS: TabKey[] = [
   "cancelled",
 ];
 
+const PAGE_SIZE = 10;
+
 function normalizeTab(param: string | null): TabKey {
   if (!param) return "pending";
   // อนุญาตให้ใช้ทั้งชื่อ tab ฝั่ง UI และ key ฝั่ง backend บางส่วนผ่าน URL
@@ -189,6 +191,16 @@ export default function BookingsPage() {
   const [countsRaw, setCountsRaw] = useState<ReservationApiCounts | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Keep pagination state separately for each tab.
+  const [pageByTab, setPageByTab] = useState<Record<TabKey, number>>({
+    pending: 1,
+    waiting_slip: 1,
+    slip_uploaded: 1,
+    slip_verified: 1,
+    check_in: 1,
+    finished: 1,
+    cancelled: 1,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -233,6 +245,21 @@ export default function BookingsPage() {
     return mapCounts(countsRaw);
   }, [countsRaw]);
 
+  const currentPage = pageByTab[tab] ?? 1;
+  const totalPages = Math.ceil(bookings.length / PAGE_SIZE);
+  const safePage = totalPages === 0 ? 1 : Math.min(currentPage, totalPages);
+  const totalCountForTab = countsRaw ? counts[tab] : bookings.length;
+
+  const paginatedBookings = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return bookings.slice(start, start + PAGE_SIZE);
+  }, [bookings, safePage]);
+
+  useEffect(() => {
+    if (safePage === currentPage) return;
+    setPageByTab((prev) => ({ ...prev, [tab]: safePage }));
+  }, [safePage, currentPage, tab]);
+
   return (
     <main className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">
       <header className="px-4 pt-5 text-center">
@@ -271,16 +298,63 @@ export default function BookingsPage() {
             </div>
           </div>
         ) : (
-          <BookingList
-            bookings={bookings}
-            tab={tab}
-            onViewDetail={(bookingId) => {
-              router.push(`/service/booking/${bookingId}`);
-            }}
-            onViewHistory={(bookingId) => {
-              router.push(`/history?bookingId=${bookingId}`);
-            }}
-          />
+          <>
+            {!loading && bookings.length > 0 && totalPages > 1 ? (
+              <div className="my-4 flex items-center justify-between gap-4">
+                <div className="text-xs text-gray-500">
+                  พบ {totalCountForTab} รายการ
+                </div>
+                <div className="text-xs text-gray-500">
+                  หน้า {safePage} / {totalPages}
+                 
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={safePage <= 1}
+                    onClick={() =>
+                      setPageByTab((prev) => ({ ...prev, [tab]: safePage - 1 }))
+                    }
+                    className={[
+                      "rounded-full border px-3 py-1.5 text-xs font-semibold",
+                      safePage <= 1
+                        ? "bg-gray-50 border-black/10 text-gray-400 cursor-not-allowed"
+                        : "bg-white border-black/10 text-gray-700 hover:bg-black/5",
+                    ].join(" ")}
+                  >
+                    ก่อนหน้า
+                  </button>
+                  <button
+                    type="button"
+                    disabled={safePage >= totalPages}
+                    onClick={() =>
+                      setPageByTab((prev) => ({ ...prev, [tab]: safePage + 1 }))
+                    }
+                    className={[
+                      "rounded-full border px-3 py-1.5 text-xs font-semibold",
+                      safePage >= totalPages
+                        ? "bg-gray-50 border-black/10 text-gray-400 cursor-not-allowed"
+                        : "bg-white border-black/10 text-gray-700 hover:bg-black/5",
+                    ].join(" ")}
+                  >
+                    ถัดไป
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <BookingList
+              bookings={paginatedBookings}
+              tab={tab}
+              onViewDetail={(bookingId) => {
+                router.push(`/service/booking/${bookingId}`);
+              }}
+              onViewHistory={(bookingId) => {
+                router.push(`/history?bookingId=${bookingId}`);
+              }}
+            />
+
+            
+          </>
         )}
       </div>
     </main>

@@ -10,6 +10,8 @@ export type SwimmingSlot = {
   statusLabel: string;
   isFull: boolean;
   isEmpty: boolean;
+  /** If true, this hour slot already has a reservation on the selected day. */
+  isEverReserved: boolean;
   sizeBooked: { large: number; small: number };
 };
 
