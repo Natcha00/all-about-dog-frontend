@@ -234,7 +234,7 @@ export default function StepSwimming(props: {
         </div>
         )}
 
-        <div className="flex items-start gap-3 pt-2">
+        {/* <div className="flex items-start gap-3 pt-2">
           <input
             type="checkbox"
             checked={isVip}
@@ -246,7 +246,7 @@ export default function StepSwimming(props: {
             <p className="text-xs text-black/45">* VIP เลือกได้เฉพาะรอบที่ “ว่างสนิท”</p>
             <p className="text-xs text-black/45">* เฉพาะวันธรรมดา ไม่รวมวันหยุดและนักขัตฤกษ์</p>
           </div>
-        </div>
+        </div> */}
 
         <div className="flex items-start justify-between gap-3 pt-1">
           <div>
