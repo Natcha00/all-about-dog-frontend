@@ -21,6 +21,7 @@ import { QRCodeSVG } from "qrcode.react";
 import type { PetPicked, ServiceType } from "@/lib/walkin/walkin/types.mock";
 import type { ReservationDetailResult } from "@/app/api/reservation/detail/route";
 import { formatDateThai } from "@/lib/date/date.utils";
+import { BANK_TRANSFER_FOR_BOOKING } from "@/lib/payment/bank-transfer";
 
 /* ===== labels ===== */
 
@@ -415,6 +416,24 @@ export default function BookingDetailPage() {
             {canUploadSlip ? "แนบสลิปเพื่อให้พนักงานตรวจสอบ" : "การแนบสลิปจะเปิดได้เฉพาะสถานะที่กำหนด"}
           </p>
         </div>
+
+        {b.status === "waiting_slip" ? (
+          <div className="rounded-2xl bg-white ring-1 ring-black/10 px-4 py-3 text-center">
+            <p className="text-[11px] font-bold text-black/45">โอนเข้าบัญชี</p>
+            <p className="mt-0.5 text-xs font-extrabold text-black/80">
+              {BANK_TRANSFER_FOR_BOOKING.bankName}
+            </p>
+            <p
+              className="mt-1 text-base font-extrabold tracking-wider text-black tabular-nums break-all"
+              translate="no"
+            >
+              {BANK_TRANSFER_FOR_BOOKING.accountNumber}
+            </p>
+            <p className="mt-0.5 text-[11px] text-black/50 leading-snug">
+              {BANK_TRANSFER_FOR_BOOKING.accountHolder}
+            </p>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3">
           <button
