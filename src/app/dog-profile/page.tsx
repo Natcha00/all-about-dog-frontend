@@ -7,6 +7,7 @@ import BtnContainerHeath, { TabItem } from "@/components/ui/btnContainerHeath";
 import InfoDog, { PetInfoMock } from "@/components/ui/infoDog";
 import VaccineTab from "@/components/ui/vaccineTab";
 import HistoryTab, { ServiceHistoryItem } from "@/components/ui/historyTab";
+import { BreedOption } from "@/app/api/dog/breeds/route";
 
 const dog: DogNameWithGender = {
     name: "Robertnajaaaa ilobveuRobertnajaaaa ilobveu",
@@ -30,8 +31,9 @@ const tabs: TabItem[] = [
 export const petInfoMock: PetInfoMock = {
     name: "อัลมอนด์",
     gender: "male",
-    breed: "คอร์กี้",
+    breed: { id: 1, nameTh: "คอร์กี้", nameEng: "Corgi", size: "small" } as BreedOption,
     color: "ขาว-น้ำตาล",
+    coatType: "ขนสั้น",
     weightKg: 10,
     heightCm: 30,
     size: "เล็ก",

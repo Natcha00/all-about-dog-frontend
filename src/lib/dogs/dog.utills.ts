@@ -61,6 +61,12 @@ export function countMeals(meals: Record<string, boolean>) {
   return Object.values(meals).filter(Boolean).length;
 }
 
+export function sortByThaiName<T extends { nameTh: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) =>
+    String(a.nameTh ?? "").localeCompare(String(b.nameTh ?? ""), "th")
+  );
+}
+
 export function buildPetPayload(form: PetCreateForm) {
   // โครง payload เผื่อ backend (ไม่ยัด imageFile ลง JSON)
   return {

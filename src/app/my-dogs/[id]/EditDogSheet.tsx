@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import type { DogProfileApiResponse } from "@/lib/dogs/dog.type";
 import type { UpdateDogBody } from "@/lib/dogs/dog.type";
 import type { CoatTypeValue } from "@/lib/dogs/dog.type";
-import { isDoubleCoatOnlyBreed } from "@/lib/dogs/dog.utills";
+import { isDoubleCoatOnlyBreed, sortByThaiName } from "@/lib/dogs/dog.utills";
 import { toDateInputValue } from "@/lib/date/date.utils";
 import type { BreedOption } from "@/app/api/dog/breeds/route";
 import type { MealKey } from "@/lib/dogs/dog.type";
@@ -68,6 +68,7 @@ function buildPartialUpdateBody(
   current: EditDogFormState
 ): UpdateDogBody {
   const body: UpdateDogBody = {};
+  const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
   if (current.name !== initial.name) body.name = current.name.trim();
   if (current.gender !== initial.gender) body.gender = current.gender === "male" ? "male" : "female";
@@ -87,8 +88,13 @@ function buildPartialUpdateBody(
   if (current.height !== initial.height && Number.isFinite(heightNum) && heightNum >= 0) {
     body.height = heightNum;
   }
-  if (current.birthdate !== initial.birthdate && current.birthdate) {
-    body.birthdate = current.birthdate;
+  const currentBirthdate = current.birthdate.trim();
+  if (
+    current.birthdate !== initial.birthdate &&
+    currentBirthdate &&
+    ISO_DATE_RE.test(currentBirthdate)
+  ) {
+    body.birthdate = currentBirthdate;
   }
 
   const healthChanged =
@@ -109,7 +115,8 @@ function buildPartialUpdateBody(
     body.healthInfo = {
       sterilization: current.sterilization,
       microchip: current.microchip,
-      bloodGroup: rawBlood === "UNKNOWN" || !rawBlood ? "UNKNOWN" : rawBlood,
+      // Send empty string when user does not select blood group.
+      bloodGroup: rawBlood,
       underlyingDisease: current.underlyingDisease.trim(),
       allergy: current.allergy.trim(),
       detail: current.detail.trim(),
@@ -246,7 +253,7 @@ export default function EditDogSheet({
   useEffect(() => {
     fetch("/api/dog/breeds")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
-      .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? data : []))
+      .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? sortByThaiName(data) : []))
       .catch(() => setBreeds([]));
   }, []);
 
@@ -312,7 +319,7 @@ export default function EditDogSheet({
   };
 
   const toggleMeal = (k: MealKey) => {
-    setForm((prev) => ({ ...prev, [k]: !(prev as Record<string, boolean>)[k] }));
+    setForm((prev) => ({ ...prev, [k]: !(prev as unknown as Record<string, boolean>)[k] }));
   };
 
   return (
@@ -442,25 +449,14 @@ export default function EditDogSheet({
                 })()}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>น้ำหนัก (กก.)</Label>
-                  <Input
-                    placeholder="เช่น 10"
-                    inputMode="numeric"
-                    value={form.weight}
-                    onChange={(e) => setForm((p) => ({ ...p, weight: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label>ส่วนสูง (ซม.)</Label>
-                  <Input
-                    placeholder="เช่น 30"
-                    inputMode="numeric"
-                    value={form.height}
-                    onChange={(e) => setForm((p) => ({ ...p, height: e.target.value }))}
-                  />
-                </div>
+              <div>
+                <Label>น้ำหนัก (กก.)</Label>
+                <Input
+                  placeholder="เช่น 10"
+                  inputMode="numeric"
+                  value={form.weight}
+                  onChange={(e) => setForm((p) => ({ ...p, weight: e.target.value }))}
+                />
               </div>
 
               <div>

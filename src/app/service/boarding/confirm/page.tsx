@@ -130,6 +130,9 @@ function BoardingConfirmPage() {
               <p className="mt-1 text-xs text-black/40">
                 * ราคาอาจเปลี่ยนตามจำนวนห้องและเงื่อนไขร้าน
               </p>
+              <p className="mt-1 text-xs text-black/50">
+                * หากยังไม่ชำระเงิน ระบบยังไม่กันห้องให้ และสามารถยกเลิกได้ภายใน 7 วันก่อนวันเข้าพัก
+              </p>
             </div>
   
             <button
@@ -176,7 +179,7 @@ function BoardingConfirmPage() {
             <div className="px-5 py-4 border-b border-black/5 bg-white/70">
               <p className="text-base font-extrabold text-gray-900">ยืนยันการทำรายการ</p>
               <p className="mt-1 text-sm text-black/55">
-                ตรวจสอบข้อมูลแล้วกดยืนยันเพื่อไปหน้าสำเร็จ
+                ตรวจสอบข้อมูลแล้วกดยืนยันเพื่อไปหน้าสำเร็จ (ยังไม่กันห้องจนกว่าจะชำระเงิน)
               </p>
             </div>
   
@@ -189,6 +192,9 @@ function BoardingConfirmPage() {
                   </p>
                 </div>
               </div>
+              <p className="mt-3 text-xs text-black/60">
+                * ฝากเลี้ยง: หากยังไม่ชำระเงิน ระบบยังไม่กันห้องให้ และยกเลิกได้ภายใน 7 วันก่อนวันเข้าพัก
+              </p>
   
               <div className="mt-4 flex gap-3">
                 <button

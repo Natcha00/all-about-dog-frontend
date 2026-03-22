@@ -13,6 +13,7 @@ import {
   calcAgeLabel,
   countMeals,
   isDoubleCoatOnlyBreed,
+  sortByThaiName,
 } from "@/lib/dogs/dog.utills";
 import { buildCreateDogBody } from "@/lib/walkin/walkin/createDogApi";
 
@@ -59,7 +60,7 @@ export default function CreatePetPageView() {
   useEffect(() => {
     fetch("/api/dog/breeds")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
-      .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? data : []))
+      .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? sortByThaiName(data) : []))
       .catch(() => setBreeds([]));
   }, []);
 
@@ -98,7 +99,12 @@ export default function CreatePetPageView() {
     }
     if (!form.weightKg.trim()) e.weightKg = "กรุณากรอกน้ำหนัก";
     else if (!Number.isFinite(Number(form.weightKg)) || Number(form.weightKg) <= 0) e.weightKg = "กรุณากรอกน้ำหนักเป็นตัวเลขที่ถูกต้อง";
-    if (!form.birthDate) e.birthDate = "กรุณาเลือกวันเกิด";
+    if (form.birthDate) {
+      const birth = new Date(`${form.birthDate}T00:00:00`);
+      if (!Number.isNaN(birth.getTime()) && birth > new Date()) {
+        e.birthDate = "วันเกิดต้องไม่เกินวันนี้";
+      }
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -125,10 +131,9 @@ export default function CreatePetPageView() {
       !!form.gender &&
       !!form.breed.trim() &&
       !!effectiveCoatType &&
-      ["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(effectiveCoatType) &&
-      !!form.birthDate
+      ["ขนสั้น", "ขนยาว", "ขนสองชั้น"].includes(effectiveCoatType)
     );
-  }, [form.name, form.gender, form.breed, form.coatType, form.birthDate, breeds]);
+  }, [form.name, form.gender, form.breed, form.coatType, breeds]);
 
   const onSave = async () => {
     setSaveError(null);

@@ -276,7 +276,7 @@ export default function StepSwimming(props: {
         <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/5 p-4">
           <p className="text-sm font-extrabold text-gray-900">สรุป</p>
 
-          <p className="text-sm font-extrabold text-gray-900 mt-2">รายละเอียดราคา</p>
+          <p className="text-sm font-extrabold text-gray-900 mt-2">รายละเอียดราคาประมาณ</p>
           <div className="rounded-2xl bg-white ring-1 ring-black/10 p-4 space-y-3 shadow-sm mt-2">
             <div className="space-y-2">
               {priceBreakdown.map((item) => (
@@ -294,10 +294,12 @@ export default function StepSwimming(props: {
             <div className="h-px bg-black/10" />
 
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-gray-900">รวมทั้งหมด</span>
+              <span className="text-sm font-bold text-gray-900">รวมทั้งหมด (ประมาณ)</span>
               <span className="text-lg font-extrabold text-[#F0A23A]">{total.toLocaleString()} บาท</span>
             </div>
           </div>
+          <p className="mt-2 text-xs text-black/55">
+            * ราคานี้เป็นราคาโดยประมาณ ราคาจริงจะอิงจากน้ำหนักที่ชั่งที่ร้าน</p>
         </div>
       ) : null}
 
@@ -389,7 +391,7 @@ export default function StepSwimming(props: {
         <p className="text-xs text-rose-600 text-center">
           {selectedTime && selectedSlotIsEverReserved
             ? "ไม่สามารถดำเนินการต่อได้ เนื่องจากรอบที่เลือกถูกจองไปแล้ว กรุณาเลือกรอบอื่น"
-            : "กรุณาเลือกวัน + รอบ ให้ครบ (VIP ต้องว่างสนิท และต้องมีโควต้าตามขนาด)"}
+            : "กรุณาเลือกวัน + รอบ ให้ครบ "}
         </p>
       ) : null}
     </section>

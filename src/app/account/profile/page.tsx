@@ -21,6 +21,15 @@ export type ProfileData = {
 };
 
 function Label({ children }: { children: React.ReactNode }) {
+    if (typeof children === "string" && children.endsWith("*")) {
+        const text = children.slice(0, -1);
+        return (
+            <p className="text-sm font-semibold text-black/80 mb-1.5">
+                {text}
+                <span className="text-red-500">*</span>
+            </p>
+        );
+    }
     return <p className="text-sm font-semibold text-black/80 mb-1.5">{children}</p>;
 }
 

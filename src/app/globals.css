@@ -10,6 +10,20 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --text-scale: 1.15;
+  --text-xs: calc(0.75rem * var(--text-scale));
+  --text-sm: calc(0.875rem * var(--text-scale));
+  --text-base: calc(1rem * var(--text-scale));
+  --text-lg: calc(1.125rem * var(--text-scale));
+  --text-xl: calc(1.25rem * var(--text-scale));
+  --text-2xl: calc(1.5rem * var(--text-scale));
+  --text-3xl: calc(1.875rem * var(--text-scale));
+  --text-4xl: calc(2.25rem * var(--text-scale));
+  --text-5xl: calc(3rem * var(--text-scale));
+  --text-6xl: calc(3.75rem * var(--text-scale));
+  --text-7xl: calc(4.5rem * var(--text-scale));
+  --text-8xl: calc(6rem * var(--text-scale));
+  --text-9xl: calc(8rem * var(--text-scale));
 }
 
 @media (prefers-color-scheme: dark) {

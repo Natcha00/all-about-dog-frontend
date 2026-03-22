@@ -121,7 +121,7 @@ export default function StepHealth(props: {
       </div>
 
       <div>
-        <Label>หมู่เลือด<span className="text-red-500">*</span></Label>
+        <Label>หมู่เลือด</Label>
         <Select value={form.bloodType} onChange={(e) => setForm((p) => ({ ...p, bloodType: e.target.value }))}>
           <option value="">โปรดเลือก</option>
           {bloodGroups.map((opt) => (

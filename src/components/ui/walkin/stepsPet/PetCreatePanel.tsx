@@ -8,7 +8,7 @@ import StepHealth from "../StepHealth";
 import type { PetCreateForm } from "@/lib/dogs/dog.type";
 import type { PetPicked } from "@/lib/walkin/walkin/types.mock";
 import { buildCreateDogBody } from "@/lib/walkin/walkin/createDogApi";
-import { isDoubleCoatOnlyBreed } from "@/lib/dogs/dog.utills";
+import { isDoubleCoatOnlyBreed, sortByThaiName } from "@/lib/dogs/dog.utills";
 import { mapDogApiItemToPetPicked } from "@/lib/walkin/walkin/dogToPetPicked";
 import type { DogApiItem } from "@/lib/dogs/dog.type";
 import type { BreedOption } from "../StepBasic";
@@ -61,7 +61,7 @@ export default function PetCreatePanel({
   useEffect(() => {
     fetch("/api/dog/breeds")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
-      .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? data : []))
+      .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? sortByThaiName(data) : []))
       .catch(() => setBreeds([]));
   }, []);
 
@@ -92,9 +92,7 @@ export default function PetCreatePanel({
       e.weightKg = "กรุณากรอกน้ำหนักเป็นตัวเลขที่ถูกต้อง";
     }
 
-    if (!petForm.birthDate) {
-      e.birthDate = "กรุณาเลือกวันเกิด";
-    } else if (isFutureBirthISO(petForm.birthDate)) {
+    if (petForm.birthDate && isFutureBirthISO(petForm.birthDate)) {
       e.birthDate = "วันเกิดต้องไม่เกินวันนี้";
     }
 
@@ -118,7 +116,6 @@ export default function PetCreatePanel({
     const e: Record<string, string> = {};
     if (!petForm.neuterStatus) e.neuterStatus = "กรุณาเลือกประวัติการทำหมัน";
     if (!petForm.microchipStatus) e.microchipStatus = "กรุณาเลือกการฝังไมโครชิป";
-    if (!petForm.bloodType.trim()) e.bloodType = "กรุณาเลือกหมู่เลือด";
     const hasMeal = Object.values(petForm.meals).some(Boolean);
     if (!hasMeal) e.meals = "กรุณาเลือกอย่างน้อย 1 มื้ออาหาร";
     setPetErrors((prev) => ({ ...prev, ...e }));
@@ -219,7 +216,7 @@ export default function PetCreatePanel({
             onClick={handleSubmitCreate}
             className="w-full rounded-2xl py-3 font-extrabold text-white bg-[#F0A23A] active:scale-[0.99] transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {submitting ? "กำลังสร้าง..." : "สร้างสุนัขใหม่ + เลือก"}
+            {submitting ? "กำลังสร้าง..." : "สร้างสุนัขใหม่"}
           </button>
         </div>
       )}

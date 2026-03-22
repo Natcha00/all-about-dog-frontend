@@ -56,11 +56,14 @@ export default function SwimConfirmSummary(props: {
         </div>
 
         <div className="pt-2 border-t border-black/5 flex items-center justify-between">
-          <p className="text-gray-700 font-semibold">ราคารวม</p>
+          <p className="text-gray-700 font-semibold">ราคาประมาณ</p>
           <p className="text-gray-900 font-extrabold">
             {total.toLocaleString()} บาท
           </p>
         </div>
+        <p className="text-xs text-gray-500">
+        ราคาที่แสดงเป็นเพียงการประมาณการ ทั้งนี้ราคาจริงจะอ้างอิงจากการชั่งน้ำหนักที่หน้าร้าน และชำระเงิน ณ จุดให้บริการ
+        </p>
       </div>
     </PoikaiCard>
   );

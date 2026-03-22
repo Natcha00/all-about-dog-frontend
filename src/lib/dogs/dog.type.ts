@@ -21,7 +21,7 @@ export type DogApiItem = {
   color: string;
   weight: number;
   height: number;
-  birthdate: string;
+  birthdate?: string | null;
   dogPictureUrl: string;
   breed: {
     id: number;
@@ -90,14 +90,14 @@ export type DogProfileApiResponse = {
     general: {
       name: string;
       gender: string;
-      age: string;
+      age?: string;
       weightKg: number;
       heightCm: number;
       breed: string;
       color: string;
       coatType: string; // "ขนสั้น" | "ขนยาว" | "ขนสองชั้น"
       size: string;
-      birthday: string;
+      birthday?: string;
     };
     careInfo: {
       sterilized: boolean;
@@ -175,7 +175,7 @@ export type UpdateDogBody = {
   coatType?: CoatTypeValue;
   weight?: number;
   height?: number;
-  birthdate?: string; // ISO date yyyy-mm-dd
+  birthdate?: string | null; // ISO date yyyy-mm-dd
   dogPictureUrl?: string | null;
   healthInfo?: UpdateDogHealthInfo;
   /** เฉพาะ Staff — ลูกค้าไม่ส่ง */

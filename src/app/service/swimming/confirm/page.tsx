@@ -201,17 +201,20 @@ function SwimConfirmPage() {
             </h3>
 
             <p className="mt-2 text-sm text-gray-600">
-              ระบบจะบันทึกรายการและไปยังหน้าสำเร็จทันที
+              ระบบจะบันทึกรายการและไปยังหน้าสำเร็จทันที (ชำระเงินหน้างานหลัง staff อนุมัติ)
             </p>
 
             <div className="mt-4 rounded-2xl bg-[#fff7ea]/60 ring-1 ring-black/5 p-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-black/60">ราคารวม</p>
+                <p className="text-sm text-black/60">ราคาประมาณ</p>
                 <p className="text-sm font-extrabold text-black/90">
                   {pricing.total.toLocaleString()} บาท
                 </p>
               </div>
             </div>
+            <p className="mt-3 text-xs text-gray-600">
+              * ราคานี้เป็นราคาโดยประมาณ การจองจะเริ่มยืนยันเมื่อ staff อนุมัติ และชำระเงินหน้างาน
+            </p>
 
             <div className="mt-6 flex gap-3">
               <button

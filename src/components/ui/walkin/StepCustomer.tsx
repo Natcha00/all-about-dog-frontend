@@ -340,9 +340,14 @@ function Field(props: {
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
 }) {
   const { label, value, onChange, placeholder, inputMode } = props;
+  const isRequired = label.endsWith("*");
+  const labelText = isRequired ? label.slice(0, -1) : label;
   return (
     <div className="space-y-1.5">
-      <p className="text-sm font-semibold text-gray-900">{label}</p>
+      <p className="text-sm font-semibold text-gray-900">
+        {labelText}
+        {isRequired ? <span className="text-red-500">*</span> : null}
+      </p>
       <input
         value={value}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}

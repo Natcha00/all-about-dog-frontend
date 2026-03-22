@@ -12,16 +12,16 @@ const CONTACT = {
   placeName: "All About Dog",
   address:
     "10/1 ทางหลวงชนบทหมายเลข นน.1016 ตำบลบางแม่นาง อำเภอบางใหญ่ จ.นนทบุรี 11140",
-  phones: ["02-2785836", "083-2129756"],
-  email: "allaboutdogcareservice@gmail.com",
-  lineId: "@AllAboutdog",
-  facebookName: "All About Dog โรงแรมสุนัข รับฝากสุนัข",
+  phones: ["082-672-1454"],
+  email: "aboutdogservice@gmail.com",
+  lineId: "@aboutdogservice",
+  facebookName: "About Dog รับฝากสุนัข สระว่ายน้ำ อาบน้ำ ตัดขนสุนัข นนทบุรี",
   // ใช้ลิงก์ embed ของ Google Maps (ใส่ของจริงทีหลังได้)
   mapEmbedSrc:
-    "https://www.google.com/maps?q=13.8167,100.4167&z=15&output=embed",
+    "https://www.google.com/maps?q=13.8714222,100.3766843&z=15&output=embed",
   // ลิงก์นำทาง (Google Maps)
   directionsHref:
-    "https://www.google.com/maps/search/?api=1&query=All%20About%20Dog",
+    "https://maps.app.goo.gl/GLBTmaHN5ai4dzcq5?g_st=il",
 };
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -202,7 +202,7 @@ export default function ContactPage() {
           desc={CONTACT.facebookName}
           right={
             <a
-              href="https://www.facebook.com/"
+              href="https://www.facebook.com/aboutdogservice"
               target="_blank"
               rel="noreferrer"
               className="rounded-2xl bg-white ring-1 ring-black/10 px-4 py-2 text-[13px] font-extrabold text-black/70 active:scale-[0.99] transition"

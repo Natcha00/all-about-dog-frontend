@@ -63,6 +63,8 @@ function BoardingSuccessPage() {
               value: <PoikaiChip tone="success">{nights} คืน</PoikaiChip>,
             },
             { label: "แพ็กเกจ", value: planLabel },
+            { label: "นโยบายห้องพัก", value: "ยังไม่กันห้องจนกว่าจะชำระเงิน" },
+            { label: "เงื่อนไขยกเลิก", value: "ยกเลิกได้ภายใน 7 วันก่อนวันเข้าพัก" },
           ]}
           // selectedContent={petList.length > 0 ? petList.join(", ") : "-"}
           totalValue={`${total.toLocaleString()} บาท`}

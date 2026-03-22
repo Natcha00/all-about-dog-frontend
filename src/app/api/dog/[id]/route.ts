@@ -16,6 +16,15 @@ export async function PUT(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Missing dog id" }, { status: 400 });
     }
     const body = await request.json().catch(() => ({}));
+    if (body && typeof body === "object" && "birthdate" in body) {
+      const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+      const rawBirthdate = String((body as { birthdate?: string | null }).birthdate ?? "").trim();
+      if (!rawBirthdate || !ISO_DATE_RE.test(rawBirthdate)) {
+        delete (body as { birthdate?: string | null }).birthdate;
+      } else {
+        (body as { birthdate?: string | null }).birthdate = rawBirthdate;
+      }
+    }
     const cookieStore = await cookies();
     return withAuthRefresh(cookieStore, async (token) => {
       const base = getBaseUrl();

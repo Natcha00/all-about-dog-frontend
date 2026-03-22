@@ -3,7 +3,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
-import { breedSizeToPetSize, isDoubleCoatOnlyBreed } from "@/lib/dogs/dog.utills";
+import { breedSizeToPetSize, isDoubleCoatOnlyBreed, sortByThaiName } from "@/lib/dogs/dog.utills";
 
 export type BreedOption = { id: number; nameTh: string; nameEng: string; size: string };
 
@@ -24,6 +24,15 @@ const today = todayISO();
 }
 
 function Label({ children }: { children: React.ReactNode }) {
+  if (typeof children === "string" && children.endsWith("*")) {
+    const text = children.slice(0, -1);
+    return (
+      <p className="text-sm font-semibold text-gray-900 mb-1.5">
+        {text}
+        <span className="text-red-500">*</span>
+      </p>
+    );
+  }
   return <p className="text-sm font-semibold text-gray-900 mb-1.5">{children}</p>;
 }
 
@@ -120,7 +129,7 @@ export default function StepBasic(props: {
     if (breedsProp != null) return;
     fetch("/api/dog/breeds")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
-      .then((data: BreedOption[]) => setBreedsFetched(Array.isArray(data) ? data : []))
+      .then((data: BreedOption[]) => setBreedsFetched(Array.isArray(data) ? sortByThaiName(data) : []))
       .catch(() => setBreedsFetched([]));
   }, [breedsProp]);
 
@@ -241,27 +250,15 @@ export default function StepBasic(props: {
           {errors.coatType ? <p className="mt-1 text-xs text-rose-600">{errors.coatType}</p> : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>น้ำหนัก (กก.)*</Label>
-            <Input
-              placeholder="เช่น 10"
-              inputMode="numeric"
-              value={form.weightKg}
-              onChange={(e) => setForm((p) => ({ ...p, weightKg: e.target.value }))}
-              error={errors.weightKg}
-            />
-          </div>
-          <div>
-            <Label>ส่วนสูง (ซม.)</Label>
-            <Input
-              placeholder="เช่น 30"
-              inputMode="numeric"
-              value={form.heightCm ?? ""}
-              onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))}
-              error={errors.heightCm}
-            />
-          </div>
+        <div>
+          <Label>น้ำหนัก (กก.)*</Label>
+          <Input
+            placeholder="เช่น 10"
+            inputMode="numeric"
+            value={form.weightKg}
+            onChange={(e) => setForm((p) => ({ ...p, weightKg: e.target.value }))}
+            error={errors.weightKg}
+          />
         </div>
 
         <div>
@@ -271,7 +268,7 @@ export default function StepBasic(props: {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>วันเกิด*</Label>
+            <Label>วันเกิด</Label>
             <Input
               type="date"
               value={form.birthDate}

@@ -7,8 +7,8 @@ import { BreedOption } from "@/app/api/dog/breeds/route";
 import type { DogProfileApiResponse, VaccineRecordFromProfile } from "./dog.type";
 
 /** Parse "อายุ 1 ปี 6 เดือน" or "1 ปี" -> years number */
-function parseAgeYears(ageStr: string): number {
-  const match = String(ageStr || "").match(/(\d+)\s*ปี/);
+function parseAgeYears(ageStr: string | undefined | null): number {
+  const match = String(ageStr ?? "").match(/(\d+)\s*ปี/);
   return match ? parseInt(match[1], 10) : 0;
 }
 
@@ -85,6 +85,11 @@ export function mapProfileToPetInfoMock(api: DogProfileApiResponse): PetInfoMock
   const mealTime = feedingTimeToMealTime(c.feedingTime);
   const age = parseAgeYears(g.age);
 
+  const rawBirthday = (g.birthday ?? "").trim();
+  const birthday = rawBirthday && rawBirthday !== "-" ? rawBirthday : "-";
+  const rawAge = (g.age ?? "").trim();
+  const ageLabel = rawAge && rawAge !== "-" ? rawAge : "-";
+
   return {
     name: g.name || "-",
     gender: g.gender?.includes("ผู้") ? "male" : "female",
@@ -94,7 +99,8 @@ export function mapProfileToPetInfoMock(api: DogProfileApiResponse): PetInfoMock
     weightKg,
     heightCm,
     size: g.size === "ใหญ่" ? "ใหญ่" : "เล็ก",
-    birthDate: g.birthday || "-",
+    birthDate: birthday,
+    ageLabel,
     age,
     sterilizeHistory: c.sterilized ? "ทำหมันแล้ว" : "ยังไม่เคยทำหมัน",
     microchip: c.microchip ? "มี" : "ไม่มี",

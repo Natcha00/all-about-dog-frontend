@@ -422,8 +422,16 @@ export default function StepConfirm(props: {
       <div className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm text-black/45">ราคารวม</p>
+            <p className="text-sm text-black/45">{isSwimmingDraft(booking) ? "ราคาประมาณ" : "ราคารวม"}</p>
             <p className="text-3xl font-extrabold text-gray-900 mt-1">{total.toLocaleString()} บาท</p>
+            {isSwimmingDraft(booking) ? (
+              <p className="mt-1 text-xs  text-red-500">
+* ราคานี้เป็นราคาโดยประมาณ ราคาจริงจะอิงจากน้ำหนักที่ชั่งที่ร้าน</p>
+            ) : isBoardingDraft(booking) ? (
+              <p className="mt-1 text-xs text-red-500">
+                * ห้องจะถูกสำรองเมื่อชำระเงินเรียบร้อยแล้วเท่านั้น
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -565,10 +573,19 @@ export default function StepConfirm(props: {
               ) : null}
               <div className="rounded-2xl bg-[#fff7ea]/60 ring-1 ring-black/5 p-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-black/60">ราคารวม</p>
+                  <p className="text-sm text-black/60">{isSwimmingDraft(booking) ? "ราคาประมาณ" : "ราคารวม"}</p>
                   <p className="text-sm font-extrabold text-black/90">{total.toLocaleString()} บาท</p>
                 </div>
               </div>
+              {isSwimmingDraft(booking) ? (
+                <p className="mt-3 text-xs text-black/60">
+                  * สำหรับว่ายน้ำ ชำระเงินหน้างาน และการจองจะเริ่มยืนยันเมื่อ staff อนุมัติ
+                </p>
+              ) : isBoardingDraft(booking) ? (
+                <p className="mt-3 text-xs text-black/60">
+                  * สำหรับฝากเลี้ยง หากยังไม่ชำระเงิน ระบบยังไม่กันห้องให้ และสามารถยกเลิกได้ภายใน 7 วันก่อนวันเข้าพัก
+                </p>
+              ) : null}
 
               <div className="mt-4 flex gap-3">
                 <button

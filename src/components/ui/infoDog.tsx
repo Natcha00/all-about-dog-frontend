@@ -27,6 +27,7 @@ export interface PetInfoMock {
     heightCm: number;
     size: "เล็ก" | "ใหญ่";
     birthDate: string;
+    ageLabel?: string;
     age: number;
 
     sterilizeHistory: string;
@@ -181,7 +182,14 @@ function parseBirthDate(birthDate: string): Date | null {
   
 export default function InfoDog({ currentItem, petInfoMock }: InfoDogProps) {
     if (currentItem !== "info") return null;
-    const age = calcAgeThai(petInfoMock.birthDate);
+    const normalizedBirthDate =
+      !petInfoMock.birthDate || petInfoMock.birthDate.trim() === "-" ? "" : petInfoMock.birthDate.trim();
+    const fallbackAge = normalizedBirthDate ? calcAgeThai(normalizedBirthDate).label : "-";
+    const ageDisplay =
+      petInfoMock.ageLabel && petInfoMock.ageLabel.trim() !== "" && petInfoMock.ageLabel.trim() !== "-"
+        ? petInfoMock.ageLabel.trim()
+        : fallbackAge;
+    const birthdayDisplay = normalizedBirthDate || "-";
 
     const genderText = petInfoMock.gender === "male" ? "ผู้" : "เมีย";
     const mealTimeText =
@@ -203,14 +211,14 @@ export default function InfoDog({ currentItem, petInfoMock }: InfoDogProps) {
             <div className="space-y-3">
                 <Section title="ข้อมูลพื้นฐาน" subtitle="รายละเอียดทั่วไปของน้อง">
                     <Row icon={<PawPrint className="h-4 w-4" />} label="ชื่อ" value={petInfoMock.name} />
-                    <Row icon={<CalendarDays className="h-4 w-4" />} label="อายุ" value={age.label} />
+                    <Row icon={<CalendarDays className="h-4 w-4" />} label="อายุ" value={ageDisplay} />
                     <Row icon={<Weight className="h-4 w-4" />} label="น้ำหนัก" value={`${petInfoMock.weightKg} กก.`} />
                     <Row icon={<Ruler className="h-4 w-4" />} label="ส่วนสูง" value={`${petInfoMock.heightCm} ซม.`} />
                     <Row icon={<Dog className="h-4 w-4" />} label="สายพันธุ์" value={petInfoMock.breed.nameTh || "-"} />
                     <Row icon={<Droplets className="h-4 w-4" />} label="สี" value={petInfoMock.color || "-"} />
                     <Row icon={<Layers className="h-4 w-4" />} label="ประเภทขน" value={petInfoMock.coatType || "-"} />
                     <Row icon={<PawPrint className="h-4 w-4" />} label="ขนาด" value={petInfoMock.size} />
-                    <Row icon={<CalendarDays className="h-4 w-4" />} label="วันเกิด" value={petInfoMock.birthDate || "-"} />
+                    <Row icon={<CalendarDays className="h-4 w-4" />} label="วันเกิด" value={birthdayDisplay} />
                 </Section>
 
                 <Section title="ข้อมูลสุขภาพและทั่วไป" subtitle="ข้อมูลสำคัญสำหรับการดูแล">

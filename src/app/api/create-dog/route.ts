@@ -11,6 +11,14 @@ import { withAuthRefresh, getBaseUrl } from "@/lib/auth/serverWithRefresh";
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as CreateDogBody;
+    const normalizedBody = { ...body } as CreateDogBody & { birthdate?: string | null };
+    const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+    const rawBirthdate = String(normalizedBody.birthdate ?? "").trim();
+    if (!rawBirthdate || !ISO_DATE_RE.test(rawBirthdate)) {
+      delete normalizedBody.birthdate;
+    } else {
+      normalizedBody.birthdate = rawBirthdate;
+    }
     const base = getBaseUrl();
     const url = `${base}${CREATE_DOG_BACKEND_PATH}`;
     const cookieStore = await cookies();
@@ -23,7 +31,7 @@ export async function POST(request: Request) {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(normalizedBody),
       })
     );
   } catch (e) {
