@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 type ReservationApiCounts = {
   pending: number;
   waiting_slip: number;
+  pay_at_store: number;
   slip_uploaded: number;
   slip_verified: number;
   check_in: number;
@@ -45,6 +46,7 @@ type ReservationApiResponse = {
 const TAB_KEYS: TabKey[] = [
   "pending",
   "waiting_slip",
+  "pay_at_store",
   "slip_uploaded",
   "slip_verified",
   "check_in",
@@ -59,6 +61,7 @@ function normalizeTab(param: string | null): TabKey {
   // อนุญาตให้ใช้ทั้งชื่อ tab ฝั่ง UI และ key ฝั่ง backend บางส่วนผ่าน URL
   if (TAB_KEYS.includes(param as TabKey)) return param as TabKey;
   // รองรับ alias เก่าจาก URL เดิม
+  if (param === "payAtStore") return "pay_at_store";
   if (param === "waitingSlip") return "waiting_slip";
   if (param === "slipVerified") return "slip_verified";
   if (param === "active") return "check_in";
@@ -75,6 +78,8 @@ function mapStatusFromBackend(status: string): Booking["status"] {
     case "waiting_slip":
       // รวม waiting_slip / slip_uploaded อยู่ในกลุ่มรอชำระเงิน / สลิป
       return "waiting_slip";
+    case "pay_at_store":
+      return "pay_at_store";
     case "slip_uploaded":
       return "slip_uploaded";
     case "slip_verified":
@@ -94,7 +99,7 @@ function mapStatusFromBackend(status: string): Booking["status"] {
 }
 
 function mapTabToBackend(tab: TabKey): string {
-  // TabKey ตรงกับ key ฝั่ง backend อยู่แล้ว
+  // ต้องตรงกับ ReservationStatusEnum บน backend (เช่น pay_at_store มี underscore)
   return tab;
 }
 
@@ -103,6 +108,7 @@ function mapCounts(apiCounts: ReservationApiCounts | null): Record<TabKey, numbe
     return {
       pending: 0,
       waiting_slip: 0,
+      pay_at_store: 0,
       slip_uploaded: 0,
       slip_verified: 0,
       check_in: 0,
@@ -114,6 +120,7 @@ function mapCounts(apiCounts: ReservationApiCounts | null): Record<TabKey, numbe
   return {
     pending: apiCounts.pending ?? 0,
     waiting_slip: apiCounts.waiting_slip ?? 0,
+    pay_at_store: apiCounts.pay_at_store ?? 0,
     slip_uploaded: apiCounts.slip_uploaded ?? 0,
     slip_verified: apiCounts.slip_verified ?? 0,
     check_in: apiCounts.check_in ?? 0,
@@ -175,6 +182,7 @@ function mapItemToBooking(item: ReservationApiItem): Booking {
     endAt,
     slotLabel,
     price: item.totalPrice ?? 0,
+    ...(item.statusLabel ? { detailStatusLabel: item.statusLabel } : {}),
     ...(reason !== undefined && { cancelledReason: reason }),
     ...(cancelledByNormalized !== undefined && { cancelledBy: cancelledByNormalized }),
     ...(byStaffName !== undefined && { cancelledByStaffName: byStaffName }),
@@ -195,6 +203,7 @@ export default function BookingsPage() {
   const [pageByTab, setPageByTab] = useState<Record<TabKey, number>>({
     pending: 1,
     waiting_slip: 1,
+    pay_at_store: 1,
     slip_uploaded: 1,
     slip_verified: 1,
     check_in: 1,

@@ -7,10 +7,12 @@ export function mapStatusFromBackend(status: string): BookingStatus {
       return "pending";
     case "waiting_slip":
       return "waiting_slip";
-    case "slip_uploaded":
-      return "slip_uploaded";
-    case "slip_verified":
-      return "slip_verified";
+      case "slip_uploaded":
+        return "slip_uploaded";
+        case "slip_verified":
+          return "slip_verified";
+          case "pay_at_store":
+            return "pay_at_store";
     case "check_in":
     case "check-in":
       return "check-in";
@@ -85,14 +87,19 @@ export function mapDetailToBooking(detail: ReservationDetailResult): Booking {
     endAt,
     slotLabel,
     price: detail.totalPrice ?? 0,
-  } as Booking;
+    actions: detail.actions ?? undefined,
+    slip: detail.slip ?? undefined,
+    timeline: detail.timeline ?? [],
+    paymentMethod:
+      detail.paymentMethod === undefined ? undefined : detail.paymentMethod,
+    statusHint: detail.statusHint ?? undefined,
+    detailStatusLabel: detail.statusLabel ?? undefined,
+  };
 
-  (booking as any).groups = detail.groups ?? [];
-  (booking as any).note = detail.note ?? null;
-  (booking as any).actions = detail.actions ?? null;
-  (booking as any).slip = detail.slip ?? null;
-  (booking as any).timeline = detail.timeline ?? [];
-  (booking as any).plan = 1;
+  const b = booking as Booking & { groups?: unknown[]; note?: unknown | null; plan?: number };
+  b.groups = detail.groups ?? [];
+  b.note = detail.note ?? null;
+  b.plan = 1;
 
   const anyDetail = detail as {
     cancelledReason?: string;

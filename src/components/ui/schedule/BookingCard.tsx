@@ -12,6 +12,8 @@ function statusLabel(s: Booking["status"]) {
       return "รออนุมัติ";
     case "waiting_slip":
       return "รอชำระเงิน";
+    case "pay_at_store":
+      return "รอชำระหน้าร้าน";
     case "slip_uploaded":
       return "รอตรวจสลิป";
     case "slip_verified":

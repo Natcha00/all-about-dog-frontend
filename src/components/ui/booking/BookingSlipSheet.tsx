@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import BottomSheetModal from "@/components/ui/BottomSheetModal";
+import ConfirmActionDialog from "@/components/ui/booking/ConfirmActionDialog";
 import AppImage from "@/components/ui/AppImage";
 import { DEFAULT_IMAGE } from "@/lib/constants";
 import { formatDateTimeThai } from "@/lib/date/date.utils";
@@ -75,11 +76,13 @@ function SlipUploadPanel({
   disabled?: boolean;
   defaultPreview?: string | null;
   onPick: (file: File, previewUrl: string) => void;
-  onSubmit: () => void;
+  onSubmit: () => boolean | Promise<boolean>;
 }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(defaultPreview ?? null);
   const [fileName, setFileName] = useState<string>("");
   const [openPreview, setOpenPreview] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     if (!previewUrl) setOpenPreview(false);
@@ -164,14 +167,33 @@ function SlipUploadPanel({
                 ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                 : "bg-[#F0A23A] text-white hover:bg-[#e99625]",
             ].join(" ")}
-            onClick={onSubmit}
+            onClick={() => setConfirmOpen(true)}
           >
             ส่ง
           </button>
         </div>
-
-        <p className="text-xs text-black/45">* หลังส่งแล้ว staff จะตรวจสอบและอัปเดตสถานะการชำระเงิน</p>
       </div>
+
+      <ConfirmActionDialog
+        open={confirmOpen}
+        title="ยืนยันการแนบสลิป"
+        description="กรุณาตรวจสอบรูปและยอดเงินให้ถูกต้องก่อนส่ง"
+        confirmText="ยืนยันแนบ"
+        loading={confirmLoading}
+        confirmButtonClassName="bg-[#F0A23A] text-white hover:bg-[#e99625]"
+        onClose={() => {
+          if (!confirmLoading) setConfirmOpen(false);
+        }}
+        onConfirm={async () => {
+          setConfirmLoading(true);
+          try {
+            const ok = await Promise.resolve(onSubmit());
+            if (ok) setConfirmOpen(false);
+          } finally {
+            setConfirmLoading(false);
+          }
+        }}
+      />
 
       <ImagePreviewModal
         open={openPreview}
@@ -189,7 +211,7 @@ type BookingSlipSheetProps = {
   disabled: boolean;
   defaultPreview?: string | null;
   onPick: (file: File, previewUrl: string) => void;
-  onSubmit: () => void;
+  onSubmit: () => boolean | Promise<boolean>;
 };
 
 export default function BookingSlipSheet({

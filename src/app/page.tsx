@@ -28,6 +28,7 @@ type DogOwnerProfile = {
 type ReservationCounts = {
   pending: number;
   waiting_slip: number;
+  pay_at_store?: number;
   slip_uploaded: number;
   slip_verified: number;
   check_in: number;

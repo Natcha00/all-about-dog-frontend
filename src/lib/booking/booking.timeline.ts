@@ -100,6 +100,7 @@ export function buildMockHistory(status: BookingStatus): HistoryItem[] {
   const statusToKeys: Record<BookingStatus, HistoryItem["key"][]> = {
     pending: ["created"],
     waiting_slip: ["created", "waiting_slip"],
+    pay_at_store: ["created", "waiting_slip"],
     slip_uploaded: ["created", "waiting_slip", "slip_uploaded"],
     slip_verified: ["created", "waiting_slip", "slip_uploaded", "slip_verified"],
     "check-in": ["created", "waiting_slip", "slip_uploaded", "slip_verified", "check_in"],

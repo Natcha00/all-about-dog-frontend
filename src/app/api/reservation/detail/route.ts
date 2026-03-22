@@ -35,9 +35,11 @@ export type ReservationDetailResult = {
   totalPrice: number;
   groups: ReservationDetailGroup[];
   note?: string | null;
+  paymentMethod?: "cash" | "slip" | null;
   actions?: {
     canViewTimeline?: boolean;
     canUploadSlip?: boolean;
+    canSelectPaymentMethod?: boolean;
     canCancel?: boolean;
     cancelHint?: string;
   };

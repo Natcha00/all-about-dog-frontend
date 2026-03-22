@@ -59,7 +59,7 @@ export default function BookingCardItem({
   onViewHistory?: (bookingId: string) => void;
 }) {
   const tone = statusTone(b.status);
-  const statusText = statusLabel(b.status);
+  const statusText = b.detailStatusLabel ?? statusLabel(b.status);
 
   const petsText = useMemo(() => {
     const names = petsList(b);

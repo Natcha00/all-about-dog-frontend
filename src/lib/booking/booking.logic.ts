@@ -7,6 +7,8 @@ export function statusToTab(status: BookingStatus): TabKey {
       return "pending";
     case "waiting_slip":
       return "waiting_slip";
+    case "pay_at_store":
+      return "pay_at_store";
     case "slip_uploaded":
       return "slip_uploaded";
     case "slip_verified":
@@ -26,6 +28,12 @@ export function tabMeta(tab: TabKey) {
       return { label: "รออนุมัติ", hint: "รอร้านอนุมัติ", tone: "neutral" as const };
     case "waiting_slip":
       return { label: "รอชำระเงิน", hint: "ลูกค้าต้องชำระเงิน", tone: "warning" as const };
+    case "pay_at_store":
+      return {
+        label: "รอชำระหน้าร้าน",
+        hint: "รอมาชำระหรือรอยืนยันที่ร้าน",
+        tone: "warning" as const,
+      };
     case "slip_uploaded":
       return { label: "รอตรวจสลิป", hint: "สลิปถูกอัปโหลดแล้ว", tone: "warning" as const };
     case "slip_verified":
@@ -47,6 +55,8 @@ export function statusLabel(status: BookingStatus) {
       return "รออนุมัติ";
     case "waiting_slip":
       return "รอชำระเงิน";
+    case "pay_at_store":
+      return "รอชำระหน้าร้าน";
     case "slip_uploaded":
       return "รอตรวจสลิป";
     case "slip_verified":
@@ -85,7 +95,8 @@ export function formatDateRange(b: Booking) {
   export function statusTone(status: BookingStatus) {
     if (status === "cancelled" || status === "rejected") return "danger" as const;
     if (status === "finished") return "success" as const;
-    if (status === "waiting_slip" || status === "slip_uploaded") return "warning" as const;
+    if (status === "waiting_slip" || status === "pay_at_store" || status === "slip_uploaded")
+      return "warning" as const;
     if (status === "slip_verified") return "success" as const;
     if (status === "check-in") return "info" as const;
     return "neutral" as const;

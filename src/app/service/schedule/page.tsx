@@ -36,6 +36,8 @@ function mapStatusFromBackend(status: string): Booking["status"] {
       return "pending";
     case "waiting_slip":
       return "waiting_slip";
+    case "pay_at_store":
+      return "pay_at_store";
     case "slip_uploaded":
       return "slip_uploaded";
     case "slip_verified":

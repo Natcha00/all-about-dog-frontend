@@ -5,6 +5,7 @@ export type BookingStatus =
   | "waiting_slip"
   | "slip_uploaded"
   | "slip_verified"
+  | "pay_at_store"
   | "check-in"
   | "finished"
   | "cancelled"
@@ -17,6 +18,7 @@ export type TabKey =
   | "waiting_slip"
   | "slip_uploaded"
   | "slip_verified"
+  | "pay_at_store"
   | "check_in"
   | "finished"
   | "cancelled";
@@ -59,7 +61,35 @@ export type Booking = {
 
   slip?: {
     imageUrl?: string;
+    required?: boolean;
+    status?: string;
   };
+
+  /** จาก GET /reservation/detail — ขับ UI ชำระเงิน / step */
+  actions?: {
+    canViewTimeline?: boolean;
+    canUploadSlip?: boolean;
+    canSelectPaymentMethod?: boolean;
+    canCancel?: boolean;
+    cancelHint?: string;
+  };
+
+  /** หลังเลือกชำระเงิน (boarding) — จาก detail */
+  paymentMethod?: "slip" | "cash" | null;
+
+  /** คำอธิบายให้ลูกค้า — ใช้แทนการ hardcode ตามบริการ */
+  statusHint?: string;
+
+  /** statusLabel จาก API (ถ้ามี) */
+  detailStatusLabel?: string;
+
+  timeline?: Array<{
+    key: string;
+    label: string;
+    at: string | null;
+    performedByName: string | null;
+    detail?: string | null;
+  }>;
   verifiedBy?: string;
   verifiedAt?: string;
 

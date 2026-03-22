@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ImagePlus, History } from "lucide-react";
 
@@ -10,6 +10,7 @@ import PageLoading from "@/components/ui/PageLoading";
 import BookingHistorySheet from "@/components/ui/booking/BookingHistorySheet";
 import BookingSlipSheet from "@/components/ui/booking/BookingSlipSheet";
 import CancelBookingDialog from "@/components/ui/booking/CancelBookingDialog";
+import OwnerBookingPaymentMethodStep from "@/components/ui/booking/OwnerBookingPaymentMethodStep";
 
 import type { Booking } from "@/lib/booking/booking.types";
 import { mapDetailToBooking } from "@/lib/booking/booking.detail-mapper";
@@ -30,6 +31,7 @@ type BookingStatus = Booking["status"];
 const STATUS_LABEL: Record<BookingStatus, string> = {
   pending: "รออนุมัติ",
   waiting_slip: "รอชำระเงิน",
+  pay_at_store: "รอชำระหน้าร้าน",
   slip_uploaded: "รอตรวจสลิป",
   slip_verified: "ชำระเงินสำเร็จ",
   "check-in": "กำลังใช้บริการ",
@@ -40,6 +42,35 @@ const STATUS_LABEL: Record<BookingStatus, string> = {
 
 function serviceLabel(t: Booking["serviceType"]) {
   return t === "boarding" ? "ฝากเลี้ยง" : "ว่ายน้ำ";
+}
+
+/**
+ * อัปโหลด/แก้ไขสลิป
+ * - `slip_uploaded` (รอตรวจสลิป): ให้แก้ไขได้เสมอจนกว่า staff จะอนุมัติ → `slip_verified` ฯลฯ
+ * - ช่วงอื่น: เชื่อ `actions.canUploadSlip` จาก API ถ้ามี; ไม่งั้น fallback ฝากเลี้ยง + waiting_slip
+ */
+function deriveCanUploadSlip(b: Booking): boolean {
+  if (b.status === "slip_uploaded") return true;
+
+  const ac = b.actions;
+  if (typeof ac?.canUploadSlip === "boolean") return ac.canUploadSlip;
+  return (
+    b.serviceType === "boarding" &&
+    b.status === "waiting_slip" &&
+    b.paymentMethod !== "cash"
+  );
+}
+
+function deriveCanSelectPaymentMethod(b: Booking): boolean {
+  const ac = b.actions;
+  if (typeof ac?.canSelectPaymentMethod === "boolean") return ac.canSelectPaymentMethod;
+  const canUp = deriveCanUploadSlip(b);
+  return (
+    b.serviceType === "boarding" &&
+    b.status === "waiting_slip" &&
+    b.paymentMethod == null &&
+    !canUp
+  );
 }
 
 /* =========================
@@ -138,14 +169,17 @@ export default function BookingDetailPage() {
   const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
   const [uploadingSlip, setUploadingSlip] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [paymentSelecting, setPaymentSelecting] = useState(false);
 
-  useEffect(() => {
-    if (!id) return;
-
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
+  const loadDetail = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!id) return;
+      const silent = Boolean(opts?.silent);
+      if (silent) setRefreshing(true);
+      else {
+        setLoading(true);
+      }
       setError(null);
       try {
         const url = `/api/reservation/detail?code=${encodeURIComponent(id)}`;
@@ -153,7 +187,6 @@ export default function BookingDetailPage() {
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          if (cancelled) return;
           setError((data as any)?.error ?? "ไม่สามารถโหลดรายละเอียดการจองได้");
           setBooking(null);
           return;
@@ -161,29 +194,27 @@ export default function BookingDetailPage() {
 
         const detail = (data as any)?.result as ReservationDetailResult | undefined;
         if (!detail) {
-          if (cancelled) return;
           setError("ไม่พบรายละเอียดการจอง");
           setBooking(null);
           return;
         }
 
-        if (cancelled) return;
         setBooking(mapDetailToBooking(detail));
+        setLocalStatus(null);
       } catch (e) {
-        if (cancelled) return;
         setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการโหลดรายละเอียดการจอง");
         setBooking(null);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (silent) setRefreshing(false);
+        else setLoading(false);
       }
-    }
+    },
+    [id],
+  );
 
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  useEffect(() => {
+    void loadDetail();
+  }, [loadDetail]);
 
   const b = localStatus && booking ? ({ ...booking, status: localStatus } as Booking) : booking;
 
@@ -241,7 +272,7 @@ export default function BookingDetailPage() {
     const isBoarding = b.serviceType === "boarding";
 
     return [
-      { label: "สถานะ", value: STATUS_LABEL[b.status] },
+      { label: "สถานะ", value: b.detailStatusLabel ?? STATUS_LABEL[b.status] },
       { label: "รายการจอง", value: b.id },
       { label: "ประเภทบริการ", value: serviceLabel(b.serviceType) },
 
@@ -297,10 +328,16 @@ export default function BookingDetailPage() {
     return items;
   }, [b, cancelledTimelineDetail]);
 
-  async function handleSubmitSlip() {
-    if (!slipFile || !b || uploadingSlip) return;
+  async function handleSubmitSlip(): Promise<boolean> {
+    if (!slipFile || !b || uploadingSlip) return false;
     try {
       setUploadingSlip(true);
+
+      if (b.paymentMethod !== "slip") {
+        const selected = await handleSelectPaymentMethod("slip");
+        if (!selected) return false;
+      }
+
       const form = new FormData();
       form.append("code", b.id);
       form.append("file", slipFile);
@@ -313,18 +350,53 @@ export default function BookingDetailPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        // simple alert for now; can replace with toast later
-        alert((data as any)?.error ?? "อัปโหลดสลิปไม่สำเร็จ");
-        return;
+        alert(
+          (data as any)?.message ??
+            (data as any)?.error ??
+            "อัปโหลดสลิปไม่สำเร็จ",
+        );
+        return false;
       }
 
       alert("อัปโหลดสลิปสำเร็จ");
-      setLocalStatus("slip_uploaded");
+      setSlipFile(null);
+      setSlipPreview(null);
       setOpenSlip(false);
+      await loadDetail({ silent: true });
+      return true;
     } catch (e) {
       alert(e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการอัปโหลดสลิป");
+      return false;
     } finally {
       setUploadingSlip(false);
+    }
+  }
+
+  async function handleSelectPaymentMethod(method: "slip" | "cash"): Promise<boolean> {
+    if (!b || paymentSelecting) return false;
+    try {
+      setPaymentSelecting(true);
+      const res = await fetch("/api/reservation/payment/select", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: b.id, method }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(
+          (data as any)?.message ??
+            (data as any)?.error ??
+            "เลือกวิธีชำระเงินไม่สำเร็จ",
+        );
+        return false;
+      }
+      await loadDetail({ silent: true });
+      return true;
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการเลือกวิธีชำระเงิน");
+      return false;
+    } finally {
+      setPaymentSelecting(false);
     }
   }
 
@@ -386,9 +458,22 @@ export default function BookingDetailPage() {
     );
   }
 
-  const canCancel = b.status === "pending";
-  const canUploadSlip = b.status === "waiting_slip" || b.status === "slip_uploaded";
+  const canCancel =
+    typeof b.actions?.canCancel === "boolean" ? b.actions.canCancel : b.status === "pending";
+  const canUploadSlip = deriveCanUploadSlip(b);
+  const canSelectPaymentMethod = deriveCanSelectPaymentMethod(b);
   const hasUploadedSlip = b.status === "slip_uploaded";
+  const showBankTransfer =
+    b.serviceType === "boarding" &&
+    b.paymentMethod === "slip" &&
+    (b.status === "waiting_slip" || b.status === "slip_uploaded");
+
+  /** สอดคล้อง staff BookingActions: ขั้น 1 เมื่อยังไม่เลือก slip */
+  const showPickPayment = canSelectPaymentMethod && b.paymentMethod !== "slip";
+  /** ขั้น 2: อัปโหลดเมื่อ API อนุญาต และ (เลือก slip แล้ว หรือไม่มีขั้นเลือกซ้ำ) */
+  const showUploadSlipSection =
+    canUploadSlip && (b.paymentMethod === "slip" || !canSelectPaymentMethod);
+
 
   const showQr = b.status === "slip_verified" || b.status === "check-in" || b.status === "finished";
 
@@ -400,6 +485,10 @@ export default function BookingDetailPage() {
       <SuccessHeader serviceLabel="รายละเอียดการจอง" />
 
       <div className="mx-auto w-full max-w-md space-y-4">
+        {refreshing ? (
+          <p className="text-center text-[11px] text-black/40">กำลังอัปเดตสถานะ…</p>
+        ) : null}
+
         <div className="rounded-2xl bg-white/80 ring-1 ring-black/5 shadow-sm px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -408,16 +497,29 @@ export default function BookingDetailPage() {
             </div>
 
             <span className="shrink-0 rounded-full bg-black/[0.06] px-3 py-1 text-xs font-bold text-black/70">
-              {STATUS_LABEL[b.status]}
+              {b.detailStatusLabel ?? STATUS_LABEL[b.status]}
             </span>
           </div>
 
-          <p className="mt-2 text-xs text-black/45">
-            {canUploadSlip ? "แนบสลิปเพื่อให้พนักงานตรวจสอบ" : "การแนบสลิปจะเปิดได้เฉพาะสถานะที่กำหนด"}
-          </p>
+
+          {b.paymentMethod === "slip" || b.paymentMethod === "cash" ? (
+            <p className="mt-1.5 text-[11px] font-semibold text-black/50">
+              วิธีชำระที่เลือก:{" "}
+              {b.paymentMethod === "slip" ? "โอนสลิป" : "ชำระหน้าร้าน"}
+            </p>
+          ) : null}
         </div>
 
-        {b.status === "waiting_slip" ? (
+        {showPickPayment ? (
+          <OwnerBookingPaymentMethodStep
+            serviceType={b.serviceType}
+            loading={paymentSelecting}
+            onSelectSlip={() => handleSelectPaymentMethod("slip")}
+            onSelectCash={() => handleSelectPaymentMethod("cash")}
+          />
+        ) : null}
+
+        {showBankTransfer ? (
           <div className="rounded-2xl bg-white ring-1 ring-black/10 px-4 py-3 text-center">
             <p className="text-[11px] font-bold text-black/45">โอนเข้าบัญชี</p>
             <p className="mt-0.5 text-xs font-extrabold text-black/80">
@@ -435,29 +537,33 @@ export default function BookingDetailPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setOpenHistory(true)}
-            className="rounded-2xl bg-white ring-1 ring-black/10 py-4 font-extrabold text-black/90 active:scale-[0.99] transition flex items-center justify-center gap-2"
-          >
-            <History className="h-5 w-5 text-black/60" />
-            ประวัติสถานะ
-          </button>
-
-          <button
-            type="button"
-            disabled={!canUploadSlip}
-            onClick={() => setOpenSlip(true)}
-            className={[
-              "rounded-2xl py-4 font-extrabold active:scale-[0.99] transition flex items-center justify-center gap-2",
-              canUploadSlip ? "bg-[#111] text-white" : "bg-gray-200 text-gray-500",
-            ].join(" ")}
-          >
-            <ImagePlus className="h-5 w-5" />
-            {hasUploadedSlip ? "แก้ไขรูปภาพสลิป" : "แนบสลิป"}
-          </button>
-        </div>
+        {showUploadSlipSection ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-black/50 px-0.5">
+              {hasUploadedSlip
+                ? "แก้ไขสลิป — รอพนักงานตรวจ (อัปโหลดใหม่ได้จนกว่าจะอนุมัติ)"
+                : "ขั้นที่ 2 — แนบหลักฐานการโอน"}
+            </p>
+            {b.serviceType === "boarding" ? (
+              <p className="text-[10px] text-slate-600 leading-relaxed rounded-xl bg-slate-50 ring-1 ring-slate-100 px-2.5 py-2">
+                <span className="font-semibold text-slate-800">นโยบายคืนเงิน:</span> แจ้งก่อนวันฝาก 7 วันขึ้นไป
+                คืนเต็มจำนวน • ภายใน 7 วันก่อนวันฝาก คืน 50% • แจ้งในวันฝาก ไม่คืนทุกกรณี
+              </p>
+            ) : null}
+            <button
+              type="button"
+              disabled={!canUploadSlip}
+              onClick={() => setOpenSlip(true)}
+              className={[
+                "w-full rounded-2xl py-4 font-extrabold active:scale-[0.99] transition flex items-center justify-center gap-2",
+                canUploadSlip ? "bg-[#111] text-white" : "bg-gray-200 text-gray-500",
+              ].join(" ")}
+            >
+              <ImagePlus className="h-5 w-5" />
+              {hasUploadedSlip ? "แก้ไขรูปภาพสลิป" : "แนบสลิป"}
+            </button>
+          </div>
+        ) : null}
 
         {/* ✅ QR */}
         {showQr ? (
@@ -479,6 +585,17 @@ export default function BookingDetailPage() {
           title=""
           subtitle=""
           rows={rows}
+          detailsHeaderAction={
+            <button
+              type="button"
+              onClick={() => setOpenHistory(true)}
+              className="inline-flex items-center gap-1 rounded-full bg-black/[0.06] px-2.5 py-1.5 text-[11px] font-extrabold text-black/70 ring-1 ring-black/10 active:scale-[0.98] transition"
+              aria-label="ประวัติสถานะ"
+            >
+              <History className="h-3.5 w-3.5 shrink-0 text-black/55" aria-hidden />
+              <span className="whitespace-nowrap">ประวัติ</span>
+            </button>
+          }
           totalValue={
             <span className="text-black/60">-</span>
           }
@@ -521,7 +638,7 @@ export default function BookingDetailPage() {
         open={openHistory}
         onClose={() => setOpenHistory(false)}
         items={historyItems}
-        currentStatusLabel={STATUS_LABEL[b.status]}
+        currentStatusLabel={b.detailStatusLabel ?? STATUS_LABEL[b.status]}
       />
 
       <BookingSlipSheet
@@ -532,7 +649,6 @@ export default function BookingDetailPage() {
         onPick={(file, previewUrl) => {
           setSlipFile(file);
           setSlipPreview(previewUrl);
-          setLocalStatus("slip_uploaded");
         }}
         onSubmit={handleSubmitSlip}
       />

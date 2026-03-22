@@ -134,6 +134,7 @@ export default function SuccessSummaryCard({
   title = "",
   subtitle = "",
   rows,
+  detailsHeaderAction,
   selectedContent,
   // totalLabel = "ราคารวม",
   totalValue,
@@ -152,6 +153,8 @@ export default function SuccessSummaryCard({
   title?: string;
   subtitle?: string;
   rows: SummaryRow[];
+  /** e.g. compact “ประวัติสถานะ” control aligned top-right of the details section */
+  detailsHeaderAction?: React.ReactNode;
   selectedTitle?: string;
   selectedContent?: React.ReactNode;
   totalLabel?: string;
@@ -234,8 +237,15 @@ export default function SuccessSummaryCard({
         {/* 1) Details */}
         <section className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
           <div className="px-4 py-3 border-b border-black/5">
-            <p className="text-sm font-semibold text-gray-900">รายละเอียด</p>
-            <p className="text-xs text-gray-500 mt-0.5">ตรวจสอบข้อมูลก่อนยืนยัน</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900">รายละเอียด</p>
+                <p className="text-xs text-gray-500 mt-0.5">ตรวจสอบข้อมูลก่อนยืนยัน</p>
+              </div>
+              {detailsHeaderAction ? (
+                <div className="shrink-0 pt-0.5">{detailsHeaderAction}</div>
+              ) : null}
+            </div>
           </div>
 
           <div className="px-4">

@@ -5,7 +5,7 @@ import type { Booking } from "@/lib/booking/booking.types";
 import AppImage from "@/components/ui/AppImage";
 
 function canUpload(b: Booking) {
-  return b.status === "waiting_slip";
+  return b.status === "waiting_slip" || b.status === "slip_uploaded";
 }
 
 export default function UploadSlipCard({
@@ -24,7 +24,8 @@ export default function UploadSlipCard({
   const disabled = !canUpload(b);
 
   const helperText = useMemo(() => {
-    if (b.status === "slip_uploaded") return "อัปโหลดแล้ว กำลังรอพนักงานตรวจสอบ";
+    if (b.status === "slip_uploaded")
+      return "รอพนักงานตรวจสลิป — แก้ไข/อัปโหลดใหม่ได้จนกว่าจะได้รับการอนุมัติ";
     if (b.status === "slip_verified") return "ตรวจสอบแล้ว ✅";
     if (b.status === "cancelled") return "รายการถูกยกเลิก ไม่สามารถแนบสลิปได้";
     if (b.status === "pending") return "รออนุมัติการจองก่อน";
@@ -87,7 +88,7 @@ export default function UploadSlipCard({
           <p className="mt-1 text-[13px] text-black/45">{helperText}</p>
         </div>
         <span className="inline-flex items-center rounded-full bg-black/[0.03] px-3 py-1.5 text-[12px] font-semibold text-black/60">
-          {disabled ? "ปิดใช้งาน" : "พร้อมแนบ"}
+          {disabled ? "ปิดใช้งาน" : b.status === "slip_uploaded" ? "แก้ไขได้" : "พร้อมแนบ"}
         </span>
       </div>
 
