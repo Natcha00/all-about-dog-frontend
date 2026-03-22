@@ -76,7 +76,7 @@ function mapStatusFromBackend(status: string): Booking["status"] {
     case "pending":
       return "pending";
     case "waiting_slip":
-      // รวม waiting_slip / slip_uploaded อยู่ในกลุ่มรอชำระเงิน / สลิป
+      // รวม waiting_slip / slip_uploaded อยู่ในกลุ่มรอแนบสลิป / สลิป
       return "waiting_slip";
     case "pay_at_store":
       return "pay_at_store";

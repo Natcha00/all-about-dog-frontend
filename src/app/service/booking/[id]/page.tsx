@@ -30,8 +30,8 @@ type BookingStatus = Booking["status"];
 
 const STATUS_LABEL: Record<BookingStatus, string> = {
   pending: "รออนุมัติ",
-  waiting_slip: "รอชำระเงิน",
-  pay_at_store: "รอชำระหน้าร้าน",
+  waiting_slip: "รอแนบสลิป",
+  pay_at_store: "รอชำระเงินหน้าร้าน",
   slip_uploaded: "รอตรวจสลิป",
   slip_verified: "ชำระเงินสำเร็จ",
   "check-in": "กำลังใช้บริการ",
@@ -272,7 +272,7 @@ export default function BookingDetailPage() {
     const isBoarding = b.serviceType === "boarding";
 
     return [
-      { label: "สถานะ", value: b.detailStatusLabel ?? STATUS_LABEL[b.status] },
+      { label: "สถานะ", value: STATUS_LABEL[b.status] },
       { label: "รายการจอง", value: b.id },
       { label: "ประเภทบริการ", value: serviceLabel(b.serviceType) },
 
@@ -475,7 +475,11 @@ export default function BookingDetailPage() {
     canUploadSlip && (b.paymentMethod === "slip" || !canSelectPaymentMethod);
 
 
-  const showQr = b.status === "slip_verified" || b.status === "check-in" || b.status === "finished";
+  const showQr =
+    b.status === "pay_at_store" ||
+    b.status === "slip_verified" ||
+    b.status === "check-in" ||
+    b.status === "finished";
 
   // ✅ map booking serviceType -> walkin serviceType ("boarding" | "swimming")
   const walkinServiceType: ServiceType = b.serviceType === "boarding" ? "boarding" : "swimming";
@@ -497,7 +501,7 @@ export default function BookingDetailPage() {
             </div>
 
             <span className="shrink-0 rounded-full bg-black/[0.06] px-3 py-1 text-xs font-bold text-black/70">
-              {b.detailStatusLabel ?? STATUS_LABEL[b.status]}
+              {STATUS_LABEL[b.status]}
             </span>
           </div>
 
@@ -573,7 +577,10 @@ export default function BookingDetailPage() {
             <div className="rounded-2xl border border-black/10 bg-white p-4 flex flex-col items-center gap-2">
               <QRCodeSVG value={`${b.id}`} size={180} marginSize={2} />
               <p className="text-xs text-black/55 text-center">
-                แสดงหลังตรวจสลิปแล้ว (Slip Verified) • รหัส:{" "}
+                {b.status === "pay_at_store"
+                  ? "รอชำระเงินหน้าร้าน — แสดง QR นี้เมื่อมาที่ร้าน"
+                  : "แสดงหลังตรวจสลิปแล้ว (Slip Verified)"}
+                {" • รหัส: "}
                 <span className="font-semibold break-all">{b.id}</span>
               </p>
             </div>
@@ -638,7 +645,7 @@ export default function BookingDetailPage() {
         open={openHistory}
         onClose={() => setOpenHistory(false)}
         items={historyItems}
-        currentStatusLabel={b.detailStatusLabel ?? STATUS_LABEL[b.status]}
+        currentStatusLabel={STATUS_LABEL[b.status]}
       />
 
       <BookingSlipSheet

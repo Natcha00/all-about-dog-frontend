@@ -59,7 +59,8 @@ export default function BookingCardItem({
   onViewHistory?: (bookingId: string) => void;
 }) {
   const tone = statusTone(b.status);
-  const statusText = b.detailStatusLabel ?? statusLabel(b.status);
+  /** ใช้ป้ายจากสถานะในแอปให้ตรงกับแท็บ ไม่ใช้ statusLabel จาก API (มักเป็น "ยืนยันแล้ว" ฯลฯ) */
+  const statusText = statusLabel(b.status);
 
   const petsText = useMemo(() => {
     const names = petsList(b);

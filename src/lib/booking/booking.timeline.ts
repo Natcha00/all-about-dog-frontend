@@ -112,7 +112,7 @@ export function buildMockHistory(status: BookingStatus): HistoryItem[] {
   const autoLabel: Record<HistoryItem["key"], string> = {
     created: "สร้างรายการจอง",
     approved: "อนุมัติแล้ว",
-    waiting_slip: "รอชำระเงิน",
+    waiting_slip: "รอแนบสลิป",
     slip_uploaded: "แนบสลิปแล้ว",
     slip_verified: "ตรวจสลิปผ่าน",
     check_in: "เช็คอินใช้บริการ",
@@ -137,7 +137,7 @@ export function buildMockHistory(status: BookingStatus): HistoryItem[] {
 
   const baseSteps: HistoryItem[] = [
     { key: "created", label: "สร้างรายการจอง", at: formatBangkokDateTime(base.toISOString()), tone: "info" },
-    { key: "waiting_slip", label: "รอชำระเงิน", at: formatBangkokDateTime(t1.toISOString()), tone: "info" },
+    { key: "waiting_slip", label: "รอแนบสลิป", at: formatBangkokDateTime(t1.toISOString()), tone: "info" },
     { key: "slip_uploaded", label: "แนบสลิปแล้ว", at: formatBangkokDateTime(t2.toISOString()), tone: "info" },
     {
       key: "slip_verified",

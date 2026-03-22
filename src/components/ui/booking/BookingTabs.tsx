@@ -15,10 +15,10 @@ export default function BookingTabs({
 }) {
   const tabs: TabKey[] = [
     "pending",
+    "pay_at_store",
     "waiting_slip",
     "slip_uploaded",
     "slip_verified",
-    "pay_at_store",
     "check_in",
     "finished",
     "cancelled",

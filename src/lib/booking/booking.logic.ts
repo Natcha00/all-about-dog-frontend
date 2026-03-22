@@ -27,10 +27,10 @@ export function tabMeta(tab: TabKey) {
     case "pending":
       return { label: "รออนุมัติ", hint: "รอร้านอนุมัติ", tone: "neutral" as const };
     case "waiting_slip":
-      return { label: "รอชำระเงิน", hint: "ลูกค้าต้องชำระเงิน", tone: "warning" as const };
+      return { label: "รอแนบสลิป", hint: "ลูกค้าต้องแนบสลิปโอน", tone: "warning" as const };
     case "pay_at_store":
       return {
-        label: "รอชำระหน้าร้าน",
+        label: "รอชำระเงินหน้าร้าน",
         hint: "รอมาชำระหรือรอยืนยันที่ร้าน",
         tone: "warning" as const,
       };
@@ -54,9 +54,9 @@ export function statusLabel(status: BookingStatus) {
     case "pending":
       return "รออนุมัติ";
     case "waiting_slip":
-      return "รอชำระเงิน";
+      return "รอแนบสลิป";
     case "pay_at_store":
-      return "รอชำระหน้าร้าน";
+      return "รอชำระเงินหน้าร้าน";
     case "slip_uploaded":
       return "รอตรวจสลิป";
     case "slip_verified":
@@ -105,7 +105,7 @@ export function formatDateRange(b: Booking) {
   export function buildBillTimeline(b: Booking): BillStatusEvent[] {
     const base: BillStatusEvent[] = [
       { key: "pending", label: "สร้างบิล", tone: "neutral" },
-      { key: "waiting_payment", label: "รอชำระเงิน", tone: "warning" },
+      { key: "waiting_payment", label: "รอแนบสลิป", tone: "warning" },
       { key: "slip_uploaded", label: "แนบสลิป", tone: "info" },
       {
         key: "slip_verified",

@@ -26,7 +26,7 @@ export default function UploadSlipCard({
   const helperText = useMemo(() => {
     if (b.status === "slip_uploaded")
       return "รอพนักงานตรวจสลิป — แก้ไข/อัปโหลดใหม่ได้จนกว่าจะได้รับการอนุมัติ";
-    if (b.status === "slip_verified") return "ตรวจสอบแล้ว ✅";
+    if (b.status === "slip_verified") return "ชำระเงินสำเร็จ";
     if (b.status === "cancelled") return "รายการถูกยกเลิก ไม่สามารถแนบสลิปได้";
     if (b.status === "pending") return "รออนุมัติการจองก่อน";
     if (b.status === "finished" || b.status === "check-in") return "รายการอยู่ระหว่าง/เสร็จสิ้นแล้ว";
