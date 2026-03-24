@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "ลงทะเบียนสมาชิก",
-  description: "ลงทะเบียนสมาชิก All About Dog",
+  description: "ลงทะเบียนสมาชิก About Dog",
 };
 
 export default function RegisterLayout({

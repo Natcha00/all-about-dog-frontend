@@ -6,7 +6,7 @@ import Image from "next/image";
 import { DEFAULT_AVATAR_IMAGE } from "@/lib/constants";
 
 export default function Navbar({
-  title = "All About Dog",
+  title = "About Dog",
   subtitle = "บริการดูแลสุนัขครบวงจร",
   avatarSrc,
 }: {

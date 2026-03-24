@@ -579,7 +579,7 @@ export default function StepConfirm(props: {
               </div>
               {isSwimmingDraft(booking) ? (
                 <p className="mt-3 text-xs text-black/60">
-                  * สำหรับว่ายน้ำ ชำระเงินหน้างาน และการจองจะเริ่มยืนยันเมื่อ staff อนุมัติ
+                  * สำหรับว่ายน้ำ ชำระเงินหน้าร้าน ห้องจะถูกสำรองเมื่อชำระเงินเรียบร้อยแล้วเท่านั้น
                 </p>
               ) : isBoardingDraft(booking) ? (
                 <p className="mt-3 text-xs text-black/60">

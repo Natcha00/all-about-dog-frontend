@@ -93,7 +93,7 @@ export default function LoginPage() {
             <div className="rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-sm p-3 mb-3">
               <Image
                 src="/images/landingDog.png"
-                alt="All About Dog - โลโก้"
+                alt="About Dog - โลโก้"
                 width={90}
                 height={90}
                 priority
@@ -101,7 +101,7 @@ export default function LoginPage() {
               />
             </div>
             <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
-              All About Dog
+              About Dog
             </h1>
             <p className="mt-1 text-xs text-black/50">
               เข้าสู่ระบบสำหรับผู้ใช้งาน

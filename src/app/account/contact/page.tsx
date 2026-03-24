@@ -9,7 +9,7 @@ const ORANGE = "#F2A245";
 
 // ✅ แก้ค่าตรงนี้ได้เลย
 const CONTACT = {
-  placeName: "All About Dog",
+  placeName: "About Dog",
   address:
     "10/1 ทางหลวงชนบทหมายเลข นน.1016 ตำบลบางแม่นาง อำเภอบางใหญ่ จ.นนทบุรี 11140",
   phones: ["082-672-1454"],

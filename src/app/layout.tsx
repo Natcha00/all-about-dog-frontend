@@ -20,8 +20,8 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: { default: "All About Dog", template: "%s | All About Dog" },
-  description: "บริการดูแลสุนัข All About Dog",
+  title: { default: "About Dog", template: "%s | About Dog" },
+  description: "บริการดูแลสุนัข About Dog",
 };
 
 export const viewport: Viewport = {

@@ -160,7 +160,7 @@ export default function StepSwimming(props: {
     <section className="rounded-3xl bg-white/70 ring-1 ring-black/5 shadow-sm p-5 space-y-4">
       <div>
         <h2 className="text-xl font-extrabold text-gray-900">สระว่ายน้ำ</h2>
-        <p className="text-sm text-black/50">เลือกวัน → เลือกรอบ → VIP/เจ้าของลงเล่น</p>
+        <p className="text-sm text-black/50">เลือกวัน → เลือกรอบ</p>
       </div>
 
       <div className="space-y-1.5">

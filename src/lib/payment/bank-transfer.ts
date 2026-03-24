@@ -5,5 +5,5 @@
 export const BANK_TRANSFER_FOR_BOOKING = {
   bankName: "ธนาคารกสิกรไทย",
   accountNumber: "000-0-00000-0",
-  accountHolder: "All About Dog",
+  accountHolder: "About Dog",
 } as const;

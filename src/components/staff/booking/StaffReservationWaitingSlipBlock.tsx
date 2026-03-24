@@ -229,7 +229,7 @@ export default function StaffReservationWaitingSlipBlock({
                 <span className="font-semibold"> เมื่อชำระเงินเรียบร้อยแล้วเท่านั้น</span>
               </p>
               <div className="border-t border-slate-200 pt-2">
-                <p className="font-bold text-slate-900 mb-1">ชำระค่าบริการล่วงหน้า:</p>
+                <p className="font-bold text-slate-900 mb-1">ชำระเงินล่วงหน้า:</p>
                 <ul className="list-disc pl-4 space-y-0.5">
                   <li>ห้องถูกสำรองไว้ให้แน่นอน</li>
                   <li>
@@ -254,7 +254,7 @@ export default function StaffReservationWaitingSlipBlock({
             <Upload className="h-4 w-4 shrink-0" />
             {booking.serviceType === "swimming"
               ? "ชำระด้วยสลิปโอน"
-              : "ต้องการชำระค่าบริการล่วงหน้า"}
+              : "ต้องการชำระเงินล่วงหน้า"}
           </button>
           <button
             type="button"

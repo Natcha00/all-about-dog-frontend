@@ -280,7 +280,7 @@ export default function DogOwnerHomePage() {
           <div className="flex flex-col">
             <span className="text-xs text-black/50">แดชบอร์ดเจ้าของสุนัข</span>
             <span className="text-sm font-extrabold text-black">
-              All About Dog
+              About Dog
             </span>
           </div>
         </div>

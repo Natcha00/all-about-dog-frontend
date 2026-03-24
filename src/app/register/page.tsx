@@ -103,7 +103,7 @@ export default function RegisterPage() {
         {/* Left: brand / hero */}
         <div className="flex flex-col items-center mb-8">
           <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">
-            All About Dog
+            About Dog
           </h1>
           <p className="mt-1 text-xs text-black/50">ลงทะเบียนผู้ใช้งานใหม่</p>
         </div>
