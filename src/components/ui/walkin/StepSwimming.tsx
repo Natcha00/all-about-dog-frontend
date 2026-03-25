@@ -12,7 +12,7 @@ type SwimmingSlot = {
   isFull: boolean;
   isEmpty: boolean;
   /** If true, this hour slot already has a reservation on the selected day (close only these hours). */
-  isEverReserved: boolean;
+  isEverReserved?: boolean;
   sizeBooked: { large: number; small: number };
 };
 
@@ -197,6 +197,7 @@ export default function StepSwimming(props: {
           {slots.map((s) => {
             const disabled = !isSlotSelectable(s, isVip, pets.length);
             const active = selectedTime === s.time;
+            const slotStatusLabel = s.isEverReserved ? "เคยจองแล้ว" : s.statusLabel;
 
             return (
               <div key={s.time} className="flex flex-col items-center justify-center h-full">
@@ -216,15 +217,8 @@ export default function StepSwimming(props: {
                   <div className="text-center">{s.time}</div>
                 </button>
                 <div className="mt-2 w-full text-center text-[11px] font-semibold leading-4">
-                  <div className={s.isFull ? "text-black/45" : "text-black/70"}>{s.statusLabel}</div>
-                  {s.isEverReserved ? (
-                    <div className="text-black/45">เคยจองแล้ว</div>
-                  ) : null}
-                  {s.isEverReserved ? (
-                    <div className="text-black/45">จองแล้ว (ปิดรอบ)</div>
-                  ) : (
-                    <div className="text-black/45">จองแล้ว {s.booked}/{s.capacity}</div>
-                  )}
+                  <div className={s.isFull ? "text-black/45" : "text-black/70"}>{slotStatusLabel}</div>
+                  <div className="text-black/45">จองแล้ว {s.booked}/{s.capacity}</div>
                   <div className="text-black/45">พันธุ์ใหญ่: {s.sizeBooked.large}</div>
                   <div className="text-black/45">พันธุ์เล็ก: {s.sizeBooked.small}</div>
                 </div>
