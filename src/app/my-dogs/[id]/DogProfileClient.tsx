@@ -207,18 +207,13 @@ export default function DogProfileClient({
       />
 
       {currentItem === "info" && dogId && profile && (
-        <div className="px-4">
+        <div className="mx-auto w-full max-w-md px-4">
           <button
             type="button"
             onClick={() => setEditOpen(true)}
-            className="flex items-center justify-center gap-2 w-full
-            rounded-2xl bg-[#f0a23a] text-white
-            px-4 py-3 min-h-[44px] text-sm font-semibold
-            shadow-sm hover:opacity-95 active:scale-[0.99] transition touch-manipulation shrink-0
-            disabled:opacity-50 disabled:pointer-events-none
-          "
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#f0a23a] text-white px-4 py-3 min-h-[44px] sm:min-h-[48px] text-sm sm:text-base font-semibold shadow-sm hover:opacity-95 active:scale-[0.99] transition touch-manipulation shrink-0 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" aria-hidden />
             แก้ไขข้อมูล
           </button>
         </div>
