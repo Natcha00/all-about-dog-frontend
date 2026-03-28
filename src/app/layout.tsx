@@ -22,6 +22,9 @@ const prompt = Prompt({
 export const metadata: Metadata = {
   title: { default: "About Dog", template: "%s | About Dog" },
   description: "บริการดูแลสุนัข About Dog",
+  icons: {
+    icon: "/dog-svgrepo-com.svg",
+  },
 };
 
 export const viewport: Viewport = {

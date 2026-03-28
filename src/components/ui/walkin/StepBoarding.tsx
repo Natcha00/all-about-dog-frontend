@@ -591,6 +591,7 @@ export default function StepBoarding(props: {
               total,
               package: planToPackage(plan),
               lines: pricingResult?.lines ?? [],
+              pricingDogs: pricingResult?.dogs ?? [],
               customerNote: note,
             })
           }

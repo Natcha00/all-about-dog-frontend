@@ -75,68 +75,6 @@ function isSwimmingDraft(b: BookingDraft): b is Extract<BookingDraft, { serviceT
 }
 
 /* =========================
-   boarding pricing helpers
-========================= */
-function calcBoardingPetLines(pets: PetPicked[], plan: 1 | 2 | 3, nights: number) {
-  if (!pets.length || !nights) return [];
-
-  // VIP: ตัวแรก 1500/คืน ตัวถัดไป 500/คืน
-  if (plan === 3) {
-    return pets.map((p, idx) => ({
-      id: p.id,
-      name: p.name,
-      breed: p.breed,
-      price: nights * (idx === 0 ? 1500 : 500),
-      meta: `${nights} คืน • VIP`,
-    }));
-  }
-
-  // Plan 1: คิดตาม size
-  if (plan === 1) {
-    return pets.map((p) => {
-      const perNight = p.size === "small" ? 450 : 600;
-      return {
-        id: p.id,
-        name: p.name,
-        breed: p.breed,
-        price: nights * perNight,
-        meta: `${nights} คืน • ${perNight}/คืน`,
-      };
-    });
-  }
-
-  // Plan 2: นอนด้วยกัน (ตัวแรกเต็ม ตัวถัดไปลด)
-  const smallPets = pets.filter((p) => p.size === "small");
-  const largePets = pets.filter((p) => p.size === "large");
-
-  const lines: Array<{ id: number; name: string; breed?: string; price: number; meta: string }> = [];
-
-  smallPets.forEach((p, i) => {
-    const perNight = i === 0 ? 450 : 380;
-    lines.push({
-      id: p.id,
-      name: p.name,
-      breed: p.breed?? undefined,
-      price: nights * perNight,
-      meta: `${nights} คืน • ${perNight}/คืน`,
-    });
-  });
-
-  largePets.forEach((p, i) => {
-    const perNight = i === 0 ? 600 : 510;
-    lines.push({
-      id: p.id,
-      name: p.name,
-      breed: p.breed?? undefined,
-      price: nights * perNight,
-      meta: `${nights} คืน • ${perNight}/คืน`,
-    });
-  });
-
-  return lines;
-}
-
-/* =========================
    ✅ room assignment helpers (เหมือนหน้า detail)
 ========================= */
 type RoomType = "SMALL" | "LARGE" | "VIP";
@@ -333,11 +271,18 @@ export default function StepConfirm(props: {
     return buildRoomAssignments({ pets: pickedPets, plan: booking.plan });
   }, [booking, pickedPets]);
 
-  // ✅ breakdown boarding
+  // ✅ breakdown boarding — จาก package-pricing API (`dogs`) ที่เก็บใน draft ตอน StepBoarding
   const boardingBreakdown = useMemo(() => {
     if (!isBoardingDraft(booking)) return [];
-    return calcBoardingPetLines(pets, booking.plan, nights || 1);
-  }, [booking, pets, nights]);
+    const dogs = booking.pricingDogs ?? [];
+    return dogs.map((d) => ({
+      id: d.dogId,
+      name: d.name,
+      breed: d.breed,
+      price: d.subtotal,
+      meta: `${nights || 1} คืน • ${d.perNight.toLocaleString()}/คืน`,
+    }));
+  }, [booking, nights]);
 
   // ✅ breakdown swimming — ใช้ pricing.items จาก API (เก็บใน draft จาก StepSwimming)
   const swimBreakdown = useMemo(() => {

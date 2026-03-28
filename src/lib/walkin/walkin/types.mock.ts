@@ -27,6 +27,18 @@ export type ReservationConfirmLine = {
   groupNumber: number;
 };
 
+/** Per-dog line from offering/boarding/package-pricing (`dogs` array) */
+export type BoardingPricingDog = {
+  dogId: number;
+  name: string;
+  groupNumber: number;
+  sizeLabel: string;
+  breed: string;
+  size: string;
+  perNight: number;
+  subtotal: number;
+};
+
 export type BoardingDraft = {
   serviceType: "boarding";
   start: string;
@@ -37,6 +49,8 @@ export type BoardingDraft = {
   total: number;
   package?: string;
   lines?: ReservationConfirmLine[];
+  /** From package-pricing API — used for confirm price breakdown */
+  pricingDogs?: BoardingPricingDog[];
   customerNote?: string;
 };
 
