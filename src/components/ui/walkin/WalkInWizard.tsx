@@ -1,7 +1,7 @@
 // src/app/(customer)/booking/WalkInWizard.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import StepService from "./StepService";
@@ -178,7 +178,25 @@ export default function WalkInWizardCustomer() {
     setPetErrors({});
   };
 
+  const clearServiceSelectionAndDrafts = useCallback(() => {
+    setServiceType(null);
+    setBooking(null);
+    setBoardingForm(initialBoardingForm);
+    setSwimmingForm(getInitialSwimmingForm());
+  }, []);
 
+  const prevSelectedPetIdsRef = useRef<string>("");
+
+  useEffect(() => {
+    const key = [...selectedPets]
+      .map((p) => p.id)
+      .sort((a, b) => a - b)
+      .join(",");
+    if (prevSelectedPetIdsRef.current !== "" && prevSelectedPetIdsRef.current !== key) {
+      clearServiceSelectionAndDrafts();
+    }
+    prevSelectedPetIdsRef.current = key;
+  }, [selectedPets, clearServiceSelectionAndDrafts]);
 
   return (
     <div className="mx-auto w-full max-w-md space-y-5">
@@ -244,7 +262,10 @@ export default function WalkInWizardCustomer() {
       {step === "service" && (
         <StepService
           pets={selectedPets}
-          onBack={() => setStep("pet")}
+          onBack={() => {
+            clearServiceSelectionAndDrafts();
+            setStep("pet");
+          }}
           onPick={(t) => {
             setServiceType(t);
             setStep(t); // "boarding" | "swimming"
