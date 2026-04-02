@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CircleItemProps } from "@/components/ui/circleProfile";
 import type { DogApiItem } from "@/lib/dogs/dog.type";
-import MyDogsGrid from "./MyDogsGrid";
+import MyDogsGrid from "@/components/my-dogs/MyDogsGrid";
 
 function mapDogToCircleItem(dog: DogApiItem): CircleItemProps {
   return {

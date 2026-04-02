@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { DogProfileApiResponse } from "@/lib/dogs/dog.type";
 import type { UpdateDogBody } from "@/lib/dogs/dog.type";
 import type { CoatTypeValue } from "@/lib/dogs/dog.type";
@@ -261,11 +261,15 @@ export default function EditDogSheet({
     fetch("/api/dog/options/coat-types")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: CoatTypeOption[]) =>
-        setCoatTypes(Array.isArray(data) && data.length > 0 ? data : [
-          { value: "ขนสั้น", label: "ขนสั้น" },
-          { value: "ขนยาว", label: "ขนยาว" },
-          { value: "ขนสองชั้น", label: "ขนสองชั้น" },
-        ])
+        setCoatTypes(
+          Array.isArray(data) && data.length > 0
+            ? data
+            : [
+                { value: "ขนสั้น", label: "ขนสั้น" },
+                { value: "ขนยาว", label: "ขนยาว" },
+                { value: "ขนสองชั้น", label: "ขนสองชั้น" },
+              ]
+        )
       )
       .catch(() =>
         setCoatTypes([
@@ -347,260 +351,254 @@ export default function EditDogSheet({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <p className="text-sm text-rose-600 bg-rose-50 rounded-xl px-3 py-2">{error}</p>
-              )}
+              {error && <p className="text-sm text-rose-600 bg-rose-50 rounded-xl px-3 py-2">{error}</p>}
 
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label>ชื่อสัตว์เลี้ยง</Label>
-                <Input
-                  placeholder="โปรดระบุ"
-                  value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                />
-              </div>
+                  <div>
+                    <Label>ชื่อสัตว์เลี้ยง</Label>
+                    <Input
+                      placeholder="โปรดระบุ"
+                      value={form.name}
+                      onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                    />
+                  </div>
 
-              <div>
-                <Label>เพศ</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <SegButton
-                    active={form.gender === "male"}
-                    onClick={() => setForm((p) => ({ ...p, gender: "male" }))}
-                  >
-                    ผู้
-                  </SegButton>
-                  <SegButton
-                    active={form.gender === "female"}
-                    onClick={() => setForm((p) => ({ ...p, gender: "female" }))}
-                  >
-                    เมีย
-                  </SegButton>
-                </div>
-              </div>
-
-              <div>
-                <Label>สายพันธุ์</Label>
-                <Select
-                  value={form.breedId}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const selected = breeds.find((b) => String(b.id) === value);
-                    const forceDoubleCoat = selected?.nameTh && isDoubleCoatOnlyBreed(selected.nameTh);
-                    setForm((p) => ({
-                      ...p,
-                      breedId: value,
-                      ...(forceDoubleCoat ? { coatType: "ขนสองชั้น" as CoatTypeValue } : {}),
-                    }));
-                  }}
-                >
-                  <option value="">โปรดเลือก</option>
-                  {breeds.map((b) => (
-                    <option key={b.id} value={String(b.id)}>
-                      {b.nameTh}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-
-              <div>
-                <Label>สีขน</Label>
-                <Input
-                  placeholder="โปรดระบุ"
-                  value={form.color}
-                  onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label>ประเภทขน</Label>
-                {(() => {
-                  const selectedBreed = breeds.find((b) => String(b.id) === form.breedId);
-                  const mustDoubleCoat = Boolean(
-                    selectedBreed?.nameTh && isDoubleCoatOnlyBreed(selectedBreed.nameTh)
-                  );
-                  const effectiveCoatType = mustDoubleCoat ? "ขนสองชั้น" : form.coatType;
-                  return (
-                    <>
-                      <Select
-                        value={effectiveCoatType}
-                        onChange={(e) => {
-                          if (mustDoubleCoat) return;
-                          setForm((p) => ({
-                            ...p,
-                            coatType: e.target.value as CoatTypeValue | "",
-                          }));
-                        }}
-                        disabled={mustDoubleCoat}
+                  <div>
+                    <Label>เพศ</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <SegButton active={form.gender === "male"} onClick={() => setForm((p) => ({ ...p, gender: "male" }))}>
+                        ผู้
+                      </SegButton>
+                      <SegButton
+                        active={form.gender === "female"}
+                        onClick={() => setForm((p) => ({ ...p, gender: "female" }))}
                       >
-                        <option value="">โปรดเลือก</option>
-                        {coatTypes.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </Select>
-                      {mustDoubleCoat ? (
-                        <p className="mt-1 text-xs text-gray-500">พันธุ์นี้เป็นขนสองชั้นเท่านั้น</p>
-                      ) : null}
-                    </>
-                  );
-                })()}
-              </div>
-
-              <div>
-                <Label>น้ำหนัก (กก.)</Label>
-                <Input
-                  placeholder="เช่น 10"
-                  inputMode="numeric"
-                  value={form.weight}
-                  onChange={(e) => setForm((p) => ({ ...p, weight: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label>วันเกิด</Label>
-                <Input
-                  type="date"
-                  value={form.birthdate}
-                  onChange={(e) => setForm((p) => ({ ...p, birthdate: e.target.value }))}
-                  className="appearance-none text-[14px]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowHealth((v) => !v)}
-                className="text-sm font-semibold text-teal-600 hover:underline"
-              >
-                {showHealth ? "ซ่อนข้อมูลสุขภาพ" : "แสดงข้อมูลสุขภาพ"}
-              </button>
-              {showHealth && (
-                <div className="mt-4 space-y-5 pt-4 border-t border-black/10">
-                  <div>
-                    <Label>ประวัติการทำหมัน</Label>
-                    <Select
-                      value={form.sterilization ? "ทำหมันแล้ว" : "ยังไม่เคยทำหมัน"}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, sterilization: e.target.value === "ทำหมันแล้ว" }))
-                      }
-                    >
-                      <option value="ยังไม่เคยทำหมัน">ยังไม่เคยทำหมัน</option>
-                      <option value="ทำหมันแล้ว">ทำหมันแล้ว</option>
-                    </Select>
+                        เมีย
+                      </SegButton>
+                    </div>
                   </div>
+
                   <div>
-                    <Label>การฝังไมโครชิป</Label>
+                    <Label>สายพันธุ์</Label>
                     <Select
-                      value={form.microchip ? "มี" : "ไม่มี"}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, microchip: e.target.value === "มี" }))
-                      }
-                    >
-                      <option value="ไม่มี">ไม่มี</option>
-                      <option value="มี">มี</option>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>หมู่เลือด</Label>
-                    <Select
-                      value={form.bloodType}
-                      onChange={(e) => setForm((p) => ({ ...p, bloodType: e.target.value }))}
+                      value={form.breedId}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const selected = breeds.find((b) => String(b.id) === value);
+                        const forceDoubleCoat = selected?.nameTh && isDoubleCoatOnlyBreed(selected.nameTh);
+                        setForm((p) => ({
+                          ...p,
+                          breedId: value,
+                          ...(forceDoubleCoat ? { coatType: "ขนสองชั้น" as CoatTypeValue } : {}),
+                        }));
+                      }}
                     >
                       <option value="">โปรดเลือก</option>
-                      {bloodGroups.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      {breeds.map((b) => (
+                        <option key={b.id} value={String(b.id)}>
+                          {b.nameTh}
                         </option>
                       ))}
                     </Select>
                   </div>
+
                   <div>
-                    <Label>โรคประจำตัว</Label>
+                    <Label>สีขน</Label>
                     <Input
-                      placeholder="ถ้ามีให้ระบุ"
-                      value={form.underlyingDisease}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, underlyingDisease: e.target.value }))
-                      }
+                      placeholder="โปรดระบุ"
+                      value={form.color}
+                      onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))}
                     />
                   </div>
+
                   <div>
-                    <Label>สิ่งที่แพ้</Label>
+                    <Label>ประเภทขน</Label>
+                    {(() => {
+                      const selectedBreed = breeds.find((b) => String(b.id) === form.breedId);
+                      const mustDoubleCoat = Boolean(selectedBreed?.nameTh && isDoubleCoatOnlyBreed(selectedBreed.nameTh));
+                      const effectiveCoatType = mustDoubleCoat ? "ขนสองชั้น" : form.coatType;
+                      return (
+                        <>
+                          <Select
+                            value={effectiveCoatType}
+                            onChange={(e) => {
+                              if (mustDoubleCoat) return;
+                              setForm((p) => ({
+                                ...p,
+                                coatType: e.target.value as CoatTypeValue | "",
+                              }));
+                            }}
+                            disabled={mustDoubleCoat}
+                          >
+                            <option value="">โปรดเลือก</option>
+                            {coatTypes.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </Select>
+                          {mustDoubleCoat ? <p className="mt-1 text-xs text-gray-500">พันธุ์นี้เป็นขนสองชั้นเท่านั้น</p> : null}
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <div>
+                    <Label>น้ำหนัก (กก.)</Label>
                     <Input
-                      placeholder="ถ้ามีให้ระบุ"
-                      value={form.allergy}
-                      onChange={(e) => setForm((p) => ({ ...p, allergy: e.target.value }))}
+                      placeholder="เช่น 10"
+                      inputMode="numeric"
+                      value={form.weight}
+                      onChange={(e) => setForm((p) => ({ ...p, weight: e.target.value }))}
                     />
                   </div>
+
                   <div>
-                    <Label>มื้ออาหาร</Label>
-                    <div className="flex flex-wrap gap-2">
-                      <Pill
-                        active={form.hasBreakfast}
-                        label="เช้า"
-                        onClick={() => toggleMeal("breakfast")}
-                      />
-                      <Pill
-                        active={form.hasAfterBreakfast}
-                        label="สาย"
-                        onClick={() => toggleMeal("lateMorning")}
-                      />
-                      <Pill active={form.hasLunch} label="เที่ยง" onClick={() => toggleMeal("lunch")} />
-                      <Pill
-                        active={form.hasAfterLunch}
-                        label="บ่าย"
-                        onClick={() => toggleMeal("afternoon")}
-                      />
-                      <Pill active={form.hasDinner} label="เย็น" onClick={() => toggleMeal("dinner")} />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>จำนวนมื้ออาหารต่อวัน</Label>
+                    <Label>วันเกิด</Label>
                     <Input
-                      value={String(
-                        [form.hasBreakfast, form.hasAfterBreakfast, form.hasLunch, form.hasAfterLunch, form.hasDinner].filter(Boolean).length
-                      )}
-                      disabled
-                      className="bg-black/5 text-gray-700"
-                    />
-                  </div>
-                  <div>
-                    <Label>รายละเอียดเพิ่มเติม</Label>
-                    <Textarea
-                      placeholder="เช่น ชอบเห่าหมาพันธุ์ใหญ่ กลัวฟ้าร้อง"
-                      value={form.detail}
-                      onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))}
+                      type="date"
+                      value={form.birthdate}
+                      onChange={(e) => setForm((p) => ({ ...p, birthdate: e.target.value }))}
+                      className="appearance-none text-[14px]"
                     />
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 h-12 rounded-2xl border-2 border-[#F2A245] font-extrabold text-[#F2A245] bg-white hover:bg-[#FCE7C6]/30 transition active:scale-[0.99]"
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 h-12 rounded-2xl font-extrabold text-white bg-[#F2A245] hover:opacity-90 disabled:opacity-50 transition active:scale-[0.99] shadow-sm"
-            >
-              {saving ? "กำลังบันทึก..." : "บันทึก"}
-            </button>
-          </div>
-          </form>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowHealth((v) => !v)}
+                    className="text-sm font-semibold text-teal-600 hover:underline"
+                  >
+                    {showHealth ? "ซ่อนข้อมูลสุขภาพ" : "แสดงข้อมูลสุขภาพ"}
+                  </button>
+
+                  {showHealth && (
+                    <div className="mt-4 space-y-5 pt-4 border-t border-black/10">
+                      <div>
+                        <Label>ประวัติการทำหมัน</Label>
+                        <Select
+                          value={form.sterilization ? "ทำหมันแล้ว" : "ยังไม่เคยทำหมัน"}
+                          onChange={(e) => setForm((p) => ({ ...p, sterilization: e.target.value === "ทำหมันแล้ว" }))}
+                        >
+                          <option value="ยังไม่เคยทำหมัน">ยังไม่เคยทำหมัน</option>
+                          <option value="ทำหมันแล้ว">ทำหมันแล้ว</option>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>การฝังไมโครชิป</Label>
+                        <Select
+                          value={form.microchip ? "มี" : "ไม่มี"}
+                          onChange={(e) => setForm((p) => ({ ...p, microchip: e.target.value === "มี" }))}
+                        >
+                          <option value="ไม่มี">ไม่มี</option>
+                          <option value="มี">มี</option>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>หมู่เลือด</Label>
+                        <Select
+                          value={form.bloodType}
+                          onChange={(e) => setForm((p) => ({ ...p, bloodType: e.target.value }))}
+                        >
+                          <option value="">โปรดเลือก</option>
+                          {bloodGroups.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>โรคประจำตัว</Label>
+                        <Input
+                          placeholder="ถ้ามีให้ระบุ"
+                          value={form.underlyingDisease}
+                          onChange={(e) => setForm((p) => ({ ...p, underlyingDisease: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <Label>สิ่งที่แพ้</Label>
+                        <Input
+                          placeholder="ถ้ามีให้ระบุ"
+                          value={form.allergy}
+                          onChange={(e) => setForm((p) => ({ ...p, allergy: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <Label>มื้ออาหาร</Label>
+                        <div className="flex flex-wrap gap-2">
+                          <Pill
+                            active={form.hasBreakfast}
+                            label="เช้า"
+                            onClick={() => toggleMeal("breakfast")}
+                          />
+                          <Pill
+                            active={form.hasAfterBreakfast}
+                            label="สาย"
+                            onClick={() => toggleMeal("lateMorning")}
+                          />
+                          <Pill active={form.hasLunch} label="เที่ยง" onClick={() => toggleMeal("lunch")} />
+                          <Pill
+                            active={form.hasAfterLunch}
+                            label="บ่าย"
+                            onClick={() => toggleMeal("afternoon")}
+                          />
+                          <Pill active={form.hasDinner} label="เย็น" onClick={() => toggleMeal("dinner")} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>จำนวนมื้ออาหารต่อวัน</Label>
+                        <Input
+                          value={String(
+                            [form.hasBreakfast, form.hasAfterBreakfast, form.hasLunch, form.hasAfterLunch, form.hasDinner].filter(Boolean).length
+                          )}
+                          disabled
+                          className="bg-black/5 text-gray-700"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>รายละเอียดเพิ่มเติม</Label>
+                        <Textarea
+                          placeholder="เช่น ชอบเห่าหมาพันธุ์ใหญ่ กลัวฟ้าร้อง"
+                          value={form.detail}
+                          onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 h-12 rounded-2xl border-2 border-[#F2A245] font-extrabold text-[#F2A245] bg-white hover:bg-[#FCE7C6]/30 transition active:scale-[0.99]"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 h-12 rounded-2xl font-extrabold text-white bg-[#F2A245] hover:opacity-90 disabled:opacity-50 transition active:scale-[0.99] shadow-sm"
+                >
+                  {saving ? "กำลังบันทึก..." : "บันทึก"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
     </div>
   );
 }
+

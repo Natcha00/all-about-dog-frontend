@@ -136,7 +136,13 @@ export default function DogProfileClient({
               refCode: it.code,
               checkIn: start || "-",
               checkOut: end || "-",
-              nights: start && end ? Math.max(1, Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24))) : 0,
+              nights:
+                start && end
+                  ? Math.max(
+                      1,
+                      Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24))
+                    )
+                  : 0,
               roomType: undefined,
             };
           }
@@ -176,9 +182,7 @@ export default function DogProfileClient({
         aria-hidden
         onChange={handlePictureFileChange}
       />
-      <div className="text-center text-2xl font-semibold m-4 text-gray-700">
-        สัตว์เลี้ยงของฉัน
-      </div>
+      <div className="text-center text-2xl font-semibold m-4 text-gray-700">สัตว์เลี้ยงของฉัน</div>
 
       <DefaultCardProfileDog
         name={card.name}
@@ -189,22 +193,13 @@ export default function DogProfileClient({
         onEditPictureClick={dogId ? handleEditPictureClick : undefined}
       />
 
-      {pictureUploading && (
-        <p className="text-center text-sm text-gray-500">กำลังอัปโหลดรูป...</p>
-      )}
+      {pictureUploading && <p className="text-center text-sm text-gray-500">กำลังอัปโหลดรูป...</p>}
       {pictureError && (
-        <p className="text-center text-sm text-amber-700 bg-amber-100 rounded-lg px-3 py-2">
-          {pictureError}
-        </p>
+        <p className="text-center text-sm text-amber-700 bg-amber-100 rounded-lg px-3 py-2">{pictureError}</p>
       )}
 
       {/* <QrCode iconSrc={qr.iconSrc} qrSrc={qr.qrSrc} label={qr.label} /> */}
-
-      <BtnContainerHeath
-        data={tabs}
-        currentItem={currentItem}
-        setCurrentItem={setCurrentItem}
-      />
+      <BtnContainerHeath data={tabs} currentItem={currentItem} setCurrentItem={setCurrentItem} />
 
       {currentItem === "info" && dogId && profile && (
         <div className="mx-auto w-full max-w-md px-4">
@@ -221,18 +216,16 @@ export default function DogProfileClient({
 
       <InfoDog currentItem={currentItem} petInfoMock={petInfo} />
       <VaccineTab currentItem={currentItem} dogId={dogId} initialVaccineList={initialVaccineList} />
+
       {currentItem === "history" && (
         <>
-          {historyLoading && (
-            <p className="text-center text-sm text-gray-500 mt-2">กำลังโหลดประวัติการใช้งาน...</p>
-          )}
+          {historyLoading && <p className="text-center text-sm text-gray-500 mt-2">กำลังโหลดประวัติการใช้งาน...</p>}
           {historyError && (
-            <p className="text-center text-sm text-amber-700 bg-amber-100 rounded-lg px-3 py-2 mt-2">
-              {historyError}
-            </p>
+            <p className="text-center text-sm text-amber-700 bg-amber-100 rounded-lg px-3 py-2 mt-2">{historyError}</p>
           )}
         </>
       )}
+
       <HistoryTab currentItem={currentItem} items={historyItemsState.length > 0 ? historyItemsState : historyItems} />
 
       {editOpen && profile && dogId && (
@@ -246,3 +239,4 @@ export default function DogProfileClient({
     </div>
   );
 }
+
