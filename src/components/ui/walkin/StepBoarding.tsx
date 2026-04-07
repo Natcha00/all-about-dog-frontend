@@ -38,7 +38,14 @@ type BoardingAvailableResponse = {
   roomPerNight: { LARGE: number; SMALL: number; VIP: number };
   package: string;
   need: { LARGE: number; SMALL: number; VIP: number };
-  fails: Array<{ date?: string; message?: string; need?: Record<string, number>; cap?: Record<string, number> }>;
+  fails: Array<{
+    date?: string;
+    status?: string;
+    message?: string;
+    need?: Record<string, number>;
+    left?: Record<string, number>;
+    cap?: Record<string, number>;
+  }>;
   /** สุนัขอย่างน้อย 1 ตัวมีการจองอื่นในช่วงนี้อยู่แล้ว → ต้องแจ้งเตือนและกดต่อไปไม่ได้ */
   hasDogInReservationInPeriod?: boolean;
 };
@@ -349,11 +356,11 @@ export default function StepBoarding(props: {
 
                 <div className="space-y-2 overflow-y-auto max-h-56 m-1 p-1">
                   {availabilityResult.fails.map((f, idx) => {
-                    const smallNotEnough = (f.need?.SMALL ?? 0) > (f.cap?.SMALL ?? 0);
-                    const largeNotEnough = (f.need?.LARGE ?? 0) > (f.cap?.LARGE ?? 0);
-                    const vipNotEnough = (f.need?.VIP ?? 0) > (f.cap?.VIP ?? 0);
+                    const left = f.left ?? f.cap ?? { SMALL: 0, LARGE: 0, VIP: 0 };
+                    const smallNotEnough = (f.need?.SMALL ?? 0) > (left?.SMALL ?? 0);
+                    const largeNotEnough = (f.need?.LARGE ?? 0) > (left?.LARGE ?? 0);
+                    const vipNotEnough = (f.need?.VIP ?? 0) > (left?.VIP ?? 0);
                     const need = f.need ?? { SMALL: 0, LARGE: 0, VIP: 0 };
-                    const cap = f.cap ?? { SMALL: 0, LARGE: 0, VIP: 0 };
 
                     return (
                       <div
@@ -393,16 +400,16 @@ export default function StepBoarding(props: {
                           <span className="font-semibold text-gray-800">ห้องคงเหลือ:</span>{" "}
                           {plan === 3 ? (
                             <span className={vipNotEnough ? "text-rose-600 font-bold" : ""}>
-                              VIP {cap.VIP}
+                              VIP {left.VIP}
                             </span>
                           ) : (
                             <>
                               <span className={smallNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ตึกหมาเล็ก {cap.SMALL}
+                                ตึกหมาเล็ก {left.SMALL}
                               </span>
                               {" • "}
                               <span className={largeNotEnough ? "text-rose-600 font-bold" : ""}>
-                                ตึกหมาใหญ่ {cap.LARGE}
+                                ตึกหมาใหญ่ {left.LARGE}
                               </span>
                             </>
                           )}
