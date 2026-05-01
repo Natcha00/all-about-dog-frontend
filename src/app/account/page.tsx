@@ -5,10 +5,6 @@ import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { ChevronRight, User, Shield, Phone, LogOut, PawPrint } from "lucide-react";
 import AppImage from "@/components/ui/AppImage";
-import { toBackendUrlFromApi } from "@/lib/api/backend";
-import { getApiErrorMessage } from "@/lib/api/error";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
-import { clearAuthTokens } from "@/lib/auth/clientToken";
 
 export type AccountProfile = {
   id: number;
@@ -148,7 +144,6 @@ function MyDogsCard({
 
 export default function AccountPage() {
   const router = useRouter();
-  const authorizedApi = useAuthorizedApi();
   const [showLogout, setShowLogout] = useState(false);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -156,12 +151,9 @@ export default function AccountPage() {
 
   useEffect(() => {
     let cancelled = false;
-    authorizedApi("/api/account/profile")
-      .then(async (res) => {
-        if (!res.ok) {
-          if (res.status === 401) throw new Error("Unauthorized");
-          throw new Error(await getApiErrorMessage(res, "โหลดข้อมูลไม่สำเร็จ"));
-        }
+    fetch("/api/account/profile", { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error(res.status === 401 ? "Unauthorized" : ` ${res.status}`);
         return res.json();
       })
       .then((data: AccountProfile) => {
@@ -176,7 +168,7 @@ export default function AccountPage() {
     return () => {
       cancelled = true;
     };
-  }, [authorizedApi]);
+  }, []);
 
   const displayName = profile
     ? [profile.firstName, profile.lastName].filter(Boolean).join(" ") || profile.email
@@ -194,10 +186,9 @@ export default function AccountPage() {
   const doLogout = async () => {
     setShowLogout(false);
     try {
-      await authorizedApi("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     } finally {
-      clearAuthTokens();
-      router.replace("/login");
+      router.push("/login");
     }
   };
 

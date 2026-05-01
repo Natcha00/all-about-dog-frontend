@@ -1,6 +1,5 @@
 import type { BookingDraft, CustomerDraft, PetPicked } from "@/lib/walkin/walkin/types.mock";
 import React, { useMemo, useState } from "react";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type ConfirmBody = {
   dogIds: number[];
@@ -228,7 +227,6 @@ export default function StepConfirm(props: {
   onConfirm: (ref: string) => void;
 }) {
   const { pets, booking, onBack, onConfirm } = props;
-  const authorizedApi = useAuthorizedApi();
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
@@ -557,14 +555,14 @@ export default function StepConfirm(props: {
                     setConfirmError(null);
                     setConfirmSubmitting(true);
                     try {
-                      const res = await authorizedApi("/api/reservation/create", {
+                      const res = await fetch("/api/reservation/create", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(body),
                       });
                       const data = await res.json().catch(() => ({}));
                       if (!res.ok) {
-                        setConfirmError(data?.message ?? data?.error ?? data?.detail ?? "ยืนยันไม่สำเร็จ");
+                        setConfirmError(data?.error ?? data?.detail ?? "ยืนยันไม่สำเร็จ");
                         return;
                       }
                       setShowConfirm(false);

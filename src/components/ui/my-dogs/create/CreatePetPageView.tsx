@@ -16,7 +16,6 @@ import {
   sortByThaiName,
 } from "@/lib/dogs/dog.utills";
 import { buildCreateDogBody } from "@/lib/walkin/walkin/createDogApi";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 const ORANGE = "#F2A245";
 
@@ -50,7 +49,6 @@ const initialForm: PetCreateForm = {
 };
 
 export default function CreatePetPageView() {
-  const authorizedApi = useAuthorizedApi();
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState<PetCreateForm>(initialForm);
@@ -60,11 +58,11 @@ export default function CreatePetPageView() {
   const [breeds, setBreeds] = useState<BreedOption[]>([]);
 
   useEffect(() => {
-    authorizedApi("/api/dog/breeds")
+    fetch("/api/dog/breeds")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? sortByThaiName(data) : []))
       .catch(() => setBreeds([]));
-  }, [authorizedApi]);
+  }, []);
 
   useEffect(() => {
     const nextAge = form.birthDate ? calcAgeLabel(form.birthDate) : "-";
@@ -153,7 +151,7 @@ export default function CreatePetPageView() {
 
     setSaveLoading(true);
     try {
-      const res = await authorizedApi("/api/create-dog", {
+      const res = await fetch("/api/create-dog", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

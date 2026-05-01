@@ -10,11 +10,8 @@ import {
   mapProfileToVaccineRecords,
 } from "@/lib/dogs/dogProfile.mapper";
 import DogProfileClient from "@/components/my-dogs/DogProfileClient";
-import { getApiErrorMessage } from "@/lib/api/error";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 export default function DogProfileContainer({ dogId }: { dogId?: string }) {
-  const authorizedApi = useAuthorizedApi();
   const [data, setData] = useState<DogProfileApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +19,12 @@ export default function DogProfileContainer({ dogId }: { dogId?: string }) {
   const fetchProfile = useCallback(async () => {
     if (!dogId) return;
     setError(null);
-    const res = await authorizedApi(`/api/dog/${encodeURIComponent(dogId)}/profile`);
+    const res = await fetch(`/api/dog/${encodeURIComponent(dogId)}/profile`);
     if (res.status === 404) return;
-    if (!res.ok) throw new Error(await getApiErrorMessage(res, "โหลดข้อมูลสัตว์เลี้ยงไม่สำเร็จ"));
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     const profile = (await res.json()) as DogProfileApiResponse;
     setData(profile);
-  }, [authorizedApi, dogId]);
+  }, [dogId]);
 
   useEffect(() => {
     if (!dogId) {
@@ -41,10 +38,10 @@ export default function DogProfileContainer({ dogId }: { dogId?: string }) {
     setError(null);
     setData(null);
 
-    authorizedApi(`/api/dog/${encodeURIComponent(dogId)}/profile`)
-      .then(async (res) => {
+    fetch(`/api/dog/${encodeURIComponent(dogId)}/profile`)
+      .then((res) => {
         if (res.status === 404) return null;
-        if (!res.ok) throw new Error(await getApiErrorMessage(res, "โหลดข้อมูลสัตว์เลี้ยงไม่สำเร็จ"));
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         return res.json() as Promise<DogProfileApiResponse>;
       })
       .then((profile) => {
@@ -54,7 +51,7 @@ export default function DogProfileContainer({ dogId }: { dogId?: string }) {
       .catch((e) => {
         if (cancelled) return;
         console.error("getDogProfile failed:", e);
-        setError(e instanceof Error ? e.message : "โหลดข้อมูลสัตว์เลี้ยงไม่สำเร็จ กรุณาลองใหม่ภายหลัง");
+        setError("โหลดข้อมูลสัตว์เลี้ยงไม่สำเร็จ กรุณาลองใหม่ภายหลัง");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -63,7 +60,7 @@ export default function DogProfileContainer({ dogId }: { dogId?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [authorizedApi, dogId]);
+  }, [dogId]);
 
   if (loading) {
     return (

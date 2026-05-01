@@ -15,7 +15,7 @@ import {
     ShieldCheck,
     Layers,
 } from "lucide-react";
-import type { BreedOption } from "@/lib/dogs/breed.types";
+import { BreedOption } from "@/app/api/dog/breeds/route";
 
 export interface PetInfoMock {
     name: string;

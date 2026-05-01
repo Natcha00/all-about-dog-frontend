@@ -2,8 +2,6 @@
 
 import { BoardingDraft, PetPicked } from "@/lib/walkin/walkin/types.mock";
 import { useEffect, useMemo, useState } from "react";
-import { toBackendUrlFromApi } from "@/lib/api/backend";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 type Plan = 1 | 2 | 3;
 
 type BoardingPackagePricingResponse = {
@@ -94,7 +92,6 @@ export default function StepBoarding(props: {
   onNext: (draft: BoardingDraft) => void;
 }) {
   const { pets, form, setForm, onBack, onNext } = props;
-  const authorizedApi = useAuthorizedApi();
 
   const start = form.start;
   const setStart = (v: string) => setForm((p) => ({ ...p, start: v }));
@@ -138,17 +135,17 @@ export default function StepBoarding(props: {
 
     setAvailabilityLoading(true);
     setAvailabilityError(null);
-    const url = toBackendUrlFromApi(`/api/offering/boarding/available?${new URLSearchParams({
+    const url = `/api/offering/boarding/available?${new URLSearchParams({
       dogIds,
       offeringType: "boarding",
       start: startDateTime,
       end: endDateTime,
       package: pkg,
-    }).toString()}`);
+    }).toString()}`;
 
-    authorizedApi(url)
+    fetch(url)
       .then((res) => {
-        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.message ?? d.error ?? d.detail ?? res.statusText)));
+        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.error ?? d.detail ?? res.statusText)));
         return res.json();
       })
       .then((data: BoardingAvailableResponse) => {
@@ -161,7 +158,7 @@ export default function StepBoarding(props: {
       .finally(() => {
         setAvailabilityLoading(false);
       });
-  }, [authorizedApi, canCheckAvailability, pets, start, end, startTime, endTime, plan]);
+  }, [canCheckAvailability, pets, start, end, startTime, endTime, plan]);
 
   const isAvailableAllNights = availabilityResult?.available ?? false;
 
@@ -186,17 +183,17 @@ export default function StepBoarding(props: {
 
     setPricingLoading(true);
     setPricingError(null);
-    const url = toBackendUrlFromApi(`/api/offering/boarding/package-pricing?${new URLSearchParams({
+    const url = `/api/offering/boarding/package-pricing?${new URLSearchParams({
       dogIds,
       offeringType: "boarding",
       start: startDateTime,
       end: endDateTime,
       package: pkg,
-    }).toString()}`);
+    }).toString()}`;
 
-    authorizedApi(url)
+    fetch(url)
       .then((res) => {
-        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.message ?? d.error ?? d.detail ?? res.statusText)));
+        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.error ?? d.detail ?? res.statusText)));
         return res.json();
       })
       .then((data: BoardingPackagePricingResponse) => {
@@ -209,7 +206,7 @@ export default function StepBoarding(props: {
       .finally(() => {
         setPricingLoading(false);
       });
-  }, [authorizedApi, canShowSummary, pets, start, end, startTime, endTime, plan]);
+  }, [canShowSummary, pets, start, end, startTime, endTime, plan]);
 
   const total = pricingResult?.pricingSummary?.total ?? 0;
   const priceBreakdown = pricingResult?.dogs ?? [];

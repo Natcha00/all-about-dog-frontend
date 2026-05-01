@@ -4,7 +4,6 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { CalendarDays, ChevronDown, ImagePlus, Syringe, X, Pencil, Trash2 } from "lucide-react";
 import { formatDateThai, toDateInputValue } from "@/lib/date/date.utils";
 import AppImage from "@/components/ui/AppImage";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 export type VaccineTypeOption = { value: string; label: string };
 
@@ -46,7 +45,6 @@ function Chip({
 }
 
 export default function VaccineTab({ currentItem, dogId, initialVaccineList = [] }: VaccineTabProps) {
-  const authorizedApi = useAuthorizedApi();
   const [open, setOpen] = useState(false);
 
   const [vaccineTypeOptions, setVaccineTypeOptions] = useState<VaccineTypeOption[]>([]);
@@ -56,11 +54,11 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
 
   useEffect(() => {
     if (currentItem !== "vaccine") return;
-    authorizedApi("/api/dog/options/vaccine-types")
+    fetch("/api/dog/options/vaccine-types")
       .then((res) => res.ok ? res.json() : [])
       .then((data: VaccineTypeOption[]) => setVaccineTypeOptions(Array.isArray(data) ? data : []))
       .catch(() => setVaccineTypeOptions([]));
-  }, [authorizedApi, currentItem]);
+  }, [currentItem]);
 
   // Backend has no GET /dog/:id/vaccinations; list comes from profile (initialVaccineList) only
   useEffect(() => {
@@ -151,7 +149,7 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
       return;
     }
     setSaving(true);
-    authorizedApi(`/api/dog/${dogId}/vaccinations/${id}`, { method: "DELETE" })
+    fetch(`/api/dog/${dogId}/vaccinations/${id}`, { method: "DELETE" })
       .then((res) => {
         if (!res.ok) return res.json().then((e) => Promise.reject(e));
       })
@@ -189,7 +187,7 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
       if (proofFile) {
         form.append("file", proofFile);
       }
-      authorizedApi(`/api/dog/${dogId}/vaccinations/${editingId}`, {
+      fetch(`/api/dog/${dogId}/vaccinations/${editingId}`, {
         method: "PUT",
         body: form,
       })
@@ -239,7 +237,7 @@ export default function VaccineTab({ currentItem, dogId, initialVaccineList = []
       form.append("file", proofFile);
     }
 
-    authorizedApi(`/api/dog/${dogId}/vaccinations`, {
+    fetch(`/api/dog/${dogId}/vaccinations`, {
       method: "POST",
       body: form,
     })

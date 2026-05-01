@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from "react";
 import PoikaiCard from "@/components/ui/PoikaiCard";
 import { Home } from "lucide-react";
-import { toBackendUrlFromApi } from "@/lib/api/backend";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type Availability = {
   capacity: { SMALL: number; LARGE: number; VIP: number };
@@ -19,7 +17,6 @@ export default function AvailabilityBox({
   startDate: string;
   endDate: string;
 }) {
-  const authorizedApi = useAuthorizedApi();
   const [availability, setAvailability] = useState<Availability | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -35,8 +32,8 @@ export default function AvailabilityBox({
         setLoading(true);
 
         // 👇 เปลี่ยน URL ให้ตรง backend ของคุณ
-        const res = await authorizedApi(
-          toBackendUrlFromApi(`/api/boarding/availability?start=${startDate}&end=${endDate}`),
+        const res = await fetch(
+          `/api/boarding/availability?start=${startDate}&end=${endDate}`,
           { cache: "no-store" }
         );
 
@@ -51,7 +48,7 @@ export default function AvailabilityBox({
     };
 
     load();
-  }, [authorizedApi, startDate, endDate]);
+  }, [startDate, endDate]);
 
   return (
     <PoikaiCard

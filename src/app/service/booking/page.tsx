@@ -6,8 +6,6 @@ import PageLoading from "@/components/ui/PageLoading";
 import type { Booking, TabKey } from "@/lib/booking/booking.types";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { toBackendUrlFromApi } from "@/lib/api/backend";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type ReservationApiCounts = {
   pending: number;
@@ -194,7 +192,6 @@ function mapItemToBooking(item: ReservationApiItem): Booking {
 export default function BookingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const authorizedApi = useAuthorizedApi();
 
   const tabParam = searchParams.get("tab");
   const tab: TabKey = normalizeTab(tabParam);
@@ -222,12 +219,12 @@ export default function BookingsPage() {
       setError(null);
       try {
         const backendTab = mapTabToBackend(tab);
-        const url = toBackendUrlFromApi(`/api/reservation?tab=${encodeURIComponent(backendTab)}`);
-        const res = await authorizedApi(url);
+        const url = `/api/reservation?tab=${encodeURIComponent(backendTab)}`;
+        const res = await fetch(url);
         const data: ReservationApiResponse = await res.json().catch(() => ({ counts: null, items: [] } as any));
         if (!res.ok) {
           if (cancelled) return;
-          setError((data as any)?.message ?? (data as any)?.error ?? "โหลดรายการจองไม่สำเร็จ");
+          setError((data as any)?.error ?? "โหลดรายการจองไม่สำเร็จ");
           setBookings([]);
           setCountsRaw(null);
           return;
@@ -251,7 +248,7 @@ export default function BookingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [authorizedApi, tab]);
+  }, [tab]);
 
   const counts = useMemo(() => {
     return mapCounts(countsRaw);

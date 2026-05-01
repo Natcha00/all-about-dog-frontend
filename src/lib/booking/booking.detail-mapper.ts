@@ -1,5 +1,5 @@
 import type { Booking, BookingStatus } from "./booking.types";
-import type { ReservationDetailResult } from "./reservation-detail.types";
+import type { ReservationDetailResult } from "@/app/api/reservation/detail/route";
 
 export function mapStatusFromBackend(status: string): BookingStatus {
   switch (status) {

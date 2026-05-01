@@ -4,7 +4,6 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import type { Gender, PetCreateForm } from "@/lib/dogs/dog.type";
 import { breedSizeToPetSize, isDoubleCoatOnlyBreed, sortByThaiName } from "@/lib/dogs/dog.utills";
-import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 export type BreedOption = { id: number; nameTh: string; nameEng: string; size: string };
 
@@ -121,7 +120,6 @@ export default function StepBasic(props: {
   breeds?: BreedOption[];
 }) {
   const { form, setForm, errors, breeds: breedsProp } = props;
-  const authorizedApi = useAuthorizedApi();
 
   const [breedsFetched, setBreedsFetched] = useState<BreedOption[]>([]);
   const [coatTypes, setCoatTypes] = useState<CoatTypeOption[]>([]);
@@ -129,14 +127,14 @@ export default function StepBasic(props: {
 
   useEffect(() => {
     if (breedsProp != null) return;
-    authorizedApi("/api/dog/breeds")
+    fetch("/api/dog/breeds")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: BreedOption[]) => setBreedsFetched(Array.isArray(data) ? sortByThaiName(data) : []))
       .catch(() => setBreedsFetched([]));
-  }, [authorizedApi, breedsProp]);
+  }, [breedsProp]);
 
   useEffect(() => {
-    authorizedApi("/api/dog/options/coat-types")
+    fetch("/api/dog/options/coat-types")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: CoatTypeOption[]) => setCoatTypes(Array.isArray(data) && data.length > 0 ? data : [
         { value: "ขนสั้น", label: "ขนสั้น" },
@@ -148,7 +146,7 @@ export default function StepBasic(props: {
         { value: "ขนยาว", label: "ขนยาว" },
         { value: "ขนสองชั้น", label: "ขนสองชั้น" },
       ]));
-  }, [authorizedApi]);
+  }, []);
 
   // ✅ ไม่เก็บ ageLabel ใน state แล้ว คำนวณสดจาก birthDate
   const derivedAge = calcAgeFromISO(form.birthDate);
