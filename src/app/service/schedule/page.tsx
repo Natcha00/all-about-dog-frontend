@@ -10,6 +10,7 @@ import ScheduleHeader from "@/components/ui/schedule/ScheduleHeader";
 import MonthCalendar from "@/components/ui/schedule/MonthCalendar";
 import BookingList from "@/components/ui/schedule/BookingList";
 import PageLoading from "@/components/ui/PageLoading";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type ReservationApiItem = {
   id: string;
@@ -99,6 +100,7 @@ function mapItemToBooking(item: ReservationApiItem): Booking {
 }
 
 export default function SchedulePage() {
+  const authorizedApi = useAuthorizedApi();
   const [anchorMonth, setAnchorMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [petFilter, setPetFilter] = useState<string>("ทั้งหมด");
@@ -114,14 +116,14 @@ export default function SchedulePage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/reservation");
+        const res = await authorizedApi("/api/reservation");
         const data: ReservationApiResponse = await res
           .json()
           .catch(() => ({ counts: null, items: [] } as any));
 
         if (!res.ok) {
           if (cancelled) return;
-          setError((data as any)?.error ?? "โหลดตารางการจองไม่สำเร็จ");
+          setError((data as any)?.message ?? (data as any)?.error ?? "โหลดตารางการจองไม่สำเร็จ");
           setBookings([]);
           return;
         }
@@ -142,7 +144,7 @@ export default function SchedulePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authorizedApi]);
 
   // ✅ รวมรายชื่อสัตว์เลี้ยงจาก pets[]
   const allPets = useMemo(() => {

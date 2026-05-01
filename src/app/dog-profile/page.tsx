@@ -7,7 +7,8 @@ import BtnContainerHeath, { TabItem } from "@/components/ui/btnContainerHeath";
 import InfoDog, { PetInfoMock } from "@/components/ui/infoDog";
 import VaccineTab from "@/components/ui/vaccineTab";
 import HistoryTab, { ServiceHistoryItem } from "@/components/ui/historyTab";
-import { BreedOption } from "@/app/api/dog/breeds/route";
+
+type BreedOption = { id: number; nameTh: string; nameEng: string; size: string };
 
 const dog: DogNameWithGender = {
     name: "Robertnajaaaa ilobveuRobertnajaaaa ilobveu",

@@ -3,7 +3,7 @@ import type { PetInfoMock } from "@/components/ui/infoDog";
 import type { QrCodeProps } from "@/components/ui/qrCode";
 import type { ServiceHistoryItem } from "@/components/ui/historyTab";
 import { toDateInputValue } from "@/lib/date/date.utils";
-import { BreedOption } from "@/app/api/dog/breeds/route";
+import type { BreedOption } from "@/lib/dogs/breed.types";
 import type { DogProfileApiResponse, VaccineRecordFromProfile } from "./dog.type";
 
 /** Parse "อายุ 1 ปี 6 เดือน" or "1 ปี" -> years number */

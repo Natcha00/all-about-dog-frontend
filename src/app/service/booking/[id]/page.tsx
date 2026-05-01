@@ -18,11 +18,12 @@ import {
   type BackendTimelineEntry,
   buildHistoryFromBackendTimeline,
 } from "@/lib/booking/booking.timeline";
+import type { ReservationDetailResult } from "@/lib/booking/reservation-detail.types";
 import { QRCodeSVG } from "qrcode.react";
 import type { PetPicked, ServiceType } from "@/lib/walkin/walkin/types.mock";
-import type { ReservationDetailResult } from "@/app/api/reservation/detail/route";
 import { formatDateThai } from "@/lib/date/date.utils";
 import { BANK_TRANSFER_FOR_BOOKING } from "@/lib/payment/bank-transfer";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 /* ===== labels ===== */
 
@@ -151,6 +152,7 @@ function planLabel(plan: 1 | 2 | 3) {
 ========================= */
 
 export default function BookingDetailPage() {
+  const authorizedApi = useAuthorizedApi();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = decodeURIComponent(params?.id ?? "");
@@ -182,12 +184,11 @@ export default function BookingDetailPage() {
       }
       setError(null);
       try {
-        const url = `/api/reservation/detail?code=${encodeURIComponent(id)}`;
-        const res = await fetch(url);
+        const res = await authorizedApi(`/api/reservation/detail?code=${encodeURIComponent(id)}`);
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          setError((data as any)?.error ?? "ไม่สามารถโหลดรายละเอียดการจองได้");
+          setError((data as any)?.message ?? (data as any)?.error ?? "ไม่สามารถโหลดรายละเอียดการจองได้");
           setBooking(null);
           return;
         }
@@ -209,7 +210,7 @@ export default function BookingDetailPage() {
         else setLoading(false);
       }
     },
-    [id],
+    [authorizedApi, id],
   );
 
   useEffect(() => {
@@ -342,7 +343,7 @@ export default function BookingDetailPage() {
       form.append("code", b.id);
       form.append("file", slipFile);
 
-      const res = await fetch("/api/reservation/slip", {
+      const res = await authorizedApi("/api/reservation/slip", {
         method: "POST",
         body: form,
       });
@@ -376,7 +377,7 @@ export default function BookingDetailPage() {
     if (!b || paymentSelecting) return false;
     try {
       setPaymentSelecting(true);
-      const res = await fetch("/api/reservation/payment/select", {
+      const res = await authorizedApi("/api/reservation/payment/select", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: b.id, method }),
@@ -404,7 +405,7 @@ export default function BookingDetailPage() {
     if (!b || cancelling) return;
     try {
       setCancelling(true);
-      const res = await fetch("/api/reservation/cancel", {
+      const res = await authorizedApi("/api/reservation/cancel", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -414,7 +415,7 @@ export default function BookingDetailPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        alert((data as any)?.error ?? "ยกเลิกรายการจองไม่สำเร็จ");
+        alert((data as any)?.message ?? (data as any)?.error ?? "ยกเลิกรายการจองไม่สำเร็จ");
         return;
       }
 

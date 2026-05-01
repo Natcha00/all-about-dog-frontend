@@ -13,6 +13,7 @@ import { mapDogApiItemToPetPicked } from "@/lib/walkin/walkin/dogToPetPicked";
 import type { DogApiItem } from "@/lib/dogs/dog.type";
 import type { BreedOption } from "../StepBasic";
 import TabsHeader from "../TabsHeader";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type Props = {
   petForm: PetCreateForm;
@@ -53,17 +54,18 @@ export default function PetCreatePanel({
   onBackToPick,
   onLoadPets,
 }: Props) {
+  const authorizedApi = useAuthorizedApi();
   const [createStep, setCreateStep] = useState<1 | 2>(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [breeds, setBreeds] = useState<BreedOption[]>([]);
 
   useEffect(() => {
-    fetch("/api/dog/breeds")
+    authorizedApi("/api/dog/breeds")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? sortByThaiName(data) : []))
       .catch(() => setBreeds([]));
-  }, []);
+  }, [authorizedApi]);
 
   const validatePetBasic = () => {
     // พันธุ์ที่ต้องเป็นขนสองชั้นเสมอ — sync form ก่อน validate
@@ -139,7 +141,7 @@ export default function PetCreatePanel({
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/create-dog", {
+      const res = await authorizedApi("/api/create-dog", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

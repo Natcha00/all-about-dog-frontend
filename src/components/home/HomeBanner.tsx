@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import AppImage from "@/components/ui/AppImage";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type BannerItem = {
   id: number;
@@ -12,6 +13,7 @@ const BANNER_DURATION_MS = 4000;
 const SWIPE_THRESHOLD = 40;
 
 export default function HomeBanner() {
+  const authorizedApi = useAuthorizedApi();
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [index, setIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -23,7 +25,7 @@ export default function HomeBanner() {
 
     async function loadBanners() {
       try {
-        const res = await fetch("/api/news/banner", {
+        const res = await authorizedApi("/api/news/banner", {
           cache: "no-store",
         });
 
@@ -52,7 +54,7 @@ export default function HomeBanner() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authorizedApi]);
 
   const goNext = useCallback(() => {
     if (total <= 1) return;

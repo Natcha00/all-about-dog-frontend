@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ChevronLeft, Camera, MapPin } from "lucide-react";
 import AppImage from "@/components/ui/AppImage";
 import { DEFAULT_AVATAR_IMAGE } from "@/lib/constants";
+import { getApiErrorMessage } from "@/lib/api/error";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 const ORANGE = "#F2A245";
 
@@ -52,6 +54,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { error?: st
 }
 
 export default function ProfilePage() {
+    const authorizedApi = useAuthorizedApi();
     const [showConfirm, setShowConfirm] = useState(false);
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -67,9 +70,12 @@ export default function ProfilePage() {
 
     useEffect(() => {
         let cancelled = false;
-        fetch("/api/account/profile", { credentials: "include" })
-            .then((res) => {
-                if (!res.ok) throw new Error(res.status === 401 ? "Unauthorized" : `${res.status}`);
+        authorizedApi("/api/account/profile")
+            .then(async (res) => {
+                if (!res.ok) {
+                    if (res.status === 401) throw new Error("Unauthorized");
+                    throw new Error(await getApiErrorMessage(res, "โหลดข้อมูลไม่สำเร็จ"));
+                }
                 return res.json();
             })
             .then((data: ProfileData) => {
@@ -92,7 +98,7 @@ export default function ProfilePage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [authorizedApi]);
 
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -113,16 +119,14 @@ export default function ProfilePage() {
         if (form.lastName !== undefined) payload.lastName = form.lastName.trim();
         if (form.phone !== undefined) payload.phoneNumber = form.phone.trim();
         if (form.address !== undefined) payload.address = form.address.trim() || null;
-        fetch("/api/account/profile", {
+        authorizedApi("/api/account/profile", {
             method: "PATCH",
-            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         })
             .then(async (res) => {
-                const data = await res.json().catch(() => ({}));
                 if (!res.ok) {
-                    throw new Error((data as { error?: string }).error || "บันทึกไม่สำเร็จ");
+                    throw new Error(await getApiErrorMessage(res, "บันทึกไม่สำเร็จ"));
                 }
                 if (profile) {
                     setProfile({
@@ -162,17 +166,18 @@ export default function ProfilePage() {
         try {
             const form = new FormData();
             form.append("file", file);
-            const res = await fetch("/api/account/profile-picture", {
+            const res = await authorizedApi("/api/account/profile-picture", {
                 method: "POST",
-                credentials: "include",
                 body: form,
             });
-            const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                const msg = (data as { error?: string }).error || (res.status === 401 ? "กรุณาเข้าสู่ระบบใหม่" : "อัปโหลดไม่สำเร็จ");
+                const msg = res.status === 401
+                    ? "กรุณาเข้าสู่ระบบใหม่"
+                    : await getApiErrorMessage(res, "อัปโหลดไม่สำเร็จ");
                 setAvatarError(msg);
                 return;
             }
+            const data = await res.json().catch(() => ({}));
             const url = (data as { profilePictureUrl?: string }).profilePictureUrl;
             if (url) {
                 URL.revokeObjectURL(previewUrl);

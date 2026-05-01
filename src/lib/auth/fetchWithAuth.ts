@@ -1,3 +1,5 @@
+import { toBackendUrlFromApi } from "@/lib/api/backend";
+import { buildAuthHeaders } from "@/lib/auth/clientToken";
 /**
  * Authenticated fetch: on 401, calls POST /api/auth/refresh-token then retries the request once.
  * Use for calls to API routes that require accessToken (cookies sent with credentials: "include").
@@ -8,10 +10,14 @@ export async function fetchWithAuth(
   init?: RequestInit,
   retried = false
 ): Promise<Response> {
-  const res = await fetch(url, { ...init, credentials: "include" });
+  const res = await fetch(url, {
+    ...init,
+    credentials: "include",
+    headers: buildAuthHeaders(init?.headers),
+  });
   if (res.status !== 401 || retried) return res;
 
-  const refreshRes = await fetch("/api/auth/refresh-token", {
+  const refreshRes = await fetch(toBackendUrlFromApi("/api/auth/refresh-token"), {
     method: "POST",
     credentials: "include",
   });

@@ -12,6 +12,8 @@ import HomeBanner from "@/components/home/HomeBanner";
 import HomeServices from "@/components/home/HomeServices";
 import { statusLabel } from "@/lib/booking/booking.logic";
 import { BookingStatus } from "@/lib/booking/booking.types";
+import { getApiErrorMessage } from "@/lib/api/error";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type DogOwnerProfile = {
   id: number;
@@ -82,6 +84,7 @@ function getUpcomingReservations(items: ReservationItem[]): ReservationItem[] {
 
 export default function DogOwnerHomePage() {
   const router = useRouter();
+  const authorizedApi = useAuthorizedApi();
 
   const [profile, setProfile] = useState<DogOwnerProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -107,13 +110,13 @@ export default function DogOwnerHomePage() {
       setProfileLoading(true);
       setProfileError(null);
       try {
-        const res = await fetch("/api/account/profile", { credentials: "include" });
+        const res = await authorizedApi("/api/account/profile");
         if (res.status === 401) {
           router.push("/login");
           return;
         }
         if (!res.ok) {
-          throw new Error("โหลดข้อมูลผู้ใช้ไม่สำเร็จ");
+          throw new Error(await getApiErrorMessage(res, "โหลดข้อมูลผู้ใช้ไม่สำเร็จ"));
         }
         const data: DogOwnerProfile = await res.json();
         if (!cancelled) {
@@ -137,7 +140,7 @@ export default function DogOwnerHomePage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [authorizedApi, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -146,9 +149,9 @@ export default function DogOwnerHomePage() {
       setDogsLoading(true);
       setDogsError(null);
       try {
-        const res = await fetch("/api/dog", { credentials: "include" });
+        const res = await authorizedApi("/api/dog");
         if (!res.ok) {
-          throw new Error("โหลดรายการสุนัขไม่สำเร็จ");
+          throw new Error(await getApiErrorMessage(res, "โหลดรายการสุนัขไม่สำเร็จ"));
         }
         const data: unknown = await res.json();
         if (!cancelled) {
@@ -173,7 +176,7 @@ export default function DogOwnerHomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authorizedApi]);
 
   useEffect(() => {
     let cancelled = false;
@@ -182,9 +185,7 @@ export default function DogOwnerHomePage() {
       setReservationsLoading(true);
       setReservationsError(null);
       try {
-        const res = await fetch("/api/reservation?tab=all", {
-          credentials: "include",
-        });
+        const res = await authorizedApi("/api/reservation?tab=all");
         const data: ReservationResponse = await res
           .json()
           .catch(() => ({ counts: null, items: [] } as unknown as ReservationResponse));
@@ -192,7 +193,9 @@ export default function DogOwnerHomePage() {
         if (!res.ok) {
           if (!cancelled) {
             setReservationsError(
-              (data as unknown as { error?: string })?.error ??
+              (data as unknown as { message?: string; error?: string; detail?: string })?.message ??
+                (data as unknown as { message?: string; error?: string; detail?: string })?.error ??
+                (data as unknown as { message?: string; error?: string; detail?: string })?.detail ??
                 "โหลดการจองไม่สำเร็จ",
             );
             setReservations([]);
@@ -225,7 +228,7 @@ export default function DogOwnerHomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authorizedApi]);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,7 +236,7 @@ export default function DogOwnerHomePage() {
     async function loadAnnouncement() {
       setAnnouncementLoading(true);
       try {
-        const res = await fetch("/api/offering/announcement");
+        const res = await authorizedApi("/api/offering/announcement");
         if (!res.ok) {
           return;
         }
@@ -255,7 +258,7 @@ export default function DogOwnerHomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authorizedApi]);
 
   const upcomingReservations = useMemo(
     () => getUpcomingReservations(reservations),

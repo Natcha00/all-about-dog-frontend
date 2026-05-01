@@ -6,8 +6,9 @@ import type { UpdateDogBody } from "@/lib/dogs/dog.type";
 import type { CoatTypeValue } from "@/lib/dogs/dog.type";
 import { isDoubleCoatOnlyBreed, sortByThaiName } from "@/lib/dogs/dog.utills";
 import { toDateInputValue } from "@/lib/date/date.utils";
-import type { BreedOption } from "@/app/api/dog/breeds/route";
+import type { BreedOption } from "@/lib/dogs/breed.types";
 import type { MealKey } from "@/lib/dogs/dog.type";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type CoatTypeOption = { value: string; label: string };
 type BloodGroupOption = { value: string; label: string };
@@ -231,6 +232,7 @@ export default function EditDogSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const authorizedApi = useAuthorizedApi();
   const initialForm = getInitialFormFromProfile(profile);
   const [form, setForm] = useState<EditDogFormState>(initialForm);
   const [breeds, setBreeds] = useState<BreedOption[]>([]);
@@ -251,14 +253,14 @@ export default function EditDogSheet({
   }, [breeds, profile.profile.general.breed]);
 
   useEffect(() => {
-    fetch("/api/dog/breeds")
+    authorizedApi("/api/dog/breeds")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: BreedOption[]) => setBreeds(Array.isArray(data) ? sortByThaiName(data) : []))
       .catch(() => setBreeds([]));
-  }, []);
+  }, [authorizedApi]);
 
   useEffect(() => {
-    fetch("/api/dog/options/coat-types")
+    authorizedApi("/api/dog/options/coat-types")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: CoatTypeOption[]) =>
         setCoatTypes(
@@ -278,14 +280,14 @@ export default function EditDogSheet({
           { value: "ขนสองชั้น", label: "ขนสองชั้น" },
         ])
       );
-  }, []);
+  }, [authorizedApi]);
 
   useEffect(() => {
-    fetch("/api/dog/options/blood-groups")
+    authorizedApi("/api/dog/options/blood-groups")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: BloodGroupOption[]) => setBloodGroups(Array.isArray(data) ? data : []))
       .catch(() => setBloodGroups([]));
-  }, []);
+  }, [authorizedApi]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,7 +304,7 @@ export default function EditDogSheet({
     }
     setSaving(true);
     try {
-      const res = await fetch(`/api/dog/${encodeURIComponent(dogId)}`, {
+      const res = await authorizedApi(`/api/dog/${encodeURIComponent(dogId)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

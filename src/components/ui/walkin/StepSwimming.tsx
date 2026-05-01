@@ -2,6 +2,8 @@
 
 import { PetPicked, ReservationConfirmLine, SwimmingDraft } from "@/lib/walkin/walkin/types.mock";
 import React, { useEffect, useMemo, useState } from "react";
+import { toBackendUrlFromApi } from "@/lib/api/backend";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type SwimmingSlot = {
   time: string;
@@ -61,6 +63,7 @@ export default function StepSwimming(props: {
   onNext: (draft: SwimmingDraft) => void;
 }) {
   const { pets, form, setForm, onBack, onNext } = props;
+  const authorizedApi = useAuthorizedApi();
 
   const dateISO = form.dateISO;
   const setDateISO = (v: string) => setForm((p) => ({ ...p, dateISO: v }));
@@ -99,16 +102,16 @@ export default function StepSwimming(props: {
 
     setSwimmingLoading(true);
     setSwimmingError(null);
-    const url = `/api/offering/swimming/package-pricing?${new URLSearchParams({
+    const url = toBackendUrlFromApi(`/api/offering/swimming/package-pricing?${new URLSearchParams({
       dogIds,
       offeringType: "swimming",
       date: dateISO,
       package: pkg,
-    }).toString()}`;
+    }).toString()}`);
 
-    fetch(url)
+    authorizedApi(url)
       .then((res) => {
-        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.error ?? d.detail ?? res.statusText)));
+        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.message ?? d.error ?? d.detail ?? res.statusText)));
         return res.json();
       })
       .then((data: SwimmingPackagePricingResponse) => {
@@ -121,7 +124,7 @@ export default function StepSwimming(props: {
       .finally(() => {
         setSwimmingLoading(false);
       });
-  }, [canFetchSwimming, dateISO, pets, isVip]);
+  }, [authorizedApi, canFetchSwimming, dateISO, pets, isVip]);
 
   const slots: SwimmingSlot[] = swimmingResult?.slots ?? [];
 

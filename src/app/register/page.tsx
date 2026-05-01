@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { toBackendUrlFromApi } from "@/lib/api/backend";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -72,7 +73,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(toBackendUrlFromApi("/api/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -89,7 +90,7 @@ export default function RegisterPage() {
         router.replace(`/verify-email?email=${encodeURIComponent(emailTrim)}`);
         return;
       }
-      setError((data.error as string) || (data.message as string) || "ลงทะเบียนไม่สำเร็จ");
+      setError((data.message as string) || (data.error as string) || "ลงทะเบียนไม่สำเร็จ");
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {

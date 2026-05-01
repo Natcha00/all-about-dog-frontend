@@ -12,6 +12,7 @@ import type { QrCodeProps } from "@/components/ui/qrCode";
 import type { DogProfileApiResponse } from "@/lib/dogs/dog.type";
 import EditDogSheet from "./EditDogSheet";
 import { Pencil } from "lucide-react";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 const tabs: TabItem[] = [
   { id: "info", label: "ข้อมูลสัตว์" },
@@ -44,6 +45,7 @@ export default function DogProfileClient({
   onProfilePictureChange,
   onProfileRefresh,
 }: DogProfileClientProps) {
+  const authorizedApi = useAuthorizedApi();
   const [currentItem, setCurrentItem] = useState<string>("info");
   const [pictureUploading, setPictureUploading] = useState(false);
   const [pictureError, setPictureError] = useState<string | null>(null);
@@ -76,13 +78,13 @@ export default function DogProfileClient({
     formData.set("file", file);
 
     try {
-      const res = await fetch(`/api/dog/${encodeURIComponent(dogId)}/profile-picture`, {
+      const res = await authorizedApi(`/api/dog/${encodeURIComponent(dogId)}/profile-picture`, {
         method: "PUT",
         body: formData,
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail ?? body.error ?? `${res.status} ${res.statusText}`);
+        throw new Error(body.message ?? body.error ?? body.detail ?? `${res.status} ${res.statusText}`);
       }
       onProfilePictureChange?.();
     } catch (err) {
@@ -103,12 +105,12 @@ export default function DogProfileClient({
     setHistoryLoading(true);
     setHistoryError(null);
 
-    fetch(`/api/dog/${encodeURIComponent(dogId)}/reservation-histories`)
+    authorizedApi(`/api/dog/${encodeURIComponent(dogId)}/reservation-histories`)
       .then((res) => {
         if (!res.ok) {
           return res
             .json()
-            .then((d) => Promise.reject(new Error(d.error ?? d.detail ?? `${res.status} ${res.statusText}`)));
+            .then((d) => Promise.reject(new Error(d.message ?? d.error ?? d.detail ?? `${res.status} ${res.statusText}`)));
         }
         return res.json() as Promise<
           Array<{
@@ -170,7 +172,7 @@ export default function DogProfileClient({
     return () => {
       cancelled = true;
     };
-  }, [currentItem, dogId, historyError, historyItemsState.length]);
+  }, [authorizedApi, currentItem, dogId, historyError, historyItemsState.length]);
 
   return (
     <div className="flex flex-col gap-4 min-h-screen overflow-y-auto">

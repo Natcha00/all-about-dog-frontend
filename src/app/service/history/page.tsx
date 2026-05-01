@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import HistoryList from "@/components/ui/history/HistoryList";
 import PageLoading from "@/components/ui/PageLoading";
 import type { ServiceHistoryItem } from "@/components/ui/history/types";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type ReservationApiItem = {
   id: string;
@@ -55,6 +56,7 @@ function mapItemToHistory(item: ReservationApiItem): ServiceHistoryItem {
 }
 
 export default function ServiceHistoryPage() {
+  const authorizedApi = useAuthorizedApi();
   const [items, setItems] = useState<ServiceHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,14 +68,14 @@ export default function ServiceHistoryPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/reservation?tab=finished");
+        const res = await authorizedApi("/api/reservation?tab=finished");
         const data: ReservationApiResponse = await res
           .json()
           .catch(() => ({ counts: null, items: [] } as any));
 
         if (!res.ok) {
           if (cancelled) return;
-          setError((data as any)?.error ?? "โหลดประวัติการใช้บริการไม่สำเร็จ");
+          setError((data as any)?.message ?? (data as any)?.error ?? "โหลดประวัติการใช้บริการไม่สำเร็จ");
           setItems([]);
           return;
         }
@@ -94,7 +96,7 @@ export default function ServiceHistoryPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authorizedApi]);
 
   return (
     <main className="min-h-screen bg-[#F7F4E8]">

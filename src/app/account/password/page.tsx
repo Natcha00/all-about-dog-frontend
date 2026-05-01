@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 /* =======================
    Small UI helpers (Poikai)
@@ -137,6 +138,7 @@ function ConfirmModal({
 ======================= */
 
 export default function ChangePasswordPage() {
+  const authorizedApi = useAuthorizedApi();
   const [oldPass, setOldPass] = useState("");
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
@@ -178,9 +180,8 @@ export default function ChangePasswordPage() {
     setApiError(null);
     setSaving(true);
     try {
-      const res = await fetch("/api/account/change-password", {
+      const res = await authorizedApi("/api/account/change-password", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentPassword: oldPass,

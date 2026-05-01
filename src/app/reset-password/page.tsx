@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { toBackendUrlFromApi } from "@/lib/api/backend";
 
 type Step = "verify-otp" | "set-password";
 
@@ -41,7 +42,7 @@ function ResetPasswordForm() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-otp-reset-password", {
+      const res = await fetch(toBackendUrlFromApi("/api/auth/verify-otp-reset-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailTrim, otp: otpTrim }),
@@ -51,7 +52,7 @@ function ResetPasswordForm() {
         setStep("set-password");
         return;
       }
-      const msg = (data.error as string) || (data.message as string) || "ยืนยัน OTP ไม่สำเร็จ";
+      const msg = (data.message as string) || (data.error as string) || "ยืนยัน OTP ไม่สำเร็จ";
       setError(msg);
       // Hint to request new OTP when expired or invalid
       if (res.status === 400 && /หมดอายุ|ไม่มี OTP|ไม่ถูกต้อง/i.test(msg)) {
@@ -79,7 +80,7 @@ function ResetPasswordForm() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/reset-password", {
+      const res = await fetch(toBackendUrlFromApi("/api/auth/reset-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailTrim, otp: otpTrim, newPassword }),
@@ -89,7 +90,7 @@ function ResetPasswordForm() {
         router.replace("/login");
         return;
       }
-      setError((data.error as string) || (data.message as string) || "ตั้งรหัสผ่านใหม่ไม่สำเร็จ");
+      setError((data.message as string) || (data.error as string) || "ตั้งรหัสผ่านใหม่ไม่สำเร็จ");
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {

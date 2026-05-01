@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { CircleItemProps } from "@/components/ui/circleProfile";
 import type { DogApiItem } from "@/lib/dogs/dog.type";
 import MyDogsGrid from "@/components/my-dogs/MyDogsGrid";
+import { getApiErrorMessage } from "@/lib/api/error";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 function mapDogToCircleItem(dog: DogApiItem): CircleItemProps {
   return {
@@ -14,6 +16,7 @@ function mapDogToCircleItem(dog: DogApiItem): CircleItemProps {
 }
 
 export default function MyPetsPage() {
+  const authorizedApi = useAuthorizedApi();
   const [dogs, setDogs] = useState<CircleItemProps[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,9 +25,11 @@ export default function MyPetsPage() {
   const loadDogs = useCallback(() => {
     setLoading(true);
     setErrorMessage(null);
-    fetch("/api/dog", { credentials: "include" })
-      .then((res) => {
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    authorizedApi("/api/dog")
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(await getApiErrorMessage(res, "โหลดรายการสัตว์เลี้ยงไม่สำเร็จ"));
+        }
         return res.json();
       })
       .then((data: unknown) => {
@@ -33,10 +38,10 @@ export default function MyPetsPage() {
       })
       .catch((e) => {
         console.error("getDogs failed:", e);
-        setErrorMessage("โหลดรายการสัตว์เลี้ยงไม่สำเร็จ กรุณาลองใหม่ภายหลัง");
+        setErrorMessage(e instanceof Error ? e.message : "โหลดรายการสัตว์เลี้ยงไม่สำเร็จ กรุณาลองใหม่ภายหลัง");
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [authorizedApi]);
 
   useEffect(() => {
     loadDogs();
@@ -46,13 +51,11 @@ export default function MyPetsPage() {
     if (!confirm("ต้องการลบสัตว์เลี้ยงตัวนี้ใช่หรือไม่?")) return;
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/dog/${id}`, {
+      const res = await authorizedApi(`/api/dog/${id}`, {
         method: "DELETE",
-        credentials: "include",
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const msg = (data.message as string) || (data.message as string) || `ลบล้มเหลว (${res.status})`;
+        const msg = await getApiErrorMessage(res, `ลบล้มเหลว (${res.status})`);
         alert(msg);
         return;
       }
@@ -63,7 +66,7 @@ export default function MyPetsPage() {
     } finally {
       setDeletingId(null);
     }
-  }, []);
+  }, [authorizedApi]);
 
   return (
     <div className="min-h-screen bg-[#F7F4E8] px-4 py-6 pb-28 max-w-md mx-auto">

@@ -16,6 +16,29 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { toBackendUrlFromApi } from "@/lib/api/backend";
+import { buildAuthHeaders, clearAuthTokens, getAccessToken, setAuthTokens } from "@/lib/auth/clientToken";
+
+function extractLoginTokens(payload: unknown): { accessToken: string | null; refreshToken: string | null } {
+  if (!payload || typeof payload !== "object") {
+    return { accessToken: null, refreshToken: null };
+  }
+
+  const record = payload as Record<string, unknown>;
+  const nested =
+    record.data && typeof record.data === "object" ? (record.data as Record<string, unknown>) : null;
+
+  const accessToken =
+    (typeof record.accessToken === "string" && record.accessToken) ||
+    (typeof nested?.accessToken === "string" && nested.accessToken) ||
+    null;
+  const refreshToken =
+    (typeof record.refreshToken === "string" && record.refreshToken) ||
+    (typeof nested?.refreshToken === "string" && nested.refreshToken) ||
+    null;
+
+  return { accessToken, refreshToken };
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,12 +54,22 @@ export default function LoginPage() {
   useEffect(() => {
     let cancelled = false;
     async function checkAuth() {
+      if (!getAccessToken()) {
+        setCheckingAuth(false);
+        return;
+      }
       try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
+        const res = await fetch(toBackendUrlFromApi("/api/auth/me"), {
+          credentials: "include",
+          headers: buildAuthHeaders(),
+        });
         if (cancelled) return;
         if (res.ok) {
           router.replace("/");
           return;
+        }
+        if (res.status === 401) {
+          clearAuthTokens();
         }
       } catch {
         if (!cancelled) setCheckingAuth(false);
@@ -60,7 +93,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(toBackendUrlFromApi("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
@@ -68,10 +101,16 @@ export default function LoginPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
+        const { accessToken, refreshToken } = extractLoginTokens(data);
+        if (!accessToken) {
+          setError("เข้าสู่ระบบสำเร็จแต่ไม่ได้รับ access token จากระบบ");
+          return;
+        }
+        setAuthTokens(accessToken, refreshToken);
         router.replace("/");
         return;
       }
-      const errMsg = (data.error as string) || (data.message as string) || `เกิดข้อผิดพลาด (${res.status})`;
+      const errMsg = (data.message as string) || (data.error as string) || `เกิดข้อผิดพลาด (${res.status})`;
       setError(errMsg);
       setVerifyEmailHint(!!errMsg && /ยืนยันอีเมล|verify.*email|email.*verify/i.test(String(errMsg)));
     } catch (e) {

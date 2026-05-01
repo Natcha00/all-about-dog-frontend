@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { toBackendUrlFromApi } from "@/lib/api/backend";
 
 function VerifyEmailForm() {
   const router = useRouter();
@@ -37,7 +38,7 @@ function VerifyEmailForm() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-email", {
+      const res = await fetch(toBackendUrlFromApi("/api/auth/verify-email"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailTrim, otp: otpTrim }),
@@ -47,7 +48,7 @@ function VerifyEmailForm() {
         router.replace("/login");
         return;
       }
-      setError((data.error as string) || (data.message as string) || "ยืนยันอีเมลไม่สำเร็จ");
+      setError((data.message as string) || (data.error as string) || "ยืนยันอีเมลไม่สำเร็จ");
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {
@@ -64,7 +65,7 @@ function VerifyEmailForm() {
     setResendStatus("sending");
     setError(null);
     try {
-      const res = await fetch("/api/auth/resend-verify-otp", {
+      const res = await fetch(toBackendUrlFromApi("/api/auth/resend-verify-otp"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailTrim }),
@@ -74,7 +75,7 @@ function VerifyEmailForm() {
         setResendStatus("ok");
       } else {
         setResendStatus("err");
-        setError((data.error as string) || (data.message as string) || "ส่ง OTP อีกครั้งไม่สำเร็จ");
+        setError((data.message as string) || (data.error as string) || "ส่ง OTP อีกครั้งไม่สำเร็จ");
       }
     } catch (e) {
       setResendStatus("err");

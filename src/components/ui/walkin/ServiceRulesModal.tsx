@@ -5,6 +5,7 @@ import { mapAnnouncementToServiceRules } from "@/lib/walkin/walkin/announcementA
 import React, { useEffect, useRef, useState } from "react";
 import SwimmingRulesTab from "./SwimmingRulesTab";
 import BoardingRulesTab from "./BoardingRulesTab";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 export default function ServiceRulesModal(props: {
   open: boolean;
@@ -12,6 +13,7 @@ export default function ServiceRulesModal(props: {
   onClose: () => void;
 }) {
   const { open, defaultTab = "swimming", onClose } = props;
+  const authorizedApi = useAuthorizedApi();
 
   const [tab, setTab] = useState<ServiceKey>(defaultTab);
   const [rules, setRules] = useState<Record<ServiceKey, ServiceRulesDTO> | null>(null);
@@ -32,9 +34,9 @@ export default function ServiceRulesModal(props: {
       setError(null);
       return;
     }
-    fetch("/api/offering/announcement")
+    authorizedApi("/api/offering/announcement")
       .then((res) => {
-        if (!res.ok) return res.json().then((b) => Promise.reject(new Error(b.detail ?? b.error ?? res.statusText)));
+        if (!res.ok) return res.json().then((b) => Promise.reject(new Error(b.message ?? b.error ?? b.detail ?? res.statusText)));
         return res.json();
       })
       .then((data) => {
@@ -45,7 +47,7 @@ export default function ServiceRulesModal(props: {
         setRules(null);
         setError(e instanceof Error ? e.message : "โหลดข้อมูลไม่สำเร็จ");
       });
-  }, [open]);
+  }, [authorizedApi, open]);
 
   // ✅ ทุกครั้งที่เปลี่ยน tab ให้ "tab ที่ถูกเปิด" เด้งบนสุด
   useEffect(() => {
@@ -119,9 +121,9 @@ export default function ServiceRulesModal(props: {
                 type="button"
                 onClick={() => {
                   setError(null);
-                  fetch("/api/offering/announcement")
+                  authorizedApi("/api/offering/announcement")
                     .then((res) => {
-                      if (!res.ok) return res.json().then((b) => Promise.reject(new Error(b.detail ?? b.error ?? res.statusText)));
+                      if (!res.ok) return res.json().then((b) => Promise.reject(new Error(b.message ?? b.error ?? b.detail ?? res.statusText)));
                       return res.json();
                     })
                     .then((data) => {

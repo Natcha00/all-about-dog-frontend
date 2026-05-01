@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MealKey, PetCreateForm } from "@/lib/dogs/dog.type";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type BloodGroupOption = { value: string; label: string };
 
@@ -78,15 +79,16 @@ export default function StepHealth(props: {
   errors?: Record<string, string>;
 }) {
   const { form, setForm, errors = {} } = props;
+  const authorizedApi = useAuthorizedApi();
 
   const [bloodGroups, setBloodGroups] = useState<BloodGroupOption[]>([]);
 
   useEffect(() => {
-    fetch("/api/dog/options/blood-groups")
+    authorizedApi("/api/dog/options/blood-groups")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.statusText))))
       .then((data: BloodGroupOption[]) => setBloodGroups(Array.isArray(data) ? data : []))
       .catch(() => setBloodGroups([]));
-  }, []);
+  }, [authorizedApi]);
 
   const toggleMeal = (k: MealKey) => {
     setForm((p) => ({ ...p, meals: { ...p.meals, [k]: !p.meals[k] } }));

@@ -9,6 +9,7 @@ import { mapDogApiListToPetPicked } from "@/lib/walkin/walkin/dogToPetPicked";
 
 import PetPickPanel from "./PetPickPanel";
 import PetCreatePanel from "./PetCreatePanel";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 type Props = {
   tab: "pick" | "create";
@@ -45,6 +46,7 @@ export default function StepPetCustomer({
   onNext,
   onResetCreateForm,
 }: Props) {
+  const authorizedApi = useAuthorizedApi();
   // ฝั่งลูกค้า: โหลดรายการหมาจาก API GET /dog แล้วแมปเป็น PetPicked สำหรับ PICK MODE
   const [myPets, setMyPets] = useState<PetPicked[]>([]);
   const [petsLoading, setPetsLoading] = useState(true);
@@ -53,11 +55,11 @@ export default function StepPetCustomer({
   const loadPets = useCallback(() => {
     setPetsError(null);
     setPetsLoading(true);
-    fetch("/api/dog")
+    authorizedApi("/api/dog")
       .then((res) => {
         if (!res.ok) {
           if (res.status === 401) return Promise.reject(new Error("กรุณาเข้าสู่ระบบ"));
-          return res.json().then((b) => Promise.reject(new Error(b.detail ?? b.error ?? res.statusText)));
+          return res.json().then((b) => Promise.reject(new Error(b.message ?? b.error ?? b.detail ?? res.statusText)));
         }
         return res.json();
       })
@@ -70,7 +72,7 @@ export default function StepPetCustomer({
         setPetsError(e instanceof Error ? e.message : "โหลดรายการสุนัขไม่สำเร็จ");
       })
       .finally(() => setPetsLoading(false));
-  }, []);
+  }, [authorizedApi]);
 
   useEffect(() => {
     loadPets();

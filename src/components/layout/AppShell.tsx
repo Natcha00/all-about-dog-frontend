@@ -1,9 +1,11 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Navbar from "@/components/ui/navbar";
 import BottomBar from "@/components/ui/bottombar";
+import { clearAuthTokens, getAccessToken } from "@/lib/auth/clientToken";
+import { useAuthorizedApi } from "@/hooks/useAuthorizedApi";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -28,18 +30,30 @@ export default function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const authorizedApi = useAuthorizedApi();
   const [authChecked, setAuthChecked] = useState(false);
+  const checkingRef = useRef(false);
 
   useEffect(() => {
     if (isPublicPath(pathname)) {
       setAuthChecked(true);
       return;
     }
+    if (!getAccessToken()) {
+      clearAuthTokens();
+      const loginUrl = "/login";
+      const current = pathname && pathname !== "/" ? `?redirect=${encodeURIComponent(pathname)}` : "";
+      router.replace(loginUrl + current);
+      return;
+    }
+    if (checkingRef.current) return;
+    checkingRef.current = true;
     let cancelled = false;
-    fetch("/api/auth/me", { credentials: "include" })
+    authorizedApi("/api/auth/me")
       .then((res) => {
         if (cancelled) return;
         if (res.status === 401) {
+          clearAuthTokens();
           const loginUrl = "/login";
           const current = pathname && pathname !== "/" ? `?redirect=${encodeURIComponent(pathname)}` : "";
           router.replace(loginUrl + current);
@@ -49,11 +63,14 @@ export default function AppShell({
       })
       .catch(() => {
         if (!cancelled) setAuthChecked(true);
+      })
+      .finally(() => {
+        checkingRef.current = false;
       });
     return () => {
       cancelled = true;
     };
-  }, [pathname, router]);
+  }, [authorizedApi, pathname, router]);
 
   const normalized = pathname.replace(/\/$/, "");
   const showBottomBar = ["/service", "/my-dogs", "/notifications", "/account", ""].includes(normalized);
